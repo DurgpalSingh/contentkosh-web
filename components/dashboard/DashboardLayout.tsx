@@ -155,6 +155,16 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               >
                 <Bell className="h-6 w-6" />
               </button>
+
+              <div className="h-6 w-px bg-gray-200" aria-hidden="true" />
+
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-x-2 text-sm font-semibold leading-6 text-gray-900 hover:text-gray-700"
+              >
+                <LogOut className="h-5 w-5 text-gray-400" />
+                <span className="hidden sm:inline">Sign out</span>
+              </button>
             </div>
           </div>
         </div>

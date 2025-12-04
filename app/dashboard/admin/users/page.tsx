@@ -51,8 +51,14 @@ export default function UsersPage() {
       }
     };
 
-    if (isAuthenticated && business?.id) {
-      fetchUsers();
+    if (isAuthenticated) {
+      if (business?.id) {
+        fetchUsers();
+      } else {
+        setLoading(false);
+        // Optional: Set an error or info message if business is required
+        // setError('No business profile found. Please contact support.');
+      }
     }
   }, [isAuthenticated, business?.id]);
 

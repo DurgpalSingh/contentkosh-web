@@ -37,14 +37,17 @@ export default function LoginPage() {
     setError(null);
 
     try {
+      // Ensure any existing session is cleared before attempting new login
+      await useAuthStore.getState().logout();
+
       console.log('Attempting login with:', data);
       const response = await authApi.login(data as LoginRequest);
       console.log('Login response:', response);
-      
+
       if (response.user && response.token) {
         console.log('Login successful, calling login function');
         login(response.user, null, response.token);
-        
+
         let profile = await authApi.getProfile();
         console.log('Profile:', profile);
         setProfile(profile);
@@ -82,14 +85,14 @@ export default function LoginPage() {
             </Link>
           </p>
         </div>
-        
+
         <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md">
               {error}
             </div>
           )}
-          
+
           <div className="space-y-4">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
@@ -106,7 +109,7 @@ export default function LoginPage() {
                 <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
               )}
             </div>
-            
+
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Password

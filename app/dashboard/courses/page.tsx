@@ -173,8 +173,14 @@ export default function CoursesPage() {
       }
     };
 
-    if (isAuthenticated && business?.id) {
-      fetchExams();
+    if (isAuthenticated) {
+      if (business?.id) {
+        fetchExams();
+      } else {
+        setLoading(false);
+        // Optional: Set an error or info message if business is required
+        // setError('No business profile found. Please contact support.');
+      }
     }
   }, [isAuthenticated, business?.id]);
 

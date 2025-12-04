@@ -7,13 +7,13 @@ import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { BatchesService, BatchUsersService } from '@/lib/api';
 import { Batch, BatchWithUsers, BatchUser } from '@/lib/api';
-import { 
-  Calendar, 
-  Users, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  UserPlus, 
+import {
+  Calendar,
+  Users,
+  Plus,
+  Edit,
+  Trash2,
+  UserPlus,
   UserMinus,
   Clock,
   CheckCircle,
@@ -66,8 +66,14 @@ export default function BatchesPage() {
       }
     };
 
-    if (isAuthenticated && business?.id) {
-      fetchBatches();
+    if (isAuthenticated) {
+      if (business?.id) {
+        fetchBatches();
+      } else {
+        setLoading(false);
+        // Optional: Set an error or info message if business is required
+        // setError('No business profile found. Please contact support.');
+      }
     }
   }, [isAuthenticated, business?.id]);
 
