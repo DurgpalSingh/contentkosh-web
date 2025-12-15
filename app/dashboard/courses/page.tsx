@@ -1,18 +1,21 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { AddExamModal } from '@/components/modals/AddExamModal';
+import { EditExamModal } from '@/components/modals/EditExamModal';
+import { DeleteConfirmModal } from '@/components/modals/DeleteConfirmModal';
 import { ExamsService, CoursesService, SubjectsService } from '@/lib/api';
 import { Exam, Course, Subject, ExamWithCourses, CourseWithSubjects } from '@/lib/api';
-import { 
-  BookOpen, 
-  GraduationCap, 
-  FileText, 
-  Plus, 
-  ChevronDown, 
+import {
+  BookOpen,
+  GraduationCap,
+  FileText,
+  Plus,
+  ChevronDown,
   ChevronRight,
   Calendar,
   Clock,
@@ -22,13 +25,17 @@ import {
 } from 'lucide-react';
 
 export default function CoursesPage() {
-  const { user, business, isAuthenticated, isLoading, isInitialized, initializeAuth } = useAuthStore();
+  const { user, business, isAuthenticated, isLoading, isInitialized, initializeAuth, logout } = useAuthStore();
   const router = useRouter();
   const [exams, setExams] = useState<Exam[]>([]);
   const [expandedExams, setExpandedExams] = useState<Set<number>>(new Set());
   const [expandedCourses, setExpandedCourses] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAddExamModalOpen, setIsAddExamModalOpen] = useState(false);
+  const [isEditExamModalOpen, setIsEditExamModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
 
   useEffect(() => {
     if (!isInitialized) {
@@ -44,139 +51,82 @@ export default function CoursesPage() {
     }
   }, [isAuthenticated, isInitialized, router]);
 
-  useEffect(() => {
-    const fetchExams = async () => {
-      if (!business?.id) {
-        setError('Business information not available');
-        setLoading(false);
+  const fetchExams = useCallback(async () => {
+    if (!business?.id) {
+      setError('Business information not available');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      console.log('Fetching exams for business:', business.id);
+
+      // Fetch all exams for this business
+      const response = await ExamsService.getExamByBusiness(business.id);
+      console.log('Exams response:', response);
+
+      // For each exam, fetch its courses with subjects
+      const examsWithCourses: Exam[] = [];
+      for (const exam of response.data || []) {
+        if (exam.id) {
+          try {
+            const examWithCoursesResponse = await ExamsService.getApiExamsWithCourses(exam.id);
+            if (examWithCoursesResponse.data) {
+              // For each course, fetch its subjects
+              const coursesWithSubjects: Course[] = [];
+              for (const course of examWithCoursesResponse.data.courses || []) {
+                if (course.id && exam.id) {
+                  try {
+                    const courseWithSubjectsResponse = await CoursesService.getApiExamsCoursesWithSubjects(exam.id, course.id);
+                    coursesWithSubjects.push({
+                      ...course,
+                      subjects: courseWithSubjectsResponse.data?.subjects || []
+                    });
+                  } catch {
+                    coursesWithSubjects.push(course);
+                  }
+                } else {
+                  coursesWithSubjects.push(course);
+                }
+              }
+              examsWithCourses.push({
+                ...examWithCoursesResponse.data,
+                courses: coursesWithSubjects
+              });
+            } else {
+              examsWithCourses.push(exam);
+            }
+          } catch {
+            examsWithCourses.push(exam);
+          }
+        }
+      }
+
+      setExams(examsWithCourses);
+      setError(null);
+    } catch (err: any) {
+      console.error('Error fetching exams:', err);
+
+      // Handle authentication errors - log out and redirect to login
+      if (err.status === 401 || err.body?.message?.toLowerCase().includes('token')) {
+        console.log('Authentication error detected, logging out...');
+        await logout();
+        router.push('/login');
         return;
       }
 
-      try {
-        console.log('Fetching exams for business:', business.id);
-        // Since there's no direct API to get all exams for a business,
-        // we'll create a mock structure for now
-        // TODO: Replace with actual API call when available
-        const mockExams: Exam[] = [
-          {
-            id: 1,
-            name: 'UPSC Civil Services',
-            description: 'Union Public Service Commission Civil Services Examination',
-            isActive: true,
-            businessId: business.id,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            courses: [
-              {
-                id: 1,
-                name: 'Preliminary Course',
-                description: 'UPSC Preliminary Examination Preparation',
-                duration: '6 months',
-                isActive: true,
-                examId: 1,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
-                subjects: [
-                  {
-                    id: 1,
-                    name: 'General Studies Paper I',
-                    description: 'History, Geography, Polity, Economy',
-                    isActive: true,
-                    courseId: 1,
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString(),
-                  },
-                  {
-                    id: 2,
-                    name: 'General Studies Paper II',
-                    description: 'CSAT - Comprehension, Logical Reasoning',
-                    isActive: true,
-                    courseId: 1,
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString(),
-                  }
-                ]
-              },
-              {
-                id: 2,
-                name: 'Mains Course',
-                description: 'UPSC Mains Examination Preparation',
-                duration: '12 months',
-                isActive: true,
-                examId: 1,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
-                subjects: [
-                  {
-                    id: 3,
-                    name: 'Essay',
-                    description: 'Essay Writing Practice',
-                    isActive: true,
-                    courseId: 2,
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString(),
-                  },
-                  {
-                    id: 4,
-                    name: 'General Studies I',
-                    description: 'Indian Heritage and Culture, History',
-                    isActive: true,
-                    courseId: 2,
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString(),
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            id: 2,
-            name: 'NEET',
-            description: 'National Eligibility cum Entrance Test',
-            isActive: true,
-            businessId: business.id,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            courses: [
-              {
-                id: 3,
-                name: 'Physics Course',
-                description: 'NEET Physics Preparation',
-                duration: '8 months',
-                isActive: true,
-                examId: 2,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
-                subjects: [
-                  {
-                    id: 5,
-                    name: 'Mechanics',
-                    description: 'Classical Mechanics',
-                    isActive: true,
-                    courseId: 3,
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString(),
-                  }
-                ]
-              }
-            ]
-          }
-        ];
-        
-        setExams(mockExams);
-        console.log('Mock exams loaded:', mockExams);
-      } catch (err: any) {
-        console.error('Error fetching exams:', err);
-        setError(err.body?.message || 'Failed to fetch exams');
-      } finally {
-        setLoading(false);
-      }
-    };
+      setError(err.body?.message || 'Failed to fetch exams');
+    } finally {
+      setLoading(false);
+    }
+  }, [business?.id]);
 
+  useEffect(() => {
     if (isAuthenticated && business?.id) {
       fetchExams();
     }
-  }, [isAuthenticated, business?.id]);
+  }, [isAuthenticated, business?.id, fetchExams]);
 
   const toggleExam = (examId: number) => {
     const newExpanded = new Set(expandedExams);
@@ -196,6 +146,22 @@ export default function CoursesPage() {
       newExpanded.add(courseId);
     }
     setExpandedCourses(newExpanded);
+  };
+
+  const handleEditExam = (exam: Exam) => {
+    setSelectedExam(exam);
+    setIsEditExamModalOpen(true);
+  };
+
+  const handleDeleteExam = (exam: Exam) => {
+    setSelectedExam(exam);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDeleteExam = async () => {
+    if (!selectedExam?.id) return;
+    await ExamsService.deleteApiExams(selectedExam.id);
+    await fetchExams();
   };
 
   if (!isInitialized || isLoading) {
@@ -219,7 +185,10 @@ export default function CoursesPage() {
             <p className="text-gray-600">Manage exams, courses, and subjects</p>
           </div>
           <div className="flex space-x-3">
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center">
+            <button
+              onClick={() => setIsAddExamModalOpen(true)}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+            >
               <Plus className="h-4 w-4 mr-2" />
               Add Exam
             </button>
@@ -247,7 +216,10 @@ export default function CoursesPage() {
             <GraduationCap className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No exams found</h3>
             <p className="text-gray-600 mb-4">Create your first exam to get started.</p>
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+            <button
+              onClick={() => setIsAddExamModalOpen(true)}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            >
               Add First Exam
             </button>
           </div>
@@ -261,31 +233,76 @@ export default function CoursesPage() {
                 onToggle={() => toggleExam(exam.id!)}
                 expandedCourses={expandedCourses}
                 onToggleCourse={toggleCourse}
+                onEdit={() => handleEditExam(exam)}
+                onDelete={() => handleDeleteExam(exam)}
               />
             ))}
           </div>
         )}
       </div>
+
+      {/* Add Exam Modal */}
+      {/* Add Exam Modal */}
+      {business?.id && isAddExamModalOpen && (
+        <AddExamModal
+          isOpen={isAddExamModalOpen}
+          onClose={() => setIsAddExamModalOpen(false)}
+          businessId={business.id}
+          onExamCreated={fetchExams}
+        />
+      )}
+
+      {/* Edit Exam Modal */}
+      {selectedExam && isEditExamModalOpen && (
+        <EditExamModal
+          isOpen={isEditExamModalOpen}
+          onClose={() => {
+            setIsEditExamModalOpen(false);
+            setSelectedExam(null);
+          }}
+          exam={selectedExam}
+          onExamUpdated={fetchExams}
+        />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {isDeleteModalOpen && (
+        <DeleteConfirmModal
+          isOpen={isDeleteModalOpen}
+          onClose={() => {
+            setIsDeleteModalOpen(false);
+            setSelectedExam(null);
+          }}
+          onConfirm={confirmDeleteExam}
+          title="Delete Exam"
+          message="Are you sure you want to delete this exam? This action cannot be undone."
+          itemName={selectedExam?.name}
+        />
+      )}
     </DashboardLayout>
   );
 }
 
-function ExamCard({ 
-  exam, 
-  isExpanded, 
-  onToggle, 
-  expandedCourses, 
-  onToggleCourse 
-}: { 
+function ExamCard({
+  exam,
+  isExpanded,
+  onToggle,
+  expandedCourses,
+  onToggleCourse,
+  onEdit,
+  onDelete
+}: {
   exam: Exam;
   isExpanded: boolean;
   onToggle: () => void;
   expandedCourses: Set<number>;
   onToggleCourse: (courseId: number) => void;
+  onEdit: () => void;
+  onDelete: () => void;
 }) {
   return (
     <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
-      <div 
+      <div
         className="px-6 py-4 cursor-pointer hover:bg-gray-50 transition-colors"
         onClick={onToggle}
       >
@@ -314,27 +331,38 @@ function ExamCard({
                 <div className="flex items-center">
                   <Calendar className="h-4 w-4 mr-1" />
                   <span>
-                    {exam.createdAt 
+                    {exam.createdAt
                       ? new Date(exam.createdAt).toLocaleDateString()
                       : 'Unknown date'
                     }
                   </span>
                 </div>
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                  exam.isActive 
-                    ? 'bg-green-100 text-green-800' 
-                    : 'bg-gray-100 text-gray-800'
-                }`}>
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${exam.isActive
+                  ? 'bg-green-100 text-green-800'
+                  : 'bg-gray-100 text-gray-800'
+                  }`}>
                   {exam.isActive ? 'Active' : 'Inactive'}
                 </span>
               </div>
             </div>
           </div>
           <div className="flex items-center space-x-2">
-            <button className="text-gray-400 hover:text-gray-600 p-1">
+            <button
+              className="text-gray-400 hover:text-gray-600 p-1"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit();
+              }}
+            >
               <Edit className="h-4 w-4" />
             </button>
-            <button className="text-gray-400 hover:text-red-600 p-1">
+            <button
+              className="text-gray-400 hover:text-red-600 p-1"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+            >
               <Trash2 className="h-4 w-4" />
             </button>
           </div>
@@ -361,18 +389,18 @@ function ExamCard({
   );
 }
 
-function CourseCard({ 
-  course, 
-  isExpanded, 
-  onToggle 
-}: { 
+function CourseCard({
+  course,
+  isExpanded,
+  onToggle
+}: {
   course: Course;
   isExpanded: boolean;
   onToggle: () => void;
 }) {
   return (
     <div className="bg-white border border-gray-200 rounded-lg">
-      <div 
+      <div
         className="px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors"
         onClick={onToggle}
       >
@@ -402,11 +430,10 @@ function CourseCard({
                   <FileText className="h-3 w-3 mr-1" />
                   <span>{course.subjects?.length || 0} subjects</span>
                 </div>
-                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                  course.isActive 
-                    ? 'bg-green-100 text-green-800' 
-                    : 'bg-gray-100 text-gray-800'
-                }`}>
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${course.isActive
+                  ? 'bg-green-100 text-green-800'
+                  : 'bg-gray-100 text-gray-800'
+                  }`}>
                   {course.isActive ? 'Active' : 'Inactive'}
                 </span>
               </div>
@@ -452,11 +479,10 @@ function SubjectCard({ subject }: { subject: Subject }) {
             <h5 className="text-sm font-medium text-gray-900">{subject.name}</h5>
             <p className="text-xs text-gray-600 mt-1">{subject.description}</p>
             <div className="flex items-center mt-1">
-              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                subject.isActive 
-                  ? 'bg-green-100 text-green-800' 
-                  : 'bg-gray-100 text-gray-800'
-              }`}>
+              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${subject.isActive
+                ? 'bg-green-100 text-green-800'
+                : 'bg-gray-100 text-gray-800'
+                }`}>
                 {subject.isActive ? 'Active' : 'Inactive'}
               </span>
             </div>

@@ -132,4 +132,30 @@ export class ExamsService {
             },
         });
     }
+    /**
+     * Get all exams for a business
+     * @param businessId Business ID
+     * @param active Filter by active status (true for active only, false for all)
+     * @returns any Exams fetched successfully
+     * @throws ApiError
+     */
+    public static getExamByBusiness(
+        businessId: number,
+        active?: boolean,
+    ): CancelablePromise<(ApiResponse & {
+        data?: Array<Exam>;
+    })> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/exams',
+            query: {
+                'businessId': businessId,
+                'active': active,
+            },
+            errors: {
+                400: `Invalid business ID`,
+                500: `Internal server error`,
+            },
+        });
+    }
 }
