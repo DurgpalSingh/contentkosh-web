@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { BatchesService, BatchUsersService } from '@/lib/api';
+import { BatchesService, BatchUsersService, ExamsService, CoursesService } from '@/lib/api';
 import { Batch, BatchWithUsers, BatchUser } from '@/lib/api';
 import { 
   Calendar, 
@@ -55,9 +55,38 @@ export default function BatchesPage() {
 
       try {
         console.log('Fetching batches for business:', business.id);
-        const response = await BatchesService.getApiBatchesBusiness(business.id);
-        console.log('Batches response:', response);
-        setBatches(response.data || []);
+
+        // 1. Fetch exams
+        const examsResponse = await ExamsService.getApiExams(business.id);
+        const exams = examsResponse.data || [];
+
+        // 2. Fetch courses for each exam
+        const allBatches: Batch[] = [];
+
+        for (const exam of exams) {
+          if (!exam.id) continue;
+          try {
+            const examWithCoursesResponse = await ExamsService.getApiExamsWithCourses(exam.id);
+            const courses = examWithCoursesResponse.data?.courses || [];
+
+            // 3. Fetch batches for each course
+            for (const course of courses) {
+              if (!course.id) continue;
+              try {
+                const batchesResponse = await BatchesService.getApiBatchesCourse(course.id);
+                if (batchesResponse.data) {
+                  allBatches.push(...batchesResponse.data);
+                }
+              } catch (err) {
+                console.error(`Failed to fetch batches for course ${course.id}`, err);
+              }
+            }
+          } catch (err) {
+            console.error(`Failed to fetch courses for exam ${exam.id}`, err);
+          }
+        }
+
+        setBatches(allBatches);
       } catch (err: any) {
         console.error('Error fetching batches:', err);
         setError(err.body?.message || 'Failed to fetch batches');

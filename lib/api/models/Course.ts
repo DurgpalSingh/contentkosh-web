@@ -3,6 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { Subject } from './Subject';
+import type { Batch } from './Batch';
 export type Course = {
     /**
      * Course ID
@@ -40,5 +41,9 @@ export type Course = {
      * List of subjects under this course
      */
     subjects?: Array<Subject>;
+    /**
+     * List of batches under this course
+     */
+    batches?: Array<Batch>;
 };
 

@@ -46,8 +46,10 @@ export default function LoginPage() {
         login(response.user, null, response.token);
         
         let profile = await authApi.getProfile();
-        console.log('Profile:', profile);
-        setProfile(profile);
+        if (profile) {
+          console.log('Profile:', profile);
+          setProfile(profile);
+        }
 
 
         // For now, redirect to dashboard - you can add role-based routing later
@@ -82,14 +84,14 @@ export default function LoginPage() {
             </Link>
           </p>
         </div>
-        
+
         <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md">
               {error}
             </div>
           )}
-          
+
           <div className="space-y-4">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">

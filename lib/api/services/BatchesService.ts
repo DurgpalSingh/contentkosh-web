@@ -29,7 +29,7 @@ export class BatchesService {
             mediaType: 'application/json',
             errors: {
                 400: `Invalid input data`,
-                404: `Business not found`,
+                404: `Course not found`,
                 409: `Batch with this code name already exists`,
                 500: `Internal server error`,
             },
@@ -136,29 +136,29 @@ export class BatchesService {
         });
     }
     /**
-     * Get all batches for a business
-     * @param businessId Business ID
+     * Get all batches for a course
+     * @param courseId Course ID
      * @param active Filter by active status (true for active only, false for all)
      * @returns any Batches fetched successfully
      * @throws ApiError
      */
-    public static getApiBatchesBusiness(
-        businessId: number,
+    public static getApiBatchesCourse(
+        courseId: number,
         active?: boolean,
     ): CancelablePromise<(ApiResponse & {
         data?: Array<Batch>;
     })> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/api/batches/business/{businessId}',
+            url: '/api/batches/course/{courseId}',
             path: {
-                'businessId': businessId,
+                'courseId': courseId,
             },
             query: {
                 'active': active,
             },
             errors: {
-                400: `Invalid business ID`,
+                400: `Invalid course ID`,
                 500: `Internal server error`,
             },
         });

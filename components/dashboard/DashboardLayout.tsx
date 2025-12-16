@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { ROUTES } from '@/lib/constants';
 import { 
@@ -24,6 +25,7 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user, business, logout } = useAuthStore();
+  const router = useRouter();
 
   const navigation = [
     { name: 'Dashboard', href: ROUTES.DASHBOARD, icon: Home },
@@ -36,6 +38,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const handleLogout = async () => {
     await logout();
+    router.push('/login');
   };
 
   // Get the display name - business name if available, otherwise fallback to Contentkosh
