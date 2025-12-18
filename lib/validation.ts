@@ -17,3 +17,40 @@ export function validateEntityName(name: string, entityLabel: string = 'Name', m
 
     return null;
 }
+
+/**
+ * Validates that a value is present (not null, undefined, or empty string).
+ * 
+ * @param value The value to check.
+ * @param label The label for the error message.
+ * @returns An error message string if invalid, or null if valid.
+ */
+export function validateRequired(value: any, label: string): string | null {
+    if (value === null || value === undefined || (typeof value === 'string' && !value.trim())) {
+        return `${label} is required`;
+    }
+    return null;
+}
+
+/**
+ * Validates that the start date is before the end date.
+ * 
+ * @param startDate The start date string.
+ * @param endDate The end date string.
+ * @param startLabel Label for start date (default: 'Start date').
+ * @param endLabel Label for end date (default: 'End date').
+ * @returns An error message string if invalid, or null if valid.
+ */
+export function validateDateRange(
+    startDate: string,
+    endDate: string,
+    startLabel: string = 'Start date',
+    endLabel: string = 'End date'
+): string | null {
+    if (!startDate || !endDate) return null; // Let required validation handle missing dates
+
+    if (new Date(startDate) > new Date(endDate)) {
+        return `${startLabel} must be before ${endLabel}`;
+    }
+    return null;
+}

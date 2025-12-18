@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { CoursesService, CreateCourseRequest } from '@/lib/api';
-import { validateEntityName } from '@/lib/validation';
+import { validateEntityName, validateDateRange } from '@/lib/validation';
 
 interface AddCourseModalProps {
     isOpen: boolean;
@@ -46,14 +46,12 @@ export function AddCourseModal({ isOpen, onClose, examId, onCourseCreated }: Add
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        const validationError = validateEntityName(name, 'Course name', 100);
+        const validationError =
+            validateEntityName(name, 'Course name', 100) ||
+            validateDateRange(startDate, endDate);
+
         if (validationError) {
             setError(validationError);
-            return;
-        }
-
-        if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
-            setError('Start date must be before end date');
             return;
         }
 

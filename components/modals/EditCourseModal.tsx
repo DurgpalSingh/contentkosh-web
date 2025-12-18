@@ -4,6 +4,11 @@ import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { CoursesService, UpdateCourseRequest, Course } from '@/lib/api';
 import { validateEntityName } from '@/lib/validation';
+import { DatePicker } from '@/components/ui/date-picker';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 interface EditCourseModalProps {
     isOpen: boolean;
@@ -16,8 +21,8 @@ interface EditCourseModalProps {
 export function EditCourseModal({ isOpen, onClose, course, examId, onCourseUpdated }: EditCourseModalProps) {
     const [name, setName] = useState(course.name || '');
     const [description, setDescription] = useState(course.description || '');
-    const [startDate, setStartDate] = useState('');
-    const [endDate, setEndDate] = useState('');
+    const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+    const [endDate, setEndDate] = useState<Date | undefined>(undefined);
     const [isActive, setIsActive] = useState(course.isActive ?? true);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -26,10 +31,10 @@ export function EditCourseModal({ isOpen, onClose, course, examId, onCourseUpdat
     useEffect(() => {
         setName(course.name || '');
         setDescription(course.description || '');
-        // Note: Since the API stores duration as text, we can't parse it back to dates
-        // Start with empty dates for editing
-        setStartDate('');
-        setEndDate('');
+        // Note: Since the API stores duration as text, we can't easily parse it back to dates if they aren't stored separately.
+        // Assuming for now we just want to allow setting new dates.
+        setStartDate(undefined);
+        setEndDate(undefined);
         setIsActive(course.isActive ?? true);
         setError(null);
     }, [course]);
@@ -49,21 +54,24 @@ export function EditCourseModal({ isOpen, onClose, course, examId, onCourseUpdat
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        const validationError = validateEntityName(name, 'Course name', 100);
-        if (validationError) {
-            setError(validationError);
+        // Basic validation
+        if (!name) {
+            setError('Course name is required');
             return;
         }
-
+        if (name.length > 100) {
+            setError('Course name cannot exceed 100 characters');
+            return;
+        }
         if (!course.id) {
             setError('Course ID is missing');
             return;
         }
-
-        if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
+        if (startDate && endDate && startDate > endDate) {
             setError('Start date must be before end date');
             return;
         }
+
 
         setLoading(true);
         setError(null);
@@ -72,9 +80,7 @@ export function EditCourseModal({ isOpen, onClose, course, examId, onCourseUpdat
             // Compute duration string from dates if both provided
             let duration: string | undefined = course.duration; // Keep existing if no new dates
             if (startDate && endDate) {
-                const start = new Date(startDate);
-                const end = new Date(endDate);
-                const months = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 30));
+                const months = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24 * 30));
                 duration = months >= 12 ? `${Math.round(months / 12)} year(s)` : `${months} month(s)`;
             }
 
@@ -85,7 +91,7 @@ export function EditCourseModal({ isOpen, onClose, course, examId, onCourseUpdat
                 isActive,
             };
 
-            await CoursesService.putApiExamsCourses(examId, course.id, request);
+            await CoursesService.putApiExamsCourses(examId, course.id!, request);
 
             onCourseUpdated();
             onClose();
@@ -129,61 +135,55 @@ export function EditCourseModal({ isOpen, onClose, course, examId, onCourseUpdat
                     )}
 
                     <div>
-                        <label htmlFor="edit-course-name" className="block text-sm font-medium text-gray-700 mb-1">
+                        <Label htmlFor="edit-course-name" className="mb-1 block">
                             Course Name <span className="text-red-500">*</span>
-                        </label>
-                        <input
+                        </Label>
+                        <Input
                             id="edit-course-name"
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             placeholder="e.g., Civil Services Foundation Course"
                             maxLength={100}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                            className="focus-visible:ring-green-500"
                             disabled={loading}
                         />
                         <p className="mt-1 text-xs text-gray-500">{name.length}/100 characters</p>
                     </div>
 
                     <div>
-                        <label htmlFor="edit-course-description" className="block text-sm font-medium text-gray-700 mb-1">
+                        <Label htmlFor="edit-course-description" className="mb-1 block">
                             Description
-                        </label>
-                        <textarea
+                        </Label>
+                        <Textarea
                             id="edit-course-description"
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                             placeholder="Brief description of the course..."
                             rows={3}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors resize-none"
+                            className="resize-none focus-visible:ring-green-500"
                             disabled={loading}
                         />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label htmlFor="edit-course-start-date" className="block text-sm font-medium text-gray-700 mb-1">
+                            <Label className="mb-1 block">
                                 Start Date
-                            </label>
-                            <input
-                                id="edit-course-start-date"
-                                type="date"
-                                value={startDate}
-                                onChange={(e) => setStartDate(e.target.value)}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                            </Label>
+                            <DatePicker
+                                date={startDate}
+                                setDate={setStartDate}
                                 disabled={loading}
                             />
                         </div>
                         <div>
-                            <label htmlFor="edit-course-end-date" className="block text-sm font-medium text-gray-700 mb-1">
+                            <Label className="mb-1 block">
                                 End Date
-                            </label>
-                            <input
-                                id="edit-course-end-date"
-                                type="date"
-                                value={endDate}
-                                onChange={(e) => setEndDate(e.target.value)}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                            </Label>
+                            <DatePicker
+                                date={endDate}
+                                setDate={setEndDate}
                                 disabled={loading}
                             />
                         </div>
@@ -192,7 +192,7 @@ export function EditCourseModal({ isOpen, onClose, course, examId, onCourseUpdat
                         <p className="text-xs text-gray-500 mt-1">Current duration: {course.duration}</p>
                     )}
 
-                    <div className="flex items-center">
+                    <div className="flex items-center space-x-2">
                         <input
                             id="edit-course-active"
                             type="checkbox"
@@ -201,24 +201,24 @@ export function EditCourseModal({ isOpen, onClose, course, examId, onCourseUpdat
                             className="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
                             disabled={loading}
                         />
-                        <label htmlFor="edit-course-active" className="ml-2 text-sm text-gray-700">
+                        <Label htmlFor="edit-course-active" className="font-normal">
                             Active (visible to students)
-                        </label>
+                        </Label>
                     </div>
 
                     {/* Actions */}
                     <div className="flex justify-end space-x-3 pt-4">
-                        <button
+                        <Button
                             type="button"
+                            variant="secondary"
                             onClick={onClose}
-                            className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                             disabled={loading}
                         >
                             Cancel
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                             type="submit"
-                            className="px-4 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                            className="bg-green-600 hover:bg-green-700"
                             disabled={loading}
                         >
                             {loading ? (
@@ -232,7 +232,7 @@ export function EditCourseModal({ isOpen, onClose, course, examId, onCourseUpdat
                             ) : (
                                 'Save Changes'
                             )}
-                        </button>
+                        </Button>
                     </div>
                 </form>
             </div>

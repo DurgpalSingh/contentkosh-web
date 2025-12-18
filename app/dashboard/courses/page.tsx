@@ -30,6 +30,64 @@ import {
   Trash2
 } from 'lucide-react';
 
+// Helper functions for data fetching
+const fetchBatchesForCourse = async (courseId: number): Promise<Batch[]> => {
+  try {
+    const response = await BatchesService.getApiBatchesCourse(courseId);
+    return response.data || [];
+  } catch (err) {
+    console.error(`Failed to fetch batches for course ${courseId}`, err);
+    return [];
+  }
+};
+
+const enrichCourseWithDetails = async (course: Course, examId: number): Promise<Course> => {
+  if (!course.id) return course;
+
+  try {
+    // 1. Fetch subjects
+    const subjectsResponse = await CoursesService.getApiExamsCoursesWithSubjects(examId, course.id);
+    const subjects = subjectsResponse.data?.subjects || [];
+
+    // 2. Fetch batches (independently, but logically associated with the course)
+    const batches = await fetchBatchesForCourse(course.id);
+
+    return {
+      ...course,
+      subjects,
+      batches
+    };
+  } catch (err) {
+    // If fetching subjects fails, return the original course
+    console.warn(`Failed to fetch details for course ${course.id}`, err);
+    return course;
+  }
+};
+
+const enrichExamWithCourses = async (exam: Exam): Promise<Exam> => {
+  if (!exam.id) return exam;
+
+  try {
+    const response = await ExamsService.getApiExamsWithCourses(exam.id);
+    if (!response.data) return exam;
+
+    const courses = response.data.courses || [];
+
+    // Enrich all courses in parallel
+    const enrichedCourses = await Promise.all(
+      courses.map(course => enrichCourseWithDetails(course, exam.id!))
+    );
+
+    return {
+      ...response.data,
+      courses: enrichedCourses
+    };
+  } catch (err) {
+    console.warn(`Failed to fetch courses for exam ${exam.id}`, err);
+    return exam;
+  }
+};
+
 export default function CoursesPage() {
   const { user, business, isAuthenticated, isLoading, isInitialized, initializeAuth, logout } = useAuthStore();
 
@@ -92,57 +150,17 @@ export default function CoursesPage() {
       console.log('Fetching exams for business:', business.id);
 
       // Fetch all exams for this business
-      const response = await ExamsService.getApiExams(business.id);
+      const response = await ExamsService.getExams(business.id);
       console.log('Exams response:', response);
 
-      // For each exam, fetch its courses with subjects
-      const examsWithCourses: Exam[] = [];
-      for (const exam of response.data || []) {
-        if (exam.id) {
-          try {
-            const examWithCoursesResponse = await ExamsService.getApiExamsWithCourses(exam.id);
-            if (examWithCoursesResponse.data) {
-              // For each course, fetch its subjects
-              const coursesWithSubjects: Course[] = [];
-              for (const course of examWithCoursesResponse.data.courses || []) {
-                if (course.id && exam.id) {
-                  try {
-                    const courseWithSubjectsResponse = await CoursesService.getApiExamsCoursesWithSubjects(exam.id, course.id);
-                    // Fetch batches for the course
-                    let batches: Batch[] = [];
-                    try {
-                      const batchesResponse = await BatchesService.getApiBatchesCourse(course.id);
-                      batches = batchesResponse.data || [];
-                    } catch (err) {
-                      console.error(`Failed to fetch batches for course ${course.id}`, err);
-                    }
+      const exams = response.data || [];
 
-                    coursesWithSubjects.push({
-                      ...course,
-                      subjects: courseWithSubjectsResponse.data?.subjects || [],
-                      batches: batches
-                    });
-                  } catch {
-                    coursesWithSubjects.push(course);
-                  }
-                } else {
-                  coursesWithSubjects.push(course);
-                }
-              }
-              examsWithCourses.push({
-                ...examWithCoursesResponse.data,
-                courses: coursesWithSubjects
-              });
-            } else {
-              examsWithCourses.push(exam);
-            }
-          } catch {
-            examsWithCourses.push(exam);
-          }
-        }
-      }
+      // Enrich all exams in parallel with courses, subjects, and batches
+      const enrichedExams = await Promise.all(
+        exams.map(exam => enrichExamWithCourses(exam))
+      );
 
-      setExams(examsWithCourses);
+      setExams(enrichedExams);
       setError(null);
     } catch (err: any) {
       console.error('Error fetching exams:', err);
@@ -159,7 +177,7 @@ export default function CoursesPage() {
     } finally {
       setLoading(false);
     }
-  }, [business?.id]);
+  }, [business?.id, logout, router]);
 
 
   useEffect(() => {

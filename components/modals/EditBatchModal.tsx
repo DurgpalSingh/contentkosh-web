@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { BatchesService, UpdateBatchRequest, Batch } from '@/lib/api';
+import { validateRequired, validateDateRange } from '@/lib/validation';
 
 interface EditBatchModalProps {
     isOpen: boolean;
@@ -45,33 +46,16 @@ export function EditBatchModal({ isOpen, onClose, batch, onBatchUpdated }: EditB
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!codeName.trim()) {
-            setError('Batch code name is required');
-            return;
-        }
+        const validationError =
+            validateRequired(codeName, 'Batch code name') ||
+            validateRequired(displayName, 'Display name') ||
+            validateRequired(startDate, 'Start date') ||
+            validateRequired(endDate, 'End date') ||
+            validateDateRange(startDate, endDate) ||
+            (!batch.id ? 'Batch ID is missing' : null);
 
-        if (!displayName.trim()) {
-            setError('Display name is required');
-            return;
-        }
-
-        if (!startDate) {
-            setError('Start date is required');
-            return;
-        }
-
-        if (!endDate) {
-            setError('End date is required');
-            return;
-        }
-
-        if (new Date(startDate) > new Date(endDate)) {
-            setError('Start date must be before end date');
-            return;
-        }
-
-        if (!batch.id) {
-            setError('Batch ID is missing');
+        if (validationError) {
+            setError(validationError);
             return;
         }
 
@@ -87,7 +71,7 @@ export function EditBatchModal({ isOpen, onClose, batch, onBatchUpdated }: EditB
                 isActive,
             };
 
-            await BatchesService.putApiBatches(batch.id, request);
+            await BatchesService.putApiBatches(batch.id!, request);
 
             onBatchUpdated();
             onClose();

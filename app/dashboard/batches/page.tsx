@@ -57,34 +57,42 @@ export default function BatchesPage() {
         console.log('Fetching batches for business:', business.id);
 
         // 1. Fetch exams
-        const examsResponse = await ExamsService.getApiExams(business.id);
+        const examsResponse = await ExamsService.getExams(business.id);
         const exams = examsResponse.data || [];
 
-        // 2. Fetch courses for each exam
-        const allBatches: Batch[] = [];
+        // 2. Fetch courses for all exams in parallel
+        const examsPromises = exams
+          .filter(exam => exam.id)
+          .map(exam => ExamsService.getApiExamsWithCourses(exam.id!));
 
-        for (const exam of exams) {
-          if (!exam.id) continue;
-          try {
-            const examWithCoursesResponse = await ExamsService.getApiExamsWithCourses(exam.id);
-            const courses = examWithCoursesResponse.data?.courses || [];
+        const examsResults = await Promise.allSettled(examsPromises);
 
-            // 3. Fetch batches for each course
-            for (const course of courses) {
-              if (!course.id) continue;
-              try {
-                const batchesResponse = await BatchesService.getApiBatchesCourse(course.id);
-                if (batchesResponse.data) {
-                  allBatches.push(...batchesResponse.data);
-                }
-              } catch (err) {
-                console.error(`Failed to fetch batches for course ${course.id}`, err);
-              }
-            }
-          } catch (err) {
-            console.error(`Failed to fetch courses for exam ${exam.id}`, err);
+        const courses = examsResults.flatMap(result => {
+          if (result.status === 'fulfilled' && result.value.data?.courses) {
+            return result.value.data.courses;
           }
-        }
+          if (result.status === 'rejected') {
+            console.error('Failed to fetch courses for an exam', result.reason);
+          }
+          return [];
+        });
+
+        // 3. Fetch batches for all courses in parallel
+        const batchesPromises = courses
+          .filter(course => course.id)
+          .map(course => BatchesService.getApiBatchesCourse(course.id!));
+
+        const batchesResults = await Promise.allSettled(batchesPromises);
+
+        const allBatches = batchesResults.flatMap(result => {
+          if (result.status === 'fulfilled' && result.value.data) {
+            return result.value.data;
+          }
+          if (result.status === 'rejected') {
+            console.error('Failed to fetch batches for a course', result.reason);
+          }
+          return [];
+        });
 
         setBatches(allBatches);
       } catch (err: any) {

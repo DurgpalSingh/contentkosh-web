@@ -39,7 +39,7 @@ export class ExamsService {
      * @returns any Exams fetched successfully
      * @throws ApiError
      */
-    public static getApiExams(
+    public static getExams(
         businessId: number,
     ): CancelablePromise<(ApiResponse & {
         data?: Array<Exam>;

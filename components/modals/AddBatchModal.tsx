@@ -1,8 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Calendar, BookOpen } from 'lucide-react';
+import { X } from 'lucide-react';
 import { BatchesService, CreateBatchRequest, Subject } from '@/lib/api';
+import { validateRequired } from '@/lib/validation';
+import { DatePicker } from '@/components/ui/date-picker';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { batchSchema } from '@/lib/schemas';
 
 interface AddBatchModalProps {
     isOpen: boolean;
@@ -15,8 +21,8 @@ interface AddBatchModalProps {
 export function AddBatchModal({ isOpen, onClose, courseId, subjects = [], onBatchCreated }: AddBatchModalProps) {
     const [codeName, setCodeName] = useState('');
     const [displayName, setDisplayName] = useState('');
-    const [startDate, setStartDate] = useState('');
-    const [endDate, setEndDate] = useState('');
+    const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+    const [endDate, setEndDate] = useState<Date | undefined>(undefined);
     const [isActive, setIsActive] = useState(true);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -37,8 +43,8 @@ export function AddBatchModal({ isOpen, onClose, courseId, subjects = [], onBatc
     const resetForm = () => {
         setCodeName('');
         setDisplayName('');
-        setStartDate('');
-        setEndDate('');
+        setStartDate(undefined);
+        setEndDate(undefined);
         setIsActive(true);
         setError(null);
     };
@@ -46,49 +52,37 @@ export function AddBatchModal({ isOpen, onClose, courseId, subjects = [], onBatc
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!codeName.trim()) {
-            setError('Batch code name is required');
+        // Zod validation
+        const result = batchSchema.safeParse({
+            codeName,
+            displayName,
+            startDate,
+            endDate
+        });
+
+        if (!result.success) {
+            setError(result.error.issues[0].message); // Fix: issues instead of errors
             return;
         }
 
-        if (!displayName.trim()) {
-            setError('Display name is required');
-            return;
-        }
-
-        if (!startDate) {
-            setError('Start date is required');
-            return;
-        }
-
-        if (!endDate) {
-            setError('End date is required');
-            return;
-        }
-
-        if (new Date(startDate) > new Date(endDate)) {
-            setError('Start date must be before end date');
-            return;
-        }
+        const data = result.data;
 
         setLoading(true);
         setError(null);
 
         try {
             // Ensure dates are in ISO format for the backend
-            const isoStartDate = new Date(startDate).toISOString();
-            const isoEndDate = new Date(endDate).toISOString();
+            const isoStartDate = data.startDate.toISOString();
+            const isoEndDate = data.endDate.toISOString();
 
             const request: CreateBatchRequest = {
-                codeName: codeName.trim(),
-                displayName: displayName.trim(),
+                codeName: data.codeName,
+                displayName: data.displayName,
                 startDate: isoStartDate,
                 endDate: isoEndDate,
                 isActive,
                 courseId,
             };
-
-
 
             await BatchesService.postApiBatches(request);
 
@@ -141,69 +135,59 @@ export function AddBatchModal({ isOpen, onClose, courseId, subjects = [], onBatc
                     )}
 
                     <div>
-                        <label htmlFor="batch-code-name" className="block text-sm font-medium text-gray-700 mb-1">
+                        <Label htmlFor="batch-code-name" className="mb-1 block">
                             Code Name <span className="text-red-500">*</span>
-                        </label>
-                        <input
+                        </Label>
+                        <Input
                             id="batch-code-name"
                             type="text"
                             value={codeName}
                             onChange={(e) => setCodeName(e.target.value)}
                             placeholder="e.g., BATCH-2024-A"
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+                            className="focus-visible:ring-purple-500"
                             disabled={loading}
                         />
                     </div>
 
                     <div>
-                        <label htmlFor="batch-display-name" className="block text-sm font-medium text-gray-700 mb-1">
+                        <Label htmlFor="batch-display-name" className="mb-1 block">
                             Display Name <span className="text-red-500">*</span>
-                        </label>
-                        <input
+                        </Label>
+                        <Input
                             id="batch-display-name"
                             type="text"
                             value={displayName}
                             onChange={(e) => setDisplayName(e.target.value)}
                             placeholder="e.g., January 2024 Batch"
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+                            className="focus-visible:ring-purple-500"
                             disabled={loading}
                         />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label htmlFor="batch-start-date" className="block text-sm font-medium text-gray-700 mb-1">
+                            <Label className="mb-1 block">
                                 Start Date <span className="text-red-500">*</span>
-                            </label>
-                            <div className="relative">
-                                <input
-                                    id="batch-start-date"
-                                    type="date"
-                                    value={startDate}
-                                    onChange={(e) => setStartDate(e.target.value)}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
-                                    disabled={loading}
-                                />
-                            </div>
+                            </Label>
+                            <DatePicker
+                                date={startDate}
+                                setDate={setStartDate}
+                                disabled={loading}
+                            />
                         </div>
                         <div>
-                            <label htmlFor="batch-end-date" className="block text-sm font-medium text-gray-700 mb-1">
+                            <Label className="mb-1 block">
                                 End Date <span className="text-red-500">*</span>
-                            </label>
-                            <div className="relative">
-                                <input
-                                    id="batch-end-date"
-                                    type="date"
-                                    value={endDate}
-                                    onChange={(e) => setEndDate(e.target.value)}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
-                                    disabled={loading}
-                                />
-                            </div>
+                            </Label>
+                            <DatePicker
+                                date={endDate}
+                                setDate={setEndDate}
+                                disabled={loading}
+                            />
                         </div>
                     </div>
 
-                    <div className="flex items-center">
+                    <div className="flex items-center space-x-2">
                         <input
                             id="batch-active"
                             type="checkbox"
@@ -212,24 +196,24 @@ export function AddBatchModal({ isOpen, onClose, courseId, subjects = [], onBatc
                             className="h-4 w-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
                             disabled={loading}
                         />
-                        <label htmlFor="batch-active" className="ml-2 text-sm text-gray-700">
+                        <Label htmlFor="batch-active" className="font-normal">
                             Active (visible to students)
-                        </label>
+                        </Label>
                     </div>
 
                     {/* Actions */}
                     <div className="flex justify-end space-x-3 pt-4">
-                        <button
+                        <Button
                             type="button"
+                            variant="secondary"
                             onClick={handleClose}
-                            className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                             disabled={loading}
                         >
                             Cancel
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                             type="submit"
-                            className="px-4 py-2 text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                            className="bg-purple-600 hover:bg-purple-700"
                             disabled={loading}
                         >
                             {loading ? (
@@ -243,7 +227,7 @@ export function AddBatchModal({ isOpen, onClose, courseId, subjects = [], onBatc
                             ) : (
                                 'Create Batch'
                             )}
-                        </button>
+                        </Button>
                     </div>
                 </form>
             </div>
