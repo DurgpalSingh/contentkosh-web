@@ -42,7 +42,9 @@ export default function UsersPage() {
         console.log('Fetching users for business:', business.id);
         const response = await BusinessUsersService.getApiUsersBusinessUsers(business.id);
         console.log('Users response:', response);
-        setUsers(response.data || []);
+        // Filter only admins
+        const admins = (response.data || []).filter(u => u.role === 'ADMIN' || u.role === 'SUPERADMIN');
+        setUsers(admins);
       } catch (err: any) {
         console.error('Error fetching users:', err);
         setError(err.body?.message || 'Failed to fetch users');
@@ -73,13 +75,13 @@ export default function UsersPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Users</h1>
-            <p className="text-gray-600">Manage users in your institute</p>
+            <h1 className="text-3xl font-bold text-gray-900">Admins</h1>
+            <p className="text-gray-600">Manage administrators in your institute</p>
           </div>
           <div className="flex space-x-3">
             <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center">
               <User className="h-4 w-4 mr-2" />
-              Add User
+              Add Admin
             </button>
           </div>
         </div>
@@ -103,17 +105,17 @@ export default function UsersPage() {
         ) : users.length === 0 ? (
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-12 text-center">
             <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No users found</h3>
-            <p className="text-gray-600 mb-4">There are no users in your institute yet.</p>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No admins found</h3>
+            <p className="text-gray-600 mb-4">There are no admin users in your institute yet.</p>
             <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-              Add First User
+              Add First Admin
             </button>
           </div>
         ) : (
           <div className="bg-white shadow rounded-lg">
             <div className="px-6 py-4 border-b border-gray-200">
               <h3 className="text-lg font-medium text-gray-900">
-                All Users ({users.length})
+                All Admins ({users.length})
               </h3>
             </div>
             <div className="divide-y divide-gray-200">
@@ -187,7 +189,7 @@ function UserCard({ businessUser }: { businessUser: BusinessUser }) {
             <div className="flex items-center">
               <Calendar className="h-4 w-4 mr-1" />
               <span>
-                {businessUser.createdAt 
+                {businessUser.createdAt
                   ? new Date(businessUser.createdAt).toLocaleDateString()
                   : 'Unknown date'
                 }

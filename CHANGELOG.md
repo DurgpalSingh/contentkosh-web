@@ -4,6 +4,31 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## Version [1.3.0] - Students Management & UI Refactoring
+**P.R Raised by** : aaditya-singh-21
+**Date** : 2025-12-19
+
+### Added
+- **Students Management**:
+  - New **Students Page** with aggregated view of students from all batches.
+  - **Hierarchical Filtering** (Exam -> Course -> Batch) to easily find students.
+  - Search functionality for students by name or email.
+  - "View Students" button in Batches page to auto-filter students list.
+- **UI Components**:
+  - `HierarchicalFilterModal`: Reusable component for multi-level filtering.
+  - `OverviewCard`: Unified card component for Exams, Batches, and Students.
+  - `StudentGridCard`: Component to display student details and enrolled batches.
+
+### Changed
+- **Admins Section**:
+  - Renamed "Users" section to "Admins".
+  - Filtered user list to show only 'ADMIN' and 'SUPERADMIN' roles.
+  - Updated sidebar theme to light blue using `bg-blue-50` and `border-blue-100`.
+- **Refactoring**:
+  - `StudentsFilterModal` and `BatchesFilterModal` now use the generic `HierarchicalFilterModal`.
+  - `BatchGridCard` and `StudentGridCard` now use the generic `OverviewCard`.
+  - Improved type safety for `Batch` and `Course` models with extended types.
+
 ## Version [1.2.1] - API Performance Optimization & Code Refactoring
 **P.R Raised by** : aaditya-singh-21
 **Date** : 2025-12-18

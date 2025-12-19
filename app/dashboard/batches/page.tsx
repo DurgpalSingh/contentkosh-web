@@ -1,172 +1,207 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { BatchesService, BatchUsersService, ExamsService, CoursesService } from '@/lib/api';
-import { Batch, BatchWithUsers, BatchUser } from '@/lib/api';
-import { 
-  Calendar, 
-  Users, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  UserPlus, 
-  UserMinus,
-  Clock,
-  CheckCircle,
-  XCircle,
-  ChevronDown,
-  ChevronRight
-} from 'lucide-react';
+import { BatchesService, ExamsService, Batch, Course, Exam } from '@/lib/api';
+import { Plus, Calendar, Search, Filter } from 'lucide-react';
+import { BatchGridCard } from '@/components/dashboard/batches/BatchGridCard';
+import { BatchesFilterModal } from '@/components/dashboard/batches/BatchesFilterModal';
+import { AddBatchModal } from '@/components/modals/AddBatchModal';
+
+// Extended batch type
+interface ExtendedBatch extends Batch {
+  courseId?: number;
+  courseName?: string;
+  examId?: number; // Add examId for filtering
+  memberCount?: number;
+}
 
 export default function BatchesPage() {
-  const { user, business, isAuthenticated, isLoading, isInitialized, initializeAuth } = useAuthStore();
+  const { user, business, isAuthenticated, isLoading, isInitialized } = useAuthStore();
   const router = useRouter();
-  const [batches, setBatches] = useState<Batch[]>([]);
-  const [expandedBatches, setExpandedBatches] = useState<Set<number>>(new Set());
-  const [batchUsers, setBatchUsers] = useState<Map<number, BatchUser[]>>(new Map());
+  const searchParams = useSearchParams();
+
+  // Data state
+  const [exams, setExams] = useState<Exam[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [allBatches, setAllBatches] = useState<ExtendedBatch[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!isInitialized) {
-      console.log('Initializing auth...');
-      initializeAuth();
-    }
-  }, [initializeAuth, isInitialized]);
+  // Filter state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedExamIds, setSelectedExamIds] = useState<number[]>([]);
+  const [selectedCourseIds, setSelectedCourseIds] = useState<number[]>([]);
 
-  useEffect(() => {
-    if (isInitialized && !isAuthenticated) {
-      console.log('Redirecting to login - not authenticated');
-      router.push('/login');
-    }
-  }, [isAuthenticated, isInitialized, router]);
+  // Modal states
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [isAddBatchModalOpen, setIsAddBatchModalOpen] = useState(false);
+  const [selectedCourseForAdd, setSelectedCourseForAdd] = useState<number | null>(null);
 
+  // Initialize filters from URL if present
   useEffect(() => {
-    const fetchBatches = async () => {
-      if (!business?.id) {
-        setError('Business information not available');
-        setLoading(false);
-        return;
+    const courseIdParam = searchParams.get('courseId');
+    if (courseIdParam) {
+      const courseId = parseInt(courseIdParam);
+      if (!isNaN(courseId)) {
+        setSelectedCourseIds([courseId]);
       }
+    }
+  }, [searchParams]);
 
-      try {
-        console.log('Fetching batches for business:', business.id);
+  const fetchData = useCallback(async () => {
+    if (!business?.id) return;
 
-        // 1. Fetch exams
-        const examsResponse = await ExamsService.getExams(business.id);
-        const exams = examsResponse.data || [];
+    try {
+      setLoading(true);
+      // 1. Fetch exams
+      const examsResponse = await ExamsService.getExams(business.id);
+      const fetchedExams = examsResponse.data || [];
+      setExams(fetchedExams);
 
-        // 2. Fetch courses for all exams in parallel
-        const examsPromises = exams
-          .filter(exam => exam.id)
-          .map(exam => ExamsService.getApiExamsWithCourses(exam.id!));
-
-        const examsResults = await Promise.allSettled(examsPromises);
-
-        const courses = examsResults.flatMap(result => {
-          if (result.status === 'fulfilled' && result.value.data?.courses) {
-            return result.value.data.courses;
+      // 2. Fetch courses from all exams and flatten
+      const coursesPromises = fetchedExams
+        .filter(exam => exam.id)
+        .map(async exam => {
+          try {
+            const res = await ExamsService.getApiExamsWithCourses(exam.id!);
+            return (res.data?.courses || []).map(c => ({ ...c, examId: exam.id })); // Inject examId
+          } catch {
+            return [];
           }
-          if (result.status === 'rejected') {
-            console.error('Failed to fetch courses for an exam', result.reason);
-          }
-          return [];
         });
 
-        // 3. Fetch batches for all courses in parallel
-        const batchesPromises = courses
-          .filter(course => course.id)
-          .map(course => BatchesService.getApiBatchesCourse(course.id!));
+      const coursesResults = await Promise.all(coursesPromises);
+      const allCourses = coursesResults.flat();
+      setCourses(allCourses);
 
-        const batchesResults = await Promise.allSettled(batchesPromises);
+      // 3. Fetch batches for all courses
+      const batchesPromises = allCourses
+        .filter(course => course.id)
+        .map(async (course) => {
+          try {
+            const response = await BatchesService.getApiBatchesCourse(course.id!);
+            const batches = response.data || [];
 
-        const allBatches = batchesResults.flatMap(result => {
-          if (result.status === 'fulfilled' && result.value.data) {
-            return result.value.data;
+            // Enhance batches with course and exam context
+            const richBatchesPromises = batches.map(async (batch) => {
+              try {
+                const usersResponse = await BatchesService.getApiBatchesWithUsers(batch.id!);
+                const count = usersResponse.data?.batchUsers?.length || 0;
+                return {
+                  ...batch,
+                  courseId: course.id,
+                  courseName: course.name,
+                  examId: course.examId, // Pass through examId
+                  memberCount: count
+                };
+              } catch {
+                return {
+                  ...batch,
+                  courseId: course.id,
+                  courseName: course.name,
+                  examId: course.examId,
+                  memberCount: 0
+                };
+              }
+            });
+
+            return await Promise.all(richBatchesPromises);
+
+          } catch (err) {
+            console.warn(`Failed to fetch batches for course ${course.id}`, err);
+            return [];
           }
-          if (result.status === 'rejected') {
-            console.error('Failed to fetch batches for a course', result.reason);
-          }
-          return [];
         });
 
-        setBatches(allBatches);
-      } catch (err: any) {
-        console.error('Error fetching batches:', err);
-        setError(err.body?.message || 'Failed to fetch batches');
-      } finally {
-        setLoading(false);
-      }
-    };
+      const batchesArrays = await Promise.all(batchesPromises);
+      const flatBatches = batchesArrays.flat();
 
+      // Sort by creation date (newest first)
+      flatBatches.sort((a, b) => {
+        return new Date(b.createdAt || '').getTime() - new Date(a.createdAt || '').getTime();
+      });
+
+      setAllBatches(flatBatches);
+      setError(null);
+    } catch (err: any) {
+      console.error('Error fetching data:', err);
+      setError('Failed to load batches. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }, [business?.id]);
+
+  useEffect(() => {
     if (isAuthenticated && business?.id) {
-      fetchBatches();
+      fetchData();
     }
-  }, [isAuthenticated, business?.id]);
+  }, [isAuthenticated, business?.id, fetchData]);
 
-  const fetchBatchUsers = async (batchId: number) => {
-    try {
-      console.log('Fetching users for batch:', batchId);
-      const response = await BatchesService.getApiBatchesWithUsers(batchId);
-      console.log('Batch users response:', response);
-      
-      if (response.data?.batchUsers) {
-        setBatchUsers(prev => new Map(prev.set(batchId, response.data!.batchUsers!)));
-      }
-    } catch (err: any) {
-      console.error('Error fetching batch users:', err);
-    }
+  // Derived state: Filtered batches
+  const filteredBatches = useMemo(() => {
+    return allBatches.filter(batch => {
+      // Search filter
+      const matchesSearch = batch.displayName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        batch.codeName?.toLowerCase().includes(searchQuery.toLowerCase());
+
+      // Exam filter
+      // If exams selected, batch must belong to one of them
+      const matchesExam = selectedExamIds.length === 0 ||
+        (batch.examId && selectedExamIds.includes(batch.examId));
+
+      // Course filter
+      const matchesCourse = selectedCourseIds.length === 0 ||
+        (batch.courseId && selectedCourseIds.includes(batch.courseId));
+
+      return matchesSearch && matchesExam && matchesCourse;
+    });
+  }, [allBatches, searchQuery, selectedExamIds, selectedCourseIds]);
+
+  // Filter Logic:
+  // If user filters by Exam, we technically don't *need* to filter by Course if they haven't selected any courses.
+  // But if they selected Exam A, and we show batches from Exam A.
+  // If they ALSO selected Course B (which is under Exam B), then the interaction of ANDing them returns empty.
+  // The Modal ensures that if you select Exam A, you ideally only see Courses from A to pick.
+  // But if a user previously picked Course B, then switched to Exam A, we might have a conflict or just 0 results.
+  // The Modal handles the selection UI. The Page handles the AND logic. This is fine.
+
+  // Handlers
+  const handleApplyFilters = (newExamIds: number[], newCourseIds: number[]) => {
+    setSelectedExamIds(newExamIds);
+    setSelectedCourseIds(newCourseIds);
   };
 
-  const toggleBatch = async (batchId: number) => {
-    const newExpanded = new Set(expandedBatches);
-    if (newExpanded.has(batchId)) {
-      newExpanded.delete(batchId);
+  const activeFiltersCount = selectedExamIds.length + selectedCourseIds.length;
+
+  const handleAddBatchClick = () => {
+    if (selectedCourseIds.length === 1) {
+      setSelectedCourseForAdd(selectedCourseIds[0]);
+      setIsAddBatchModalOpen(true);
+    } else if (courses.length > 0) {
+      setSelectedCourseForAdd(courses[0].id!);
+      setIsAddBatchModalOpen(true);
     } else {
-      newExpanded.add(batchId);
-      // Fetch users when expanding
-      if (!batchUsers.has(batchId)) {
-        await fetchBatchUsers(batchId);
-      }
-    }
-    setExpandedBatches(newExpanded);
-  };
-
-  const addUserToBatch = async (batchId: number, userId: number) => {
-    try {
-      console.log('Adding user to batch:', { batchId, userId });
-      await BatchUsersService.postApiBatchesAddUser({
-        batchId,
-        userId
-      });
-      
-      // Refresh batch users
-      await fetchBatchUsers(batchId);
-    } catch (err: any) {
-      console.error('Error adding user to batch:', err);
+      alert("Please create a course first.");
     }
   };
 
-  const removeUserFromBatch = async (batchId: number, userId: number) => {
-    try {
-      console.log('Removing user from batch:', { batchId, userId });
-      await BatchUsersService.postApiBatchesRemoveUser({
-        batchId,
-        userId
-      });
-      
-      // Refresh batch users
-      await fetchBatchUsers(batchId);
-    } catch (err: any) {
-      console.error('Error removing user from batch:', err);
-    }
+  const handleViewStudents = (batch: Batch) => {
+    router.push(`/dashboard/students?batchId=${batch.id}`);
   };
 
-  if (!isInitialized || isLoading) {
+  const handleEditBatch = (batch: Batch) => {
+    console.log("Edit batch", batch.id);
+  };
+
+  const handleDeleteBatch = (batch: Batch) => {
+    console.log("Delete batch", batch.id);
+  };
+
+  if (isLoading || !isInitialized) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner size="lg" />
@@ -174,266 +209,125 @@ export default function BatchesPage() {
     );
   }
 
-  if (!isAuthenticated || !user) {
-    return null;
-  }
-
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Batches</h1>
-            <p className="text-gray-600">Manage student batches and their members</p>
+            <p className="text-gray-600 mt-1">Manage student batches and enrollment</p>
           </div>
-          <div className="flex space-x-3">
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Batch
-            </button>
-          </div>
+          <button
+            onClick={handleAddBatchClick}
+            className="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+          >
+            <Plus className="h-5 w-5 mr-2" />
+            Add Batch
+          </button>
         </div>
 
+        {/* Filters and Search */}
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-5 w-5 text-gray-400" />
+            </div>
+            <input
+              type="text"
+              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 sm:text-sm transition-colors"
+              placeholder="Search batches..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <button
+            onClick={() => setIsFilterModalOpen(true)}
+            className={`flex items-center px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${activeFiltersCount > 0
+                ? 'bg-blue-50 border-blue-200 text-blue-700'
+                : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+              }`}
+          >
+            <Filter className="h-4 w-4 mr-2" />
+            Filters
+            {activeFiltersCount > 0 && (
+              <span className="ml-2 bg-blue-100 text-blue-800 py-0.5 px-2 rounded-full text-xs">
+                {activeFiltersCount}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {/* Content */}
         {loading ? (
-          <div className="flex items-center justify-center py-12">
+          <div className="flex justify-center py-12">
             <LoadingSpinner size="lg" />
           </div>
         ) : error ? (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-            <div className="flex items-center">
-              <div className="text-red-600 mr-3">
-                <Calendar className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-red-800">Error</h3>
-                <p className="text-sm text-red-600 mt-1">{error}</p>
-              </div>
-            </div>
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 text-sm">
+            {error}
           </div>
-        ) : batches.length === 0 ? (
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-12 text-center">
-            <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+        ) : filteredBatches.length === 0 ? (
+          <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl p-12 text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 mb-4">
+              <Calendar className="h-6 w-6 text-gray-400" />
+            </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">No batches found</h3>
-            <p className="text-gray-600 mb-4">Create your first batch to get started.</p>
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-              Add First Batch
-            </button>
+            <p className="text-gray-500 mb-6">
+              {searchQuery || activeFiltersCount > 0
+                ? "Try adjusting your filters or search query."
+                : "Get started by adding a new batch."}
+            </p>
+            {!searchQuery && activeFiltersCount === 0 && (
+              <button
+                onClick={handleAddBatchClick}
+                className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Batch
+              </button>
+            )}
           </div>
         ) : (
-          <div className="space-y-4">
-            {batches.map((batch) => (
-              <BatchCard
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredBatches.map((batch) => (
+              <BatchGridCard
                 key={batch.id}
                 batch={batch}
-                isExpanded={expandedBatches.has(batch.id!)}
-                onToggle={() => toggleBatch(batch.id!)}
-                users={batchUsers.get(batch.id!) || []}
-                onAddUser={(userId) => addUserToBatch(batch.id!, userId)}
-                onRemoveUser={(userId) => removeUserFromBatch(batch.id!, userId)}
+                courseName={batch.courseName}
+                memberCount={batch.memberCount}
+                onViewStudents={handleViewStudents}
+                onEdit={handleEditBatch}
+                onDelete={handleDeleteBatch}
               />
             ))}
           </div>
         )}
       </div>
-    </DashboardLayout>
-  );
-}
 
-function BatchCard({ 
-  batch, 
-  isExpanded, 
-  onToggle, 
-  users, 
-  onAddUser, 
-  onRemoveUser 
-}: { 
-  batch: Batch;
-  isExpanded: boolean;
-  onToggle: () => void;
-  users: BatchUser[];
-  onAddUser: (userId: number) => void;
-  onRemoveUser: (userId: number) => void;
-}) {
-  const getStatusColor = (isActive: boolean) => {
-    return isActive 
-      ? 'bg-green-100 text-green-800' 
-      : 'bg-gray-100 text-gray-800';
-  };
+      {/* Filter Modal */}
+      <BatchesFilterModal
+        isOpen={isFilterModalOpen}
+        onClose={() => setIsFilterModalOpen(false)}
+        exams={exams}
+        allCourses={courses}
+        initialSelectedExamIds={selectedExamIds}
+        initialSelectedCourseIds={selectedCourseIds}
+        onApplyFilters={handleApplyFilters}
+      />
 
-  const getStatusIcon = (isActive: boolean) => {
-    return isActive 
-      ? <CheckCircle className="h-4 w-4" />
-      : <XCircle className="h-4 w-4" />;
-  };
-
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return 'Not set';
-    return new Date(dateString).toLocaleDateString();
-  };
-
-  const getDateStatus = () => {
-    if (!batch.startDate || !batch.endDate) return 'text-gray-500';
-    
-    const now = new Date();
-    const start = new Date(batch.startDate);
-    const end = new Date(batch.endDate);
-    
-    if (now < start) return 'text-blue-600'; // Not started
-    if (now > end) return 'text-red-600'; // Ended
-    return 'text-green-600'; // Active
-  };
-
-  return (
-    <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
-      <div 
-        className="px-6 py-4 cursor-pointer hover:bg-gray-50 transition-colors"
-        onClick={onToggle}
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className="flex-shrink-0">
-              {isExpanded ? (
-                <ChevronDown className="h-5 w-5 text-gray-400" />
-              ) : (
-                <ChevronRight className="h-5 w-5 text-gray-400" />
-              )}
-            </div>
-            <div className="flex-shrink-0">
-              <div className="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                <Calendar className="h-5 w-5 text-blue-600" />
-              </div>
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center space-x-3">
-                <h3 className="text-lg font-medium text-gray-900">{batch.displayName}</h3>
-                <span className="text-sm text-gray-500">({batch.codeName})</span>
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(batch.isActive!)}`}>
-                  {getStatusIcon(batch.isActive!)}
-                  <span className="ml-1">{batch.isActive ? 'Active' : 'Inactive'}</span>
-                </span>
-              </div>
-              <div className="flex items-center mt-2 space-x-4 text-sm text-gray-500">
-                <div className="flex items-center">
-                  <Users className="h-4 w-4 mr-1" />
-                  <span>{users.length} members</span>
-                </div>
-                <div className="flex items-center">
-                  <Clock className="h-4 w-4 mr-1" />
-                  <span className={getDateStatus()}>
-                    {formatDate(batch.startDate)} - {formatDate(batch.endDate)}
-                  </span>
-                </div>
-                <div className="flex items-center">
-                  <Calendar className="h-4 w-4 mr-1" />
-                  <span>
-                    Created {batch.createdAt 
-                      ? new Date(batch.createdAt).toLocaleDateString()
-                      : 'Unknown date'
-                    }
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            <button className="text-gray-400 hover:text-gray-600 p-1">
-              <Edit className="h-4 w-4" />
-            </button>
-            <button className="text-gray-400 hover:text-red-600 p-1">
-              <Trash2 className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {isExpanded && (
-        <div className="border-t border-gray-200 bg-gray-50">
-          <div className="px-6 py-4">
-            <div className="flex items-center justify-between mb-4">
-              <h4 className="text-sm font-medium text-gray-900">Batch Members ({users.length})</h4>
-              <button className="bg-blue-600 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-700 transition-colors flex items-center">
-                <UserPlus className="h-3 w-3 mr-1" />
-                Add Member
-              </button>
-            </div>
-            
-            {users.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <Users className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                <p>No members in this batch</p>
-                <button 
-                  className="mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium"
-                  onClick={() => onAddUser(1)} // Mock user ID
-                >
-                  Add first member
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {users.map((batchUser) => (
-                  <UserMemberCard
-                    key={batchUser.id}
-                    batchUser={batchUser}
-                    onRemove={() => onRemoveUser(batchUser.userId!)}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+      {/* Add Batch Modal */}
+      {selectedCourseForAdd && isAddBatchModalOpen && (
+        <AddBatchModal
+          isOpen={isAddBatchModalOpen}
+          onClose={() => {
+            setIsAddBatchModalOpen(false);
+            setSelectedCourseForAdd(null);
+          }}
+          courseId={selectedCourseForAdd}
+          onBatchCreated={fetchData}
+        />
       )}
-    </div>
-  );
-}
-
-function UserMemberCard({ 
-  batchUser, 
-  onRemove 
-}: { 
-  batchUser: BatchUser;
-  onRemove: () => void;
-}) {
-  return (
-    <div className="bg-white border border-gray-200 rounded-lg p-3">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <div className="flex-shrink-0">
-            <div className="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center">
-              <Users className="h-4 w-4 text-gray-600" />
-            </div>
-          </div>
-          <div className="flex-1 min-w-0">
-            <h5 className="text-sm font-medium text-gray-900">{batchUser.user?.name || 'Unknown User'}</h5>
-            <p className="text-xs text-gray-600">{batchUser.user?.email || 'No email'}</p>
-            <div className="flex items-center mt-1">
-              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                batchUser.isActive 
-                  ? 'bg-green-100 text-green-800' 
-                  : 'bg-gray-100 text-gray-800'
-              }`}>
-                {batchUser.isActive ? 'Active' : 'Inactive'}
-              </span>
-              <span className="text-xs text-gray-500 ml-2">
-                Joined {batchUser.createdAt 
-                  ? new Date(batchUser.createdAt).toLocaleDateString()
-                  : 'Unknown date'
-                }
-              </span>
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center space-x-1">
-          <button className="text-gray-400 hover:text-gray-600 p-1">
-            <Edit className="h-3 w-3" />
-          </button>
-          <button 
-            className="text-gray-400 hover:text-red-600 p-1"
-            onClick={onRemove}
-          >
-            <UserMinus className="h-3 w-3" />
-          </button>
-        </div>
-      </div>
-    </div>
+    </DashboardLayout>
   );
 }
