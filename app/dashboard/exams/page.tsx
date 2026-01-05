@@ -10,7 +10,7 @@ import { ExamGridCard } from '@/components/dashboard/exams/ExamGridCard';
 import { AddExamModal } from '@/components/modals/AddExamModal';
 import { EditExamModal } from '@/components/modals/EditExamModal';
 import { DeleteConfirmModal } from '@/components/modals/DeleteConfirmModal';
-import { ExamsService, Exam } from '@/lib/api';
+import { ExamsService, Exam, BusinessService } from '@/lib/api';
 
 export default function ExamsPage() {
     const router = useRouter();
@@ -31,8 +31,9 @@ export default function ExamsPage() {
 
         try {
             setLoading(true);
-            const response = await ExamsService.getExams(business.id);
-            setExams(response.data || []);
+            const response = await BusinessService.getApiBusinessExams({ businessId: business.id });
+            const examsList = response?.data || [];
+            setExams(examsList);
             setError(null);
         } catch (err: any) {
             console.error('Error fetching exams:', err);

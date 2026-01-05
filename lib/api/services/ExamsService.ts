@@ -5,7 +5,6 @@
 import type { ApiResponse } from '../models/ApiResponse';
 import type { CreateExamRequest } from '../models/CreateExamRequest';
 import type { Exam } from '../models/Exam';
-import type { ExamWithCourses } from '../models/ExamWithCourses';
 import type { UpdateExamRequest } from '../models/UpdateExamRequest';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
@@ -17,42 +16,34 @@ export class ExamsService {
      * @returns any Exam created successfully
      * @throws ApiError
      */
-    public static postApiExams(
-        requestBody: CreateExamRequest,
-    ): CancelablePromise<(ApiResponse & {
-        data?: Exam;
-    })> {
+    public static postApiBusinessExams(): CancelablePromise<void> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/api/exams',
-            body: requestBody,
-            mediaType: 'application/json',
-            errors: {
-                400: `Invalid input data`,
-                500: `Internal server error`,
-            },
+            url: '/api/business/{businessId}/exams',
         });
     }
     /**
-     * Get all exams for a business
-     * @param businessId Business ID
+     * List exams for a business
      * @returns any Exams fetched successfully
      * @throws ApiError
      */
-    public static getExams(
+    public static getApiBusinessExams({
+        businessId,
+    }: {
+        /**
+         * Business ID
+         */
         businessId: number,
-    ): CancelablePromise<(ApiResponse & {
-        data?: Array<Exam>;
-    })> {
+    }): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/api/exams',
-            query: {
+            url: '/api/business/{businessId}/exams',
+            path: {
                 'businessId': businessId,
             },
             errors: {
-                400: `Missing business ID`,
-                500: `Internal server error`,
+                400: `Invalid Business ID`,
+                404: `Business not found`,
             },
         });
     }
@@ -62,121 +53,128 @@ export class ExamsService {
      * @returns any Exam fetched successfully
      * @throws ApiError
      */
-    public static getApiExams1(
+    public static getApiBusinessExams1({
+        businessId,
+        id,
+        fields,
+        include,
+    }: {
+        /**
+         * Business ID
+         */
+        businessId: number,
+        /**
+         * Exam ID
+         */
         id: number,
-    ): CancelablePromise<(ApiResponse & {
-        data?: Exam;
-    })> {
+        /**
+         * Comma-separated list of fields to select
+         */
+        fields?: string,
+        /**
+         * Comma-separated list of relations to include
+         */
+        include?: string,
+    }): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/api/exams/{id}',
+            url: '/api/business/{businessId}/exams/{id}',
             path: {
+                'businessId': businessId,
                 'id': id,
             },
+            query: {
+                'fields': fields,
+                'include': include,
+            },
             errors: {
-                400: `Invalid exam ID`,
                 404: `Exam not found`,
-                500: `Internal server error`,
             },
         });
     }
     /**
-     * Update exam
-     * @param id Exam ID
-     * @param requestBody
+     * Update exam under a business
      * @returns any Exam updated successfully
      * @throws ApiError
      */
-    public static putApiExams(
+    public static putApiBusinessExams({
+        businessId,
+        id,
+        requestBody,
+    }: {
+        /**
+         * Business ID
+         */
+        businessId: number,
+        /**
+         * Exam ID
+         */
         id: number,
         requestBody: UpdateExamRequest,
-    ): CancelablePromise<(ApiResponse & {
-        data?: Exam;
-    })> {
+    }): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'PUT',
-            url: '/api/exams/{id}',
+            url: '/api/business/{businessId}/exams/{id}',
             path: {
+                'businessId': businessId,
                 'id': id,
             },
             body: requestBody,
             mediaType: 'application/json',
             errors: {
-                400: `Invalid input data`,
                 404: `Exam not found`,
-                500: `Internal server error`,
             },
         });
     }
     /**
-     * Delete exam
-     * @param id Exam ID
+     * Delete exam under a business
      * @returns any Exam deleted successfully
      * @throws ApiError
      */
-    public static deleteApiExams(
+    public static deleteApiBusinessExams({
+        businessId,
+        id,
+    }: {
+        /**
+         * Business ID
+         */
+        businessId: number,
+        /**
+         * Exam ID
+         */
         id: number,
-    ): CancelablePromise<(ApiResponse & {
-        data?: any;
-    })> {
+    }): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'DELETE',
-            url: '/api/exams/{id}',
+            url: '/api/business/{businessId}/exams/{id}',
             path: {
-                'id': id,
-            },
-            errors: {
-                400: `Invalid exam ID`,
-                500: `Internal server error`,
-            },
-        });
-    }
-    /**
-     * Get exam with its courses
-     * @param id Exam ID
-     * @returns any Exam with courses fetched successfully
-     * @throws ApiError
-     */
-    public static getApiExamsWithCourses(
-        id: number,
-    ): CancelablePromise<(ApiResponse & {
-        data?: ExamWithCourses;
-    })> {
-        return __request(OpenAPI, {
-            method: 'GET',
-            url: '/api/exams/{id}/with-courses',
-            path: {
-                'id': id,
-            },
-            errors: {
-                400: `Invalid exam ID`,
-                404: `Exam not found`,
-                500: `Internal server error`,
-            },
-        });
-    }
-    /**
-     * Get all exams for a business
-     * @param businessId Business ID
-     * @param active Filter by active status (true for active only, false for all)
-     * @returns any Exams fetched successfully
-     * @throws ApiError
-     */
-    public static getExamByBusinessId(
-        businessId: number,
-        active?: boolean,
-    ): CancelablePromise<(ApiResponse & {
-        data?: Array<Exam>;
-    })> {
-        return __request(OpenAPI, {
-            method: 'GET',
-            url: '/api/exams',
-            query: {
                 'businessId': businessId,
-                'active': active,
+                'id': id,
             },
             errors: {
-                400: `Invalid business ID`,
+                404: `Exam not found`,
+            },
+        });
+    }
+    /**
+     * Create a new exam
+     * @returns any Exam created successfully
+     * @throws ApiError
+     */
+    public static postApiExams({
+        requestBody,
+    }: {
+        requestBody: CreateExamRequest,
+    }): CancelablePromise<(ApiResponse & {
+        data?: Exam;
+    })> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/exams',
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                400: `Invalid input data`,
                 500: `Internal server error`,
             },
         });

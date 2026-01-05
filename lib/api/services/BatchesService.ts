@@ -17,9 +17,11 @@ export class BatchesService {
      * @returns any Batch created successfully
      * @throws ApiError
      */
-    public static postApiBatches(
+    public static postApiBatches({
+        requestBody,
+    }: {
         requestBody: CreateBatchRequest,
-    ): CancelablePromise<(ApiResponse & {
+    }): CancelablePromise<(ApiResponse & {
         data?: Batch;
     })> {
         return __request(OpenAPI, {
@@ -29,7 +31,7 @@ export class BatchesService {
             mediaType: 'application/json',
             errors: {
                 400: `Invalid input data`,
-                404: `Course not found`,
+                404: `Business not found`,
                 409: `Batch with this code name already exists`,
                 500: `Internal server error`,
             },
@@ -41,9 +43,14 @@ export class BatchesService {
      * @returns any Batch fetched successfully
      * @throws ApiError
      */
-    public static getApiBatches(
+    public static getApiBatches({
+        id,
+    }: {
+        /**
+         * Batch ID
+         */
         id: number,
-    ): CancelablePromise<(ApiResponse & {
+    }): CancelablePromise<(ApiResponse & {
         data?: Batch;
     })> {
         return __request(OpenAPI, {
@@ -66,10 +73,16 @@ export class BatchesService {
      * @returns any Batch updated successfully
      * @throws ApiError
      */
-    public static putApiBatches(
+    public static putApiBatches({
+        id,
+        requestBody,
+    }: {
+        /**
+         * Batch ID
+         */
         id: number,
         requestBody: UpdateBatchRequest,
-    ): CancelablePromise<(ApiResponse & {
+    }): CancelablePromise<(ApiResponse & {
         data?: Batch;
     })> {
         return __request(OpenAPI, {
@@ -94,9 +107,14 @@ export class BatchesService {
      * @returns any Batch deleted successfully
      * @throws ApiError
      */
-    public static deleteApiBatches(
+    public static deleteApiBatches({
+        id,
+    }: {
+        /**
+         * Batch ID
+         */
         id: number,
-    ): CancelablePromise<(ApiResponse & {
+    }): CancelablePromise<(ApiResponse & {
         data?: any;
     })> {
         return __request(OpenAPI, {
@@ -117,9 +135,14 @@ export class BatchesService {
      * @returns any Batch with users fetched successfully
      * @throws ApiError
      */
-    public static getApiBatchesWithUsers(
+    public static getApiBatchesWithUsers({
+        id,
+    }: {
+        /**
+         * Batch ID
+         */
         id: number,
-    ): CancelablePromise<(ApiResponse & {
+    }): CancelablePromise<(ApiResponse & {
         data?: BatchWithUsers;
     })> {
         return __request(OpenAPI, {
@@ -136,16 +159,62 @@ export class BatchesService {
         });
     }
     /**
+     * Get all batches for a business
+     * @param businessId Business ID
+     * @param active Filter by active status (true for active only, false for all)
+     * @returns any Batches fetched successfully
+     * @throws ApiError
+     */
+    public static getApiBatchesBusiness({
+        businessId,
+        active,
+    }: {
+        /**
+         * Business ID
+         */
+        businessId: number,
+        /**
+         * Filter by active status (true for active only, false for all)
+         */
+        active?: boolean,
+    }): CancelablePromise<(ApiResponse & {
+        data?: Array<Batch>;
+    })> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/batches/business/{businessId}',
+            path: {
+                'businessId': businessId,
+            },
+            query: {
+                'active': active,
+            },
+            errors: {
+                400: `Invalid business ID`,
+                500: `Internal server error`,
+            },
+        });
+    }
+    /**
      * Get all batches for a course
      * @param courseId Course ID
      * @param active Filter by active status (true for active only, false for all)
      * @returns any Batches fetched successfully
      * @throws ApiError
      */
-    public static getApiBatchesCourse(
+    public static getApiBatchesCourse({
+        courseId,
+        active,
+    }: {
+        /**
+         * Course ID
+         */
         courseId: number,
+        /**
+         * Filter by active status (true for active only, false for all)
+         */
         active?: boolean,
-    ): CancelablePromise<(ApiResponse & {
+    }): CancelablePromise<(ApiResponse & {
         data?: Array<Batch>;
     })> {
         return __request(OpenAPI, {
