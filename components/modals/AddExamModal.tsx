@@ -59,7 +59,7 @@ export function AddExamModal({ isOpen, onClose, businessId, onExamCreated }: Add
                 businessId,
             };
 
-            await ExamsService.postApiExams(request);
+            await ExamsService.postApiBusinessExams({ businessId, requestBody: request });
 
             // Reset form and notify parent
             resetForm();

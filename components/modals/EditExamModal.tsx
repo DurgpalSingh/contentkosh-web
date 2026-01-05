@@ -65,7 +65,7 @@ export function EditExamModal({ isOpen, onClose, exam, onExamUpdated }: EditExam
                 isActive,
             };
 
-            await ExamsService.putApiExams(exam.id, request);
+            await ExamsService.putApiBusinessExams({ businessId: exam.businessId, id: exam.id, requestBody: request });
 
             // Notify parent and close
             onExamUpdated();

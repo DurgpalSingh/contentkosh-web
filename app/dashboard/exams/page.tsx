@@ -10,11 +10,11 @@ import { ExamGridCard } from '@/components/dashboard/exams/ExamGridCard';
 import { AddExamModal } from '@/components/modals/AddExamModal';
 import { EditExamModal } from '@/components/modals/EditExamModal';
 import { DeleteConfirmModal } from '@/components/modals/DeleteConfirmModal';
-import { ExamsService, Exam, BusinessService } from '@/lib/api';
+import { ExamsService, Exam} from '@/lib/api';
 
 export default function ExamsPage() {
     const router = useRouter();
-    const { user, business, isAuthenticated, isLoading, isInitialized } = useAuthStore();
+    const { user, business, isAuthenticated, isLoading, isInitialized, initializeAuth } = useAuthStore();
 
     const [exams, setExams] = useState<Exam[]>([]);
     const [loading, setLoading] = useState(true);
@@ -26,12 +26,25 @@ export default function ExamsPage() {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
 
+    useEffect(() => {
+    if (!isInitialized) {
+      initializeAuth();
+    }
+  }, [initializeAuth, isInitialized]);
+
+  useEffect(() => {
+    if (isInitialized && !isAuthenticated) {
+      console.log('Redirecting to login - not authenticated');
+      router.push('/login');
+    }
+  }, [isAuthenticated, isInitialized, router]);
+
     const fetchExams = useCallback(async () => {
         if (!business?.id) return;
 
         try {
             setLoading(true);
-            const response = await BusinessService.getApiBusinessExams({ businessId: business.id });
+            const response = await ExamsService.getApiBusinessExams({ businessId: business.id });
             const examsList = response?.data || [];
             setExams(examsList);
             setError(null);
@@ -62,7 +75,7 @@ export default function ExamsPage() {
     const confirmDeleteExam = async () => {
         if (!selectedExam?.id) return;
         try {
-            await ExamsService.deleteApiExams(selectedExam.id);
+            await ExamsService.deleteApiBusinessExams({ businessId: business?.id, id: selectedExam.id });
             await fetchExams();
             setIsDeleteModalOpen(false);
             setSelectedExam(null);

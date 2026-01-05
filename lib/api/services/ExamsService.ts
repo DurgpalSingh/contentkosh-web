@@ -16,10 +16,31 @@ export class ExamsService {
      * @returns any Exam created successfully
      * @throws ApiError
      */
-    public static postApiBusinessExams(): CancelablePromise<void> {
+    public static postApiBusinessExams({
+        businessId,
+        requestBody,
+    }: {
+        /**
+         * Business ID
+         */
+        businessId: number;
+        requestBody: CreateExamRequest;
+    }): CancelablePromise<(ApiResponse & {
+        data?: Exam;
+    })> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/business/{businessId}/exams',
+            path: {
+                'businessId': businessId,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                400: `Invalid input data`,
+                404: `Business not found`,
+                500: `Internal server error`,
+            },
         });
     }
     /**
@@ -153,29 +174,6 @@ export class ExamsService {
             },
             errors: {
                 404: `Exam not found`,
-            },
-        });
-    }
-    /**
-     * Create a new exam
-     * @returns any Exam created successfully
-     * @throws ApiError
-     */
-    public static postApiExams({
-        requestBody,
-    }: {
-        requestBody: CreateExamRequest,
-    }): CancelablePromise<(ApiResponse & {
-        data?: Exam;
-    })> {
-        return __request(OpenAPI, {
-            method: 'POST',
-            url: '/api/exams',
-            body: requestBody,
-            mediaType: 'application/json',
-            errors: {
-                400: `Invalid input data`,
-                500: `Internal server error`,
             },
         });
     }
