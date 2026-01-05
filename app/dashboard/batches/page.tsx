@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { BatchesService, BatchUsersService } from '@/lib/api';
+import { BatchesService, BatchUsersService, BusinessService, CoursesService } from '@/lib/api';
 import { Batch, BatchWithUsers, BatchUser } from '@/lib/api';
 import { 
   Calendar, 
@@ -54,10 +54,23 @@ export default function BatchesPage() {
       }
 
       try {
-        console.log('Fetching batches for business:', business.id);
-        const response = await BatchesService.getApiBatchesBusiness(business.id);
-        console.log('Batches response:', response);
-        setBatches(response.data || []);
+        console.log('Fetching batches for business (aggregating exams -> courses -> batches):', business.id);
+        const examsResp = await BusinessService.getApiBusinessExams({ businessId: business.id });
+        const exams = examsResp?.data || [];
+        console.log('Fetched exams:', exams);
+        const allBatches: Batch[] = [];
+        for (const exam of exams) {
+          if (!exam?.id) continue;
+          const coursesResp = await CoursesService.getApiExamsCourses({ examId: exam.id });
+          const courses = coursesResp?.data || [];
+          for (const course of courses) {
+            if (!course?.id) continue;
+            const batchesResp = await BatchesService.getApiBatchesCourse({ courseId: course.id });
+            allBatches.push(...(batchesResp?.data || []));
+          }
+        }
+
+        setBatches(allBatches);
       } catch (err: any) {
         console.error('Error fetching batches:', err);
         setError(err.body?.message || 'Failed to fetch batches');
@@ -74,7 +87,7 @@ export default function BatchesPage() {
   const fetchBatchUsers = async (batchId: number) => {
     try {
       console.log('Fetching users for batch:', batchId);
-      const response = await BatchesService.getApiBatchesWithUsers(batchId);
+      const response = await BatchesService.getApiBatchesWithUsers({ id: batchId });
       console.log('Batch users response:', response);
       
       if (response.data?.batchUsers) {
@@ -102,10 +115,7 @@ export default function BatchesPage() {
   const addUserToBatch = async (batchId: number, userId: number) => {
     try {
       console.log('Adding user to batch:', { batchId, userId });
-      await BatchUsersService.postApiBatchesAddUser({
-        batchId,
-        userId
-      });
+      await BatchUsersService.postApiBatchesAddUser({ requestBody: { batchId, userId } });
       
       // Refresh batch users
       await fetchBatchUsers(batchId);
@@ -117,10 +127,7 @@ export default function BatchesPage() {
   const removeUserFromBatch = async (batchId: number, userId: number) => {
     try {
       console.log('Removing user from batch:', { batchId, userId });
-      await BatchUsersService.postApiBatchesRemoveUser({
-        batchId,
-        userId
-      });
+      await BatchUsersService.postApiBatchesRemoveUser({ requestBody: { batchId, userId } });
       
       // Refresh batch users
       await fetchBatchUsers(batchId);

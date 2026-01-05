@@ -18,9 +18,11 @@ export class BatchUsersService {
      * @returns any User added to batch successfully
      * @throws ApiError
      */
-    public static postApiBatchesAddUser(
+    public static postApiBatchesAddUser({
+        requestBody,
+    }: {
         requestBody: AddUserToBatchRequest,
-    ): CancelablePromise<(ApiResponse & {
+    }): CancelablePromise<(ApiResponse & {
         data?: BatchUser;
     })> {
         return __request(OpenAPI, {
@@ -65,9 +67,14 @@ export class BatchUsersService {
      * @returns any User batches fetched successfully
      * @throws ApiError
      */
-    public static getApiBatchesUser(
+    public static getApiBatchesUser({
+        userId,
+    }: {
+        /**
+         * User ID
+         */
         userId: number,
-    ): CancelablePromise<(ApiResponse & {
+    }): CancelablePromise<(ApiResponse & {
         data?: Array<{
             /**
              * Batch User ID
@@ -102,9 +109,14 @@ export class BatchUsersService {
      * @returns any Batch users fetched successfully
      * @throws ApiError
      */
-    public static getApiBatchesUsers(
+    public static getApiBatchesUsers({
+        batchId,
+    }: {
+        /**
+         * Batch ID
+         */
         batchId: number,
-    ): CancelablePromise<(ApiResponse & {
+    }): CancelablePromise<(ApiResponse & {
         data?: Array<{
             /**
              * Batch User ID
@@ -154,11 +166,21 @@ export class BatchUsersService {
      * @returns any Batch user updated successfully
      * @throws ApiError
      */
-    public static putApiBatchesUsers(
+    public static putApiBatchesUsers({
+        batchId,
+        userId,
+        requestBody,
+    }: {
+        /**
+         * Batch ID
+         */
         batchId: number,
+        /**
+         * User ID
+         */
         userId: number,
         requestBody: UpdateBatchUserRequest,
-    ): CancelablePromise<(ApiResponse & {
+    }): CancelablePromise<(ApiResponse & {
         data?: BatchUser;
     })> {
         return __request(OpenAPI, {

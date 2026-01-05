@@ -28,9 +28,9 @@ export type BatchWithUsers = {
      */
     isActive?: boolean;
     /**
-     * ID of the business this batch belongs to
+     * ID of the course this batch belongs to
      */
-    businessId?: number;
+    courseId?: number;
     /**
      * Batch creation timestamp
      */
@@ -39,15 +39,15 @@ export type BatchWithUsers = {
      * Batch last update timestamp
      */
     updatedAt?: string;
-    business?: {
+    course?: {
         /**
-         * Business ID
+         * Course ID
          */
         id?: number;
         /**
-         * Business institute name
+         * Course name
          */
-        instituteName?: string;
+        name?: string;
     };
     batchUsers?: Array<{
         /**

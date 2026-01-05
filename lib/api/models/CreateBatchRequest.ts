@@ -24,8 +24,8 @@ export type CreateBatchRequest = {
      */
     isActive?: boolean;
     /**
-     * ID of the business this batch belongs to (required)
+     * ID of the course this batch belongs to (required)
      */
-    businessId: number;
+    courseId: number;
 };
 
