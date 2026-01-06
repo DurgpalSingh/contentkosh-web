@@ -3,7 +3,9 @@
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { ExamsService, UpdateExamRequest, Exam } from '@/lib/api';
-import { validateEntityName } from '@/lib/validation';
+import { validateEntityName, validateDateRange } from '@/lib/validation';
+import { toISODateTime } from '@/lib/utils';
+import { DatePicker } from '../ui/date-picker';
 
 interface EditExamModalProps {
     isOpen: boolean;
@@ -15,6 +17,8 @@ interface EditExamModalProps {
 export function EditExamModal({ isOpen, onClose, exam, onExamUpdated }: EditExamModalProps) {
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
+    const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+    const [endDate, setEndDate] = useState<Date | undefined>(undefined);
     const [isActive, setIsActive] = useState(true);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -24,7 +28,9 @@ export function EditExamModal({ isOpen, onClose, exam, onExamUpdated }: EditExam
         if (isOpen && exam) {
             setName(exam.name || '');
             setDescription(exam.description || '');
-            setIsActive(exam.isActive ?? true);
+            setIsActive(exam.status ? exam.status === 'ACTIVE' : true);
+            setStartDate(exam.startDate ? new Date(exam.startDate) : undefined);
+            setEndDate(exam.endDate ? new Date(exam.endDate) : undefined);
         }
     }, [isOpen, exam]);
 
@@ -50,6 +56,15 @@ export function EditExamModal({ isOpen, onClose, exam, onExamUpdated }: EditExam
             return;
         }
 
+        const dateError = validateDateRange(
+            toISODateTime(startDate) || '',
+            toISODateTime(endDate) || ''
+        );
+        if (dateError) {
+            setError(dateError);
+            return;
+        }
+
         if (!exam.id) {
             setError('Invalid exam');
             return;
@@ -62,10 +77,11 @@ export function EditExamModal({ isOpen, onClose, exam, onExamUpdated }: EditExam
             const request: UpdateExamRequest = {
                 name: name.trim(),
                 description: description.trim() || undefined,
-                isActive,
+                startDate: toISODateTime(startDate),
+                endDate: toISODateTime(endDate),
             };
 
-            await ExamsService.putApiBusinessExams({ businessId: exam.businessId, id: exam.id, requestBody: request });
+            await ExamsService.putApiBusinessExams({ businessId: exam.businessId!, id: exam.id!, requestBody: request });
 
             // Notify parent and close
             onExamUpdated();
@@ -144,18 +160,19 @@ export function EditExamModal({ isOpen, onClose, exam, onExamUpdated }: EditExam
                         />
                     </div>
 
-                    <div className="flex items-center">
-                        <input
-                            id="edit-exam-active"
-                            type="checkbox"
-                            checked={isActive}
-                            onChange={(e) => setIsActive(e.target.checked)}
-                            className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                            disabled={loading}
-                        />
-                        <label htmlFor="edit-exam-active" className="ml-2 text-sm text-gray-700">
-                            Active (visible to students)
-                        </label>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label htmlFor="edit-exam-start-date" className="block text-sm font-medium text-gray-700 mb-1">
+                                Start date
+                            </label>
+                            <DatePicker date={startDate} setDate={setStartDate} disabled={loading}/>
+                        </div>
+                        <div>
+                            <label htmlFor="edit-exam-end-date" className="block text-sm font-medium text-gray-700 mb-1">
+                                End date
+                            </label>
+                            <DatePicker date={endDate} setDate={setEndDate} disabled={loading} />
+                        </div>
                     </div>
 
                     {/* Actions */}

@@ -8,12 +8,20 @@ export type UpdateExamRequest = {
      */
     name?: string;
     /**
+     * Code for the exam
+     */
+    code?: string;
+    /**
      * Description of the exam
      */
     description?: string;
     /**
-     * Whether the exam is active
+     * Optional start date
      */
-    isActive?: boolean;
+    startDate?: string;
+    /**
+     * Optional end date
+     */
+    endDate?: string;
 };
 

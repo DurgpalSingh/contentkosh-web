@@ -1,5 +1,5 @@
 import { Exam } from '@/lib/api';
-import { BookOpen, Calendar, Clock, MoreVertical, Edit, Trash2, Eye } from 'lucide-react';
+import { BookOpen, Calendar, MoreVertical, Edit, Trash2, Eye } from 'lucide-react';
 import { useState } from 'react';
 
 interface ExamGridCardProps {
@@ -11,7 +11,6 @@ interface ExamGridCardProps {
 
 export function ExamGridCard({ exam, onViewCourses, onEdit, onDelete }: ExamGridCardProps) {
     const [showMenu, setShowMenu] = useState(false);
-
     return (
         <div className="bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden flex flex-col h-full">
             <div className="p-5 flex-1">
@@ -20,9 +19,8 @@ export function ExamGridCard({ exam, onViewCourses, onEdit, onDelete }: ExamGrid
                         <h3 className="text-lg font-semibold text-slate-900 line-clamp-1" title={exam.name}>
                             {exam.name}
                         </h3>
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mt-2 ${exam.isActive ? 'bg-green-100 text-green-800' : 'bg-slate-100 text-slate-800'
-                            }`}>
-                            {exam.isActive ? 'Active' : 'Inactive'}
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mt-2 ${exam.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-slate-100 text-slate-800'}` }>
+                            {exam.status === 'ACTIVE' ? 'Active' : 'Inactive'}
                         </span>
                     </div>
 
