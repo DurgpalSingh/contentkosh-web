@@ -91,7 +91,7 @@ export function EditCourseModal({ isOpen, onClose, course, examId, onCourseUpdat
                 isActive,
             };
 
-            await CoursesService.putApiExamsCourses(examId, course.id!, request);
+            await CoursesService.putApiExamsCourses({ examId, courseId: course.id!, requestBody: request });
 
             onCourseUpdated();
             onClose();

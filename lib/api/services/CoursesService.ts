@@ -220,34 +220,4 @@ export class CoursesService {
             },
         });
     }
-    /**
-     * Get course with its subjects under an exam
-     * @param examId Exam ID
-     * @param courseId Course ID
-     * @returns any Course with subjects fetched successfully
-     * @throws ApiError
-     */
-    public static getApiExamsCoursesWithSubjects(
-        examId: number,
-        courseId: number,
-    ): CancelablePromise<(ApiResponse & {
-        data?: CourseWithSubjects;
-    })> {
-        return __request(OpenAPI, {
-            method: 'GET',
-            url: '/api/exams/{examId}/courses/{courseId}',
-            path: {
-                'examId': examId,
-                'courseId': courseId,
-            },
-            query: {
-                'includes': 'coueses',
-            },
-            errors: {
-                400: `Invalid course ID`,
-                404: `Course not found`,
-                500: `Internal server error`,
-            },
-        });
-    }
 }

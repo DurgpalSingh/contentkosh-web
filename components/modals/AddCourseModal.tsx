@@ -67,6 +67,18 @@ export function AddCourseModal({ isOpen, onClose, examId, onCourseCreated }: Add
                 const months = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 30));
                 duration = months >= 12 ? `${Math.round(months / 12)} year(s)` : `${months} month(s)`;
             }
+
+            // Build request and call API
+            const request: CreateCourseRequest = {
+                name: name.trim(),
+                description: description.trim() || undefined,
+                duration,
+                isActive,
+                examId,
+            };
+
+            await CoursesService.postApiExamsCourses({ examId, requestBody: request });
+            onCourseCreated();
             onClose();
         } catch (err: any) {
             console.error('Error creating course:', err);

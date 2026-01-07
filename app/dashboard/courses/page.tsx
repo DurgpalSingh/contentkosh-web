@@ -22,19 +22,10 @@ interface ExtendedCourse extends Course {
   subjects?: Subject[]; // Ensure subjects is strongly typed
 }
 
-// Helpers
-const enrichCourseWithSubjects = async (course: Course, examId: number): Promise<Course> => {
-  try {
-    const response = await CoursesService.getApiExamsCoursesWithSubjects(examId, course.id!);
-    return { ...course, subjects: response.data?.subjects || [] };
-  } catch (err) {
-    console.warn(`Failed to fetch subjects for course ${course.id}`, err);
-    return course;
-  }
-};
+
 
 export default function CoursesPage() {
-  const { user, business, isAuthenticated, isLoading, isInitialized } = useAuthStore();
+  const { user, business, isAuthenticated, isLoading, isInitialized, initializeAuth} = useAuthStore();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -66,6 +57,19 @@ export default function CoursesPage() {
   const [isDeleteSubjectModalOpen, setIsDeleteSubjectModalOpen] = useState(false);
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
 
+      useEffect(() => {
+    if (!isInitialized) {
+      initializeAuth();
+    }
+  }, [initializeAuth, isInitialized]);
+
+  useEffect(() => {
+    if (isInitialized && !isAuthenticated) {
+      console.log('Redirecting to login - not authenticated');
+      router.push('/login');
+    }
+  }, [isAuthenticated, isInitialized, router]);
+
   // Initialize filters from URL if present
   useEffect(() => {
     const examIdParam = searchParams.get('examId');
@@ -83,25 +87,18 @@ export default function CoursesPage() {
     try {
       setLoading(true);
       // Fetch all exams first
-      const examsResponse = await ExamsService.getExams(business.id);
+      const examsResponse = await ExamsService.getApiBusinessExams({ businessId: business.id });
       const fetchedExams = examsResponse.data || [];
       setExams(fetchedExams);
-
-      // Fetch courses for all exams (flattening the list)
+      // Fetch courses for all exams (flattening the list) using include=subjects
       const coursesPromises = fetchedExams.map(async (exam) => {
         if (!exam.id) return [];
         try {
-          const response = await ExamsService.getApiExamsWithCourses(exam.id);
-          const rawCourses = response.data?.courses || [];
+          const response = await CoursesService.getApiExamsCourses({ examId: exam.id, include: 'subjects' });
+          const rawCourses = response.data || [];
 
-          // Enrich courses with subjects
-          // We do this in parallel for all courses of this exam
-          const enrichedCourses = await Promise.all(
-            rawCourses.map(course => enrichCourseWithSubjects(course, exam.id!))
-          );
-
-          // Inject examId and examName into each course
-          return enrichedCourses.map(course => ({
+          // Inject examId and examName into each course (subjects already included)
+          return rawCourses.map(course => ({
             ...course,
             examId: exam.id,
             examName: exam.name
@@ -186,7 +183,7 @@ export default function CoursesPage() {
   const confirmDeleteCourse = async () => {
     if (!selectedCourse?.id || !selectedCourse.examId) return;
     try {
-      await CoursesService.deleteApiExamsCourses(selectedCourse.examId, selectedCourse.id);
+      await CoursesService.deleteApiExamsCourses({examId: selectedCourse.examId, courseId: selectedCourse.id});
       await fetchData();
       setIsDeleteCourseModalOpen(false);
       setSelectedCourse(null);
