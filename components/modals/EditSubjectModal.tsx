@@ -90,12 +90,13 @@ export function EditSubjectModal({ isOpen, onClose, examId, courseId, subject, o
             />
 
             {/* Modal */}
-            <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+            <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden" role="dialog" aria-modal="true" aria-labelledby="edit-subject-title">
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-indigo-500 to-indigo-600">
-                    <h2 className="text-xl font-semibold text-white">Edit Subject</h2>
+                    <h2 id="edit-subject-title" className="text-xl font-semibold text-white">Edit Subject</h2>
                     <button
                         onClick={onClose}
+                        aria-label="Close edit subject modal"
                         className="p-1 text-white/80 hover:text-white transition-colors"
                     >
                         <X className="h-5 w-5" />
@@ -105,7 +106,7 @@ export function EditSubjectModal({ isOpen, onClose, examId, courseId, subject, o
                 {/* Form */}
                 <form onSubmit={handleSubmit} className="p-6 space-y-4">
                     {error && (
-                        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                        <div role="alert" aria-live="assertive" className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
                             {error}
                         </div>
                     )}
@@ -121,10 +122,13 @@ export function EditSubjectModal({ isOpen, onClose, examId, courseId, subject, o
                             onChange={(e) => setName(e.target.value)}
                             placeholder="e.g., Indian History, Mathematics"
                             maxLength={100}
+                            required
+                            aria-required="true"
+                            aria-describedby="subject-name-help"
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
                             disabled={loading}
                         />
-                        <p className="mt-1 text-xs text-gray-500">{name.length}/100 characters</p>
+                        <p id="subject-name-help" className="mt-1 text-xs text-gray-500">{name.length}/100 characters</p>
                     </div>
 
                     <div>

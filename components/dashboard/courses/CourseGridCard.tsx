@@ -18,9 +18,9 @@ export function CourseGridCard({ course, examName, onViewBatches, onViewSubjects
         <div className="bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden flex flex-col h-full">
             <div className="p-5 flex-1">
                 <div className="flex justify-between items-start mb-2">
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                         {examName && (
-                            <span className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 mb-2">
+                            <span className="px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 mb-2 line-clamp-1 break-words">
                                 {examName}
                             </span>
                         )}

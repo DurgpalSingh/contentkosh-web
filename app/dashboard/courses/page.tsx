@@ -8,9 +8,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { AddCourseModal } from '@/components/modals/AddCourseModal';
 import { EditCourseModal } from '@/components/modals/EditCourseModal';
 import { DeleteConfirmModal } from '@/components/modals/DeleteConfirmModal';
-import { AddSubjectModal } from '@/components/modals/AddSubjectModal';
-import { EditSubjectModal } from '@/components/modals/EditSubjectModal';
-import { SubjectsListModal } from '@/components/modals/SubjectsListModal';
+
 import { ExamsService, CoursesService, SubjectsService, Exam, Course, Subject } from '@/lib/api';
 import { Plus, BookOpen, Search } from 'lucide-react';
 import { CourseGridCard } from '@/components/dashboard/courses/CourseGridCard';
@@ -48,14 +46,8 @@ export default function CoursesPage() {
 
   const [isDeleteCourseModalOpen, setIsDeleteCourseModalOpen] = useState(false);
 
-  // Subject Modal states
-  const [isSubjectsListModalOpen, setIsSubjectsListModalOpen] = useState(false);
-  const [selectedCourseForSubjects, setSelectedCourseForSubjects] = useState<ExtendedCourse | null>(null);
+  // Subjects are handled on their dedicated page (no nested modals here)
 
-  const [isAddSubjectModalOpen, setIsAddSubjectModalOpen] = useState(false);
-  const [isEditSubjectModalOpen, setIsEditSubjectModalOpen] = useState(false);
-  const [isDeleteSubjectModalOpen, setIsDeleteSubjectModalOpen] = useState(false);
-  const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
 
       useEffect(() => {
     if (!isInitialized) {
@@ -91,7 +83,7 @@ export default function CoursesPage() {
       const fetchedExams = examsResponse.data || [];
       setExams(fetchedExams);
       // Fetch courses for all exams (flattening the list) using include=subjects
-      const coursesPromises = fetchedExams.map(async (exam) => {
+      const coursesPromises = fetchedExams.map(async (exam: Exam) => {
         if (!exam.id) return [];
         try {
           const response = await CoursesService.getApiExamsCourses({ examId: exam.id, include: 'subjects' });
@@ -166,8 +158,8 @@ export default function CoursesPage() {
   };
 
   const handleViewSubjects = (course: ExtendedCourse) => {
-    setSelectedCourseForSubjects(course);
-    setIsSubjectsListModalOpen(true);
+    // Navigate to dedicated course subjects page
+    router.push(`/dashboard/courses/${course.id}/subjects?examId=${course.examId}`);
   };
 
   const handleEditCourse = (course: ExtendedCourse) => {
@@ -192,62 +184,9 @@ export default function CoursesPage() {
     }
   };
 
-  // Subject Handlers
-  const handleAddSubject = () => {
-    // Add subject logic (open add subject modal)
-    // Note: We need Course ID and Exam ID.
-    // selectedCourseForSubjects should be set when list modal is open.
-    setIsAddSubjectModalOpen(true);
-  };
 
-  const handleEditSubject = (subject: Subject) => {
-    setSelectedSubject(subject);
-    setIsEditSubjectModalOpen(true);
-  };
 
-  const handleDeleteSubject = (subject: Subject) => {
-    setSelectedSubject(subject);
-    setIsDeleteSubjectModalOpen(true);
-  };
 
-  const confirmDeleteSubject = async () => {
-    if (!selectedSubject?.id || !selectedCourseForSubjects?.id || !selectedCourseForSubjects.examId) return;
-    try {
-      await SubjectsService.deleteApiExamsCoursesSubjects(
-        selectedCourseForSubjects.examId,
-        selectedCourseForSubjects.id!,
-        selectedSubject.id
-      );
-      await fetchData(); // Refresh data to update counts
-      // Also need to update the local 'selectedCourseForSubjects' to refract changes in the modal immediately?
-      // Actually fetchData updates 'allCourses'. We need to update 'selectedCourseForSubjects' 
-      // or close/reopen modal, or better: rely on fetchData and useEffect to sync?
-      // Simplest: just close modal for now or refetch and manually update local state.
-      // Let's refetch and find the updated course object to update modal if open.
-
-      setIsDeleteSubjectModalOpen(false);
-      setSelectedSubject(null);
-
-      // Hacky re-sync: find the course in new data or just rely on next render if we structured it well.
-      // But 'selectedCourseForSubjects' is a snapshot.
-      // Better approach: Close list modal or implement finer grained updates.
-      // For now, let's close the list modal to force refresh when reopened? Or try to update it.
-      // Let's restart fetch and hopefully update current view.
-
-    } catch (err) {
-      console.error('Error deleting subject:', err);
-    }
-  };
-
-  // Effect to sync selectedCourseForSubjects with updated data
-  useEffect(() => {
-    if (selectedCourseForSubjects && allCourses.length > 0) {
-      const updatedCourse = allCourses.find(c => c.id === selectedCourseForSubjects.id);
-      if (updatedCourse) {
-        setSelectedCourseForSubjects(updatedCourse);
-      }
-    }
-  }, [allCourses]); // When data refreshes, update the modal's data source if found
 
   if (isLoading || !isInitialized) {
     return (
@@ -382,62 +321,6 @@ export default function CoursesPage() {
           title="Delete Course"
           message="Are you sure you want to delete this course? This will also delete all subjects under it. This action cannot be undone."
           itemName={selectedCourse?.name}
-        />
-      )}
-
-      {/* Subjects List Modal */}
-      {selectedCourseForSubjects && isSubjectsListModalOpen && (
-        <SubjectsListModal
-          isOpen={isSubjectsListModalOpen}
-          onClose={() => {
-            setIsSubjectsListModalOpen(false);
-            setSelectedCourseForSubjects(null);
-          }}
-          course={selectedCourseForSubjects}
-          onAddSubject={handleAddSubject}
-          onEditSubject={handleEditSubject}
-          onDeleteSubject={handleDeleteSubject}
-        />
-      )}
-
-      {/* Add Subject Modal */}
-      {isAddSubjectModalOpen && selectedCourseForSubjects && selectedCourseForSubjects.examId && (
-        <AddSubjectModal
-          isOpen={isAddSubjectModalOpen}
-          onClose={() => setIsAddSubjectModalOpen(false)}
-          examId={selectedCourseForSubjects.examId!}
-          courseId={selectedCourseForSubjects.id!}
-          onSubjectCreated={fetchData}
-        />
-      )}
-
-      {/* Edit Subject Modal */}
-      {isEditSubjectModalOpen && selectedSubject && selectedCourseForSubjects && selectedCourseForSubjects.examId && (
-        <EditSubjectModal
-          isOpen={isEditSubjectModalOpen}
-          onClose={() => {
-            setIsEditSubjectModalOpen(false);
-            setSelectedSubject(null);
-          }}
-          examId={selectedCourseForSubjects.examId!}
-          courseId={selectedCourseForSubjects.id!}
-          subject={selectedSubject}
-          onSubjectUpdated={fetchData}
-        />
-      )}
-
-      {/* Delete Subject Confirmation Modal */}
-      {isDeleteSubjectModalOpen && selectedSubject && (
-        <DeleteConfirmModal
-          isOpen={isDeleteSubjectModalOpen}
-          onClose={() => {
-            setIsDeleteSubjectModalOpen(false);
-            setSelectedSubject(null);
-          }}
-          onConfirm={confirmDeleteSubject}
-          title="Delete Subject"
-          message="Are you sure you want to delete this subject? This action cannot be undone."
-          itemName={selectedSubject?.name}
         />
       )}
 
