@@ -50,17 +50,25 @@ export class ExamsService {
      */
     public static getApiBusinessExams({
         businessId,
+        include,
     }: {
         /**
          * Business ID
          */
         businessId: number,
+        /**
+         * Comma-separated list of relations to include
+         */
+        include?: string,
     }): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/business/{businessId}/exams',
             path: {
                 'businessId': businessId,
+            },
+            query: {
+                'include': include,
             },
             errors: {
                 400: `Invalid Business ID`,

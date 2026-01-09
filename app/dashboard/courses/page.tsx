@@ -62,29 +62,39 @@ export default function CoursesPage() {
     try {
       setLoading(true);
       // Fetch all exams first
-      const examsResponse = await ExamsService.getApiBusinessExams({ businessId: business.id });
+      const examsResponse = await ExamsService.getApiBusinessExams({ businessId: business.id, include : 'courses.subjects' });
       const fetchedExams = examsResponse.data || [];
       setExams(fetchedExams);
-      // Fetch courses for all exams (flattening the list) using include=subjects
-      const coursesPromises = fetchedExams.map(async (exam: Exam) => {
-        if (!exam.id) return [];
-        try {
-          const response = await CoursesService.getApiExamsCourses({ examId: exam.id, include: 'subjects' });
-          const rawCourses = response.data || [];
+      console.log('Fetched Exams:', fetchedExams);
+      // // Fetch courses for all exams (flattening the list) using include=subjects
+      // const coursesPromises = fetchedExams.map(async (exam: Exam) => {
+      //   if (!exam.id) return [];
+      //   try {
+      //     const response = await CoursesService.getApiExamsCourses({ examId: exam.id, include: 'subjects' });
+      //     const rawCourses = response.data || [];
 
-          // Inject examId and examName into each course (subjects already included)
-          return rawCourses.map(course => ({
-            ...course,
-            examId: exam.id,
-            examName: exam.name
-          })) as ExtendedCourse[];
-        } catch (err) {
-          console.warn(`Failed to fetch courses for exam ${exam.id}`, err);
-          return [];
-        }
+      //     // Inject examId and examName into each course (subjects already included)
+      //     return rawCourses.map(course => ({
+      //       ...course,
+      //       examId: exam.id,
+      //       examName: exam.name
+      //     })) as ExtendedCourse[];
+      //   } catch (err) {
+      //     console.warn(`Failed to fetch courses for exam ${exam.id}`, err);
+      //     return [];
+      //   }
+      // });
+      const coursesLists = fetchedExams.map(async (exam: Exam) => {
+        if (!exam.courses) return [];
+        // Inject examId and examName into each course (subjects already included)
+        return exam.courses.map(course => ({
+          ...course,
+          examId: exam.id,
+          examName: exam.name
+        })) as ExtendedCourse[];
       });
 
-      const coursesArrays = await Promise.all(coursesPromises);
+      const coursesArrays = await Promise.all(coursesLists);
       const flatCourses = coursesArrays.flat();
 
       // Sort by creation date (newest first)
