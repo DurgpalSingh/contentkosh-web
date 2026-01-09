@@ -71,9 +71,9 @@ export function AddCourseModal({ isOpen, onClose, examId, onCourseCreated }: Add
             // Build request and call API
             const request: CreateCourseRequest = {
                 name: name.trim(),
-                description: description.trim() || undefined,
+                description: description.length ? description.trim() : description,
                 duration,
-                isActive,
+                status: isActive ? "ACTIVE" : "INACTIVE",
                 examId,
             };
 

@@ -16,7 +16,7 @@ export function ExamGridCard({ exam, onViewCourses, onEdit, onDelete }: ExamGrid
             <div className="p-5 flex-1">
                 <div className="flex justify-between items-start mb-4">
                     <div className="flex-1 min-w-0">
-                        <h3 className="text-lg font-semibold text-slate-900 line-clamp-1 break-words" title={exam.name}>
+                        <h3 className="text-lg font-semibold text-slate-900 line-clamp-2 break-words" title={exam.name}>
                             {exam.name}
                         </h3>
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mt-2 ${exam.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-slate-100 text-slate-800'}` }>

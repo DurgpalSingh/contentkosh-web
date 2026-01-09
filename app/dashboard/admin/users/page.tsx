@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
-import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { BusinessUsersService } from '@/lib/api';
 import { BusinessUser } from '@/lib/api';
@@ -15,20 +14,6 @@ export default function UsersPage() {
   const [users, setUsers] = useState<BusinessUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!isInitialized) {
-      console.log('Initializing auth...');
-      initializeAuth();
-    }
-  }, [initializeAuth, isInitialized]);
-
-  useEffect(() => {
-    if (isInitialized && !isAuthenticated) {
-      console.log('Redirecting to login - not authenticated');
-      router.push('/login');
-    }
-  }, [isAuthenticated, isInitialized, router]);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -71,7 +56,6 @@ export default function UsersPage() {
   }
 
   return (
-    <DashboardLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
@@ -126,7 +110,6 @@ export default function UsersPage() {
           </div>
         )}
       </div>
-    </DashboardLayout>
   );
 }
 

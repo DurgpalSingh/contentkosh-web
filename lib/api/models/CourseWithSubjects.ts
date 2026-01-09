@@ -23,7 +23,7 @@ export type CourseWithSubjects = {
     /**
      * Whether the course is active
      */
-    isActive?: boolean;
+    status?: "ACTIVE" | "INACTIVE";
     /**
      * ID of the exam this course belongs to
      */

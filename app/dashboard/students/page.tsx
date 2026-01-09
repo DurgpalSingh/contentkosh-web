@@ -3,7 +3,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
-import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ExamsService, BatchesService, CoursesService } from '@/lib/api';
 import { Exam, Course, Batch, BatchUser, BatchWithUsers } from '@/lib/api';
@@ -45,15 +44,6 @@ export default function StudentsPage() {
     const [selectedExamIds, setSelectedExamIds] = useState<number[]>([]);
     const [selectedCourseIds, setSelectedCourseIds] = useState<number[]>([]);
     const [selectedBatchIds, setSelectedBatchIds] = useState<number[]>([]);
-
-    // Initialization check
-    useEffect(() => {
-        if (!isInitialized) initializeAuth();
-    }, [initializeAuth, isInitialized]);
-
-    useEffect(() => {
-        if (isInitialized && !isAuthenticated) router.push('/login');
-    }, [isAuthenticated, isInitialized, router]);
 
     // Initial Data Fetch
     useEffect(() => {
@@ -223,7 +213,7 @@ export default function StudentsPage() {
     const activeFilterCount = selectedExamIds.length + selectedCourseIds.length + selectedBatchIds.length;
 
     return (
-        <DashboardLayout>
+            <>
             <div className="space-y-6">
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -322,6 +312,6 @@ export default function StudentsPage() {
                     }}
                 />
             </div>
-        </DashboardLayout>
+        </>
     );
 }

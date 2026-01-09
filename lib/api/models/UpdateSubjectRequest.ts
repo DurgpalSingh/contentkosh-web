@@ -14,6 +14,6 @@ export type UpdateSubjectRequest = {
     /**
      * Whether the subject is active
      */
-    isActive?: boolean;
+    status?: "ACTIVE" | "INACTIVE";
 };
 

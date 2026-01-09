@@ -1,32 +1,11 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
-import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
-import { AdminDashboard } from '@/components/dashboard/AdminDashboard';
-import { TeacherDashboard } from '@/components/dashboard/TeacherDashboard';
-import { StudentDashboard } from '@/components/dashboard/StudentDashboard';
+
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 export default function Dashboard() {
-  const { user, business, isAuthenticated, isLoading, isInitialized, initializeAuth, setLoading } = useAuthStore();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!isInitialized) {
-      console.log('Initializing auth...');
-      initializeAuth();
-    }
-  }, [initializeAuth, isInitialized]);
-
-  useEffect(() => {
-    console.log('Auth check - isLoading:', isLoading, 'isAuthenticated:', isAuthenticated, 'user:', user, 'isInitialized:', isInitialized);
-    if (isInitialized && !isAuthenticated) {
-      console.log('Redirecting to login - not authenticated');
-      router.push('/login');
-    }
-  }, [isAuthenticated, isInitialized, router, user]);
+  const { user, isAuthenticated, isLoading, isInitialized } = useAuthStore();
 
   if (!isInitialized || isLoading) {
     return (
@@ -58,11 +37,7 @@ export default function Dashboard() {
     return <DefaultDashboard />;
   };
 
-  return (
-    <DashboardLayout>
-      {renderDashboard()}
-    </DashboardLayout>
-  );
+  return renderDashboard();
 }
 
 // Default dashboard for users without specific roles

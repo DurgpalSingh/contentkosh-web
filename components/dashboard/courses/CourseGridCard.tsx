@@ -24,7 +24,7 @@ export function CourseGridCard({ course, examName, onViewBatches, onViewSubjects
                                 {examName}
                             </span>
                         )}
-                        <h3 className="text-lg font-semibold text-slate-900 line-clamp-1" title={course.name}>
+                        <h3 className="text-lg font-semibold text-slate-900 line-clamp-2" title={course.name}>
                             {course.name}
                         </h3>
                     </div>
@@ -93,9 +93,9 @@ export function CourseGridCard({ course, examName, onViewBatches, onViewSubjects
                         <span>{course.subjects?.length || 0} Subjects</span>
                     </div>
                     <div className="flex items-center text-sm text-slate-500">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${course.isActive ? 'bg-green-100 text-green-800' : 'bg-slate-100 text-slate-800'
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${course.status === "ACTIVE" ? 'bg-green-100 text-green-800' : 'bg-slate-100 text-slate-800'
                             }`}>
-                            {course.isActive ? 'Active' : 'Inactive'}
+                            {course.status === "ACTIVE"? 'Active' : 'Inactive'}
                         </span>
                     </div>
                 </div>
@@ -111,7 +111,7 @@ export function CourseGridCard({ course, examName, onViewBatches, onViewSubjects
                 </button>
                 <button
                     onClick={() => onViewBatches(course)}
-                    className="flex-1 flex items-center justify-center px-4 py-2 bg-white border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors text-sm font-medium"
+                    className="min-w-0 flex-1 flex items-center justify-center px-4 py-2 bg-white border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors text-sm font-medium"
                 >
                     <Calendar className="h-4 w-4 mr-2" />
                     Batches

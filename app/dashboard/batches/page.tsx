@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
-import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { BatchesService, ExamsService, Batch, Course, Exam } from '@/lib/api';
 import { Plus, Calendar, Search, Filter } from 'lucide-react';
@@ -210,7 +209,7 @@ export default function BatchesPage() {
   }
 
   return (
-    <DashboardLayout>
+      <>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -328,6 +327,6 @@ export default function BatchesPage() {
           onBatchCreated={fetchData}
         />
       )}
-    </DashboardLayout>
+    </>
   );
 }

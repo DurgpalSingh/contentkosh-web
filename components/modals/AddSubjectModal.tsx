@@ -56,7 +56,7 @@ export function AddSubjectModal({ isOpen, onClose, examId, courseId, onSubjectCr
             const request: CreateSubjectRequest = {
                 name: name.trim(),
                 description: description.trim() || undefined,
-                isActive,
+                status: isActive ? "ACTIVE" : "INACTIVE",
                 courseId,
             };
 

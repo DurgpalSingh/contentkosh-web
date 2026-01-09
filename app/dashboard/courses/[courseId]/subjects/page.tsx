@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { AddSubjectModal } from '@/components/modals/AddSubjectModal';
 import { EditSubjectModal } from '@/components/modals/EditSubjectModal';
@@ -43,7 +42,11 @@ export default function CourseSubjectsPage() {
 
       const data = response.data as Course | undefined;
       setCourse(data || null);
-      setSubjects(data?.subjects || []);
+      const sortedSubjects = [...data?.subjects || []].sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+      setSubjects(sortedSubjects);
       setError(null);
     } catch (err) {
       console.error('Failed to load course subjects', err);
@@ -88,16 +91,14 @@ export default function CourseSubjectsPage() {
 
   if (loading) {
     return (
-      <DashboardLayout>
-        <div className="flex justify-center py-12">
-          <LoadingSpinner size="lg" />
-        </div>
-      </DashboardLayout>
+      <div className="flex justify-center py-12">
+        <LoadingSpinner size="lg" />
+      </div>
     );
   }
 
   return (
-    <DashboardLayout>
+    <>
       <div className="space-y-8">
 
         {/* Header */}
@@ -215,6 +216,6 @@ export default function CourseSubjectsPage() {
           itemName={selectedSubject.name}
         />
       )}
-    </DashboardLayout>
+    </>
   );
 }

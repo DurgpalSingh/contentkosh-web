@@ -35,9 +35,12 @@ export function SubjectGridCard({ subject, onEdit, onDelete }: SubjectGridCardPr
             )}
           </p>
 
-          {/* <div className="mt-2 text-xs text-slate-400">
-            Subject
-          </div> */}
+          <div className="mt-2 text-xs text-slate-400">
+            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${subject.status === "ACTIVE" ? 'bg-green-100 text-green-800' : 'bg-slate-100 text-slate-800'
+              }`}>
+              {subject.status === "ACTIVE" ? 'Active' : 'Inactive'}
+            </span>
+          </div>
         </div>
 
         {/* Actions */}

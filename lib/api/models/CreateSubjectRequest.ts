@@ -14,7 +14,7 @@ export type CreateSubjectRequest = {
     /**
      * Whether the subject is active
      */
-    isActive?: boolean;
+    status?: "ACTIVE" | "INACTIVE";
     /**
      * ID of the course this subject belongs to (required)
      */

@@ -18,6 +18,6 @@ export type UpdateCourseRequest = {
     /**
      * Whether the course is active
      */
-    isActive?: boolean;
+    status?: "ACTIVE" | "INACTIVE";
 };
 

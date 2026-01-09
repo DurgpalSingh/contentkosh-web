@@ -23,7 +23,7 @@ export function EditCourseModal({ isOpen, onClose, course, examId, onCourseUpdat
     const [description, setDescription] = useState(course.description || '');
     const [startDate, setStartDate] = useState<Date | undefined>(undefined);
     const [endDate, setEndDate] = useState<Date | undefined>(undefined);
-    const [isActive, setIsActive] = useState(course.isActive ?? true);
+    const [isActive, setIsActive] = useState(course.status === "ACTIVE");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -35,7 +35,7 @@ export function EditCourseModal({ isOpen, onClose, course, examId, onCourseUpdat
         // Assuming for now we just want to allow setting new dates.
         setStartDate(undefined);
         setEndDate(undefined);
-        setIsActive(course.isActive ?? true);
+        setIsActive(course.status === "ACTIVE");
         setError(null);
     }, [course]);
 
@@ -86,9 +86,9 @@ export function EditCourseModal({ isOpen, onClose, course, examId, onCourseUpdat
 
             const request: UpdateCourseRequest = {
                 name: name.trim(),
-                description: description.trim() || undefined,
+                description: description.length ? description.trim() : description,
                 duration,
-                isActive,
+                status: isActive ? "ACTIVE" : "INACTIVE",
             };
 
             await CoursesService.putApiExamsCourses({ examId, courseId: course.id!, requestBody: request });

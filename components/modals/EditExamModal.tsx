@@ -16,6 +16,7 @@ interface EditExamModalProps {
 
 export function EditExamModal({ isOpen, onClose, exam, onExamUpdated }: EditExamModalProps) {
     const [name, setName] = useState('');
+    const [code, setCode] = useState('');
     const [description, setDescription] = useState('');
     const [startDate, setStartDate] = useState<Date | undefined>(undefined);
     const [endDate, setEndDate] = useState<Date | undefined>(undefined);
@@ -27,6 +28,7 @@ export function EditExamModal({ isOpen, onClose, exam, onExamUpdated }: EditExam
     useEffect(() => {
         if (isOpen && exam) {
             setName(exam.name || '');
+            setCode(exam.code || '');
             setDescription(exam.description || '');
             setIsActive(exam.status ? exam.status === 'ACTIVE' : true);
             setStartDate(exam.startDate ? new Date(exam.startDate) : undefined);
@@ -76,6 +78,7 @@ export function EditExamModal({ isOpen, onClose, exam, onExamUpdated }: EditExam
         try {
             const request: UpdateExamRequest = {
                 name: name.trim(),
+                code: code.trim(),
                 description: description.trim() || undefined,
                 startDate: toISODateTime(startDate),
                 endDate: toISODateTime(endDate),
@@ -143,6 +146,23 @@ export function EditExamModal({ isOpen, onClose, exam, onExamUpdated }: EditExam
                             disabled={loading}
                         />
                         <p className="mt-1 text-xs text-gray-500">{name.length}/50 characters</p>
+                    </div>
+
+                    <div>
+                        <label htmlFor="edit-exam-code" className="block text-sm font-medium text-gray-700 mb-1">
+                            Exam Code 
+                        </label>
+                        <input
+                            id="edit-exam-code"
+                            type="text"
+                            value={code}
+                            onChange={(e) => setCode(e.target.value)}
+                            placeholder="e.g., UPSC Civil Services"
+                            maxLength={20}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                            disabled={loading}
+                        />
+                        <p className="mt-1 text-xs text-gray-500">{code.length}/20 characters</p>
                     </div>
 
                     <div>

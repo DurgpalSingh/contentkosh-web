@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
-import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { AddCourseModal } from '@/components/modals/AddCourseModal';
 import { EditCourseModal } from '@/components/modals/EditCourseModal';
@@ -45,22 +44,6 @@ export default function CoursesPage() {
   const [selectedCourse, setSelectedCourse] = useState<ExtendedCourse | null>(null);
 
   const [isDeleteCourseModalOpen, setIsDeleteCourseModalOpen] = useState(false);
-
-  // Subjects are handled on their dedicated page (no nested modals here)
-
-
-      useEffect(() => {
-    if (!isInitialized) {
-      initializeAuth();
-    }
-  }, [initializeAuth, isInitialized]);
-
-  useEffect(() => {
-    if (isInitialized && !isAuthenticated) {
-      console.log('Redirecting to login - not authenticated');
-      router.push('/login');
-    }
-  }, [isAuthenticated, isInitialized, router]);
 
   // Initialize filters from URL if present
   useEffect(() => {
@@ -197,7 +180,7 @@ export default function CoursesPage() {
   }
 
   return (
-    <DashboardLayout>
+      <>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -324,6 +307,6 @@ export default function CoursesPage() {
         />
       )}
 
-    </DashboardLayout>
+    </>
   );
-}
+} 

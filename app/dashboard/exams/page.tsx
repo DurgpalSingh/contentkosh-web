@@ -4,17 +4,16 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, BookOpen, Search } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
-import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ExamGridCard } from '@/components/dashboard/exams/ExamGridCard';
 import { AddExamModal } from '@/components/modals/AddExamModal';
 import { EditExamModal } from '@/components/modals/EditExamModal';
 import { DeleteConfirmModal } from '@/components/modals/DeleteConfirmModal';
-import { ExamsService, Exam} from '@/lib/api';
+import { ExamsService, Exam } from '@/lib/api';
 
 export default function ExamsPage() {
+    const { user, business, isAuthenticated, isLoading, isInitialized } = useAuthStore();
     const router = useRouter();
-    const { user, business, isAuthenticated, isLoading, isInitialized, initializeAuth } = useAuthStore();
 
     const [exams, setExams] = useState<Exam[]>([]);
     const [loading, setLoading] = useState(true);
@@ -26,19 +25,6 @@ export default function ExamsPage() {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
 
-    useEffect(() => {
-    if (!isInitialized) {
-      initializeAuth();
-    }
-  }, [initializeAuth, isInitialized]);
-
-  useEffect(() => {
-    if (isInitialized && !isAuthenticated) {
-      console.log('Redirecting to login - not authenticated');
-      router.push('/login');
-    }
-  }, [isAuthenticated, isInitialized, router]);
-
     const fetchExams = useCallback(async () => {
         if (!business?.id) return;
 
@@ -46,7 +32,11 @@ export default function ExamsPage() {
             setLoading(true);
             const response = await ExamsService.getApiBusinessExams({ businessId: business.id });
             const examsList = response?.data || [];
-            setExams(examsList);
+            const sortedExams = [...examsList].sort(
+                (a, b) =>
+                    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            );
+            setExams(sortedExams);
             setError(null);
         } catch (err: any) {
             console.error('Error fetching exams:', err);
@@ -73,9 +63,9 @@ export default function ExamsPage() {
     };
 
     const confirmDeleteExam = async () => {
-        if (!selectedExam?.id) return;
+        if (!selectedExam?.id || !business?.id) return;
         try {
-            await ExamsService.deleteApiBusinessExams({ businessId: business?.id, id: selectedExam.id });
+            await ExamsService.deleteApiBusinessExams({ businessId: business.id, id: selectedExam.id });
             await fetchExams();
             setIsDeleteModalOpen(false);
             setSelectedExam(null);
@@ -98,7 +88,7 @@ export default function ExamsPage() {
     }
 
     return (
-        <DashboardLayout>
+        <>
             <div className="space-y-6">
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -191,6 +181,6 @@ export default function ExamsPage() {
                     itemName={selectedExam?.name}
                 />
             )}
-        </DashboardLayout>
+        </>
     );
 }

@@ -17,7 +17,7 @@ interface EditSubjectModalProps {
 export function EditSubjectModal({ isOpen, onClose, examId, courseId, subject, onSubjectUpdated }: EditSubjectModalProps) {
     const [name, setName] = useState(subject.name || '');
     const [description, setDescription] = useState(subject.description || '');
-    const [isActive, setIsActive] = useState(subject.isActive || false);
+    const [isActive, setIsActive] = useState(subject.status === "ACTIVE");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -26,7 +26,7 @@ export function EditSubjectModal({ isOpen, onClose, examId, courseId, subject, o
         if (subject) {
             setName(subject.name || '');
             setDescription(subject.description || '');
-            setIsActive(subject.isActive || false);
+            setIsActive(subject.status === "ACTIVE");
         }
     }, [subject]);
 
@@ -62,8 +62,8 @@ export function EditSubjectModal({ isOpen, onClose, examId, courseId, subject, o
         try {
             const request: UpdateSubjectRequest = {
                 name: name.trim(),
-                description: description.trim() || undefined,
-                isActive,
+                description: description.length ? description.trim() : description,
+                status: isActive ? "ACTIVE" : "INACTIVE",
             };
 
             await SubjectsService.putApiExamsCoursesSubjects(examId, courseId, subject.id, request);
