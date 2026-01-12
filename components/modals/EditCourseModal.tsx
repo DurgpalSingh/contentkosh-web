@@ -3,12 +3,13 @@
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { CoursesService, UpdateCourseRequest, Course } from '@/lib/api';
-import { validateEntityName } from '@/lib/validation';
+import { validateDateRange, validateEntityName } from '@/lib/validation';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { toISODateTime } from '@/lib/utils';
 
 interface EditCourseModalProps {
     isOpen: boolean;
@@ -33,11 +34,11 @@ export function EditCourseModal({ isOpen, onClose, course, examId, onCourseUpdat
         setDescription(course.description || '');
         // Note: Since the API stores duration as text, we can't easily parse it back to dates if they aren't stored separately.
         // Assuming for now we just want to allow setting new dates.
-        setStartDate(undefined);
-        setEndDate(undefined);
+        setStartDate(course.startDate ? new Date(course.startDate) : undefined);
+        setEndDate(course.endDate ? new Date(course.endDate) : undefined);
         setIsActive(course.status === "ACTIVE");
         setError(null);
-    }, [course]);
+    }, [isOpen, course]);
 
     // Close modal on Escape key press
     useEffect(() => {
@@ -72,22 +73,26 @@ export function EditCourseModal({ isOpen, onClose, course, examId, onCourseUpdat
             return;
         }
 
+        const dateError = validateDateRange(
+            toISODateTime(startDate) || '',
+            toISODateTime(endDate) || ''
+        );
+        if (dateError) {
+            setError(dateError);
+            return;
+        }
+
 
         setLoading(true);
         setError(null);
 
         try {
-            // Compute duration string from dates if both provided
-            let duration: string | undefined = course.duration; // Keep existing if no new dates
-            if (startDate && endDate) {
-                const months = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24 * 30));
-                duration = months >= 12 ? `${Math.round(months / 12)} year(s)` : `${months} month(s)`;
-            }
 
             const request: UpdateCourseRequest = {
                 name: name.trim(),
                 description: description.length ? description.trim() : description,
-                duration,
+                startDate: toISODateTime(startDate),
+                endDate: toISODateTime(endDate),
                 status: isActive ? "ACTIVE" : "INACTIVE",
             };
 
@@ -188,9 +193,6 @@ export function EditCourseModal({ isOpen, onClose, course, examId, onCourseUpdat
                             />
                         </div>
                     </div>
-                    {course.duration && (
-                        <p className="text-xs text-gray-500 mt-1">Current duration: {course.duration}</p>
-                    )}
 
                     <div className="flex items-center space-x-2">
                         <input

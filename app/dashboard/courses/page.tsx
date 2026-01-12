@@ -65,7 +65,6 @@ export default function CoursesPage() {
       const examsResponse = await ExamsService.getApiBusinessExams({ businessId: business.id, include : 'courses.subjects' });
       const fetchedExams = examsResponse.data || [];
       setExams(fetchedExams);
-      console.log('Fetched Exams:', fetchedExams);
       // // Fetch courses for all exams (flattening the list) using include=subjects
       // const coursesPromises = fetchedExams.map(async (exam: Exam) => {
       //   if (!exam.id) return [];

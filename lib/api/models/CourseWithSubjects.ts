@@ -17,9 +17,13 @@ export type CourseWithSubjects = {
      */
     description?: string;
     /**
-     * Duration of the course
+     * Optional start date
      */
-    duration?: string;
+    startDate?: string;
+    /**
+     * Optional end date
+     */
+    endDate?: string;
     /**
      * Whether the course is active
      */

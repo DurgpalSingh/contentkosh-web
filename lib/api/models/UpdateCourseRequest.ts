@@ -12,9 +12,13 @@ export type UpdateCourseRequest = {
      */
     description?: string;
     /**
-     * Duration of the course (e.g., 6 months, 1 year)
+     * Optional start date
      */
-    duration?: string;
+    startDate?: string;
+    /**
+     * Optional end date
+     */
+    endDate?: string;
     /**
      * Whether the course is active
      */

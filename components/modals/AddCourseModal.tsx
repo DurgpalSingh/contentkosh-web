@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { CoursesService, CreateCourseRequest } from '@/lib/api';
 import { validateEntityName, validateDateRange } from '@/lib/validation';
+import { toISODateTime } from '@/lib/utils';
+import { DatePicker } from '../ui/date-picker';
 
 interface AddCourseModalProps {
     isOpen: boolean;
@@ -15,8 +17,8 @@ interface AddCourseModalProps {
 export function AddCourseModal({ isOpen, onClose, examId, onCourseCreated }: AddCourseModalProps) {
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
-    const [startDate, setStartDate] = useState('');
-    const [endDate, setEndDate] = useState('');
+    const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+    const [endDate, setEndDate] = useState<Date | undefined>(undefined);
     const [isActive, setIsActive] = useState(true);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -37,8 +39,8 @@ export function AddCourseModal({ isOpen, onClose, examId, onCourseCreated }: Add
     const resetForm = () => {
         setName('');
         setDescription('');
-        setStartDate('');
-        setEndDate('');
+        setStartDate(undefined);
+        setEndDate(undefined);
         setIsActive(true);
         setError(null);
     };
@@ -47,11 +49,19 @@ export function AddCourseModal({ isOpen, onClose, examId, onCourseCreated }: Add
         e.preventDefault();
 
         const validationError =
-            validateEntityName(name, 'Course name', 100) ||
-            validateDateRange(startDate, endDate);
+            validateEntityName(name, 'Course name', 100);
 
         if (validationError) {
             setError(validationError);
+            return;
+        }
+
+        const dateError = validateDateRange(
+            toISODateTime(startDate) || '',
+            toISODateTime(endDate) || ''
+        );
+        if (dateError) {
+            setError(dateError);
             return;
         }
 
@@ -59,20 +69,12 @@ export function AddCourseModal({ isOpen, onClose, examId, onCourseCreated }: Add
         setError(null);
 
         try {
-            // Compute duration string from dates if both provided
-            let duration: string | undefined;
-            if (startDate && endDate) {
-                const start = new Date(startDate);
-                const end = new Date(endDate);
-                const months = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 30));
-                duration = months >= 12 ? `${Math.round(months / 12)} year(s)` : `${months} month(s)`;
-            }
-
             // Build request and call API
             const request: CreateCourseRequest = {
                 name: name.trim(),
                 description: description.length ? description.trim() : description,
-                duration,
+                startDate: toISODateTime(startDate),
+                endDate: toISODateTime(endDate),
                 status: isActive ? "ACTIVE" : "INACTIVE",
                 examId,
             };
@@ -161,27 +163,13 @@ export function AddCourseModal({ isOpen, onClose, examId, onCourseCreated }: Add
                             <label htmlFor="course-start-date" className="block text-sm font-medium text-gray-700 mb-1">
                                 Start Date
                             </label>
-                            <input
-                                id="course-start-date"
-                                type="date"
-                                value={startDate}
-                                onChange={(e) => setStartDate(e.target.value)}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
-                                disabled={loading}
-                            />
+                            <DatePicker date={startDate} setDate={setStartDate} disabled={loading} />
                         </div>
                         <div>
                             <label htmlFor="course-end-date" className="block text-sm font-medium text-gray-700 mb-1">
                                 End Date
                             </label>
-                            <input
-                                id="course-end-date"
-                                type="date"
-                                value={endDate}
-                                onChange={(e) => setEndDate(e.target.value)}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
-                                disabled={loading}
-                            />
+                            <DatePicker date={endDate} setDate={setEndDate} disabled={loading} />
                         </div>
                     </div>
 
