@@ -26,7 +26,7 @@ export function BatchGridCard({ batch, courseName, memberCount = 0, onViewStuden
         const end = new Date(batch.endDate);
 
         if (now < start) return 'text-blue-600'; // Not started
-        if (now > end) return 'text-red-600'; // Ended
+        if (now > end) return 'text-red-600'; // Endedx
         return 'text-green-600'; // Active
     };
 

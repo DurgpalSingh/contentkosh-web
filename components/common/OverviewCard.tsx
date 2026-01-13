@@ -71,7 +71,7 @@ export function OverviewCard({
                             </h3>
 
                             {subtitle && (
-                                <div className="mt-1 text-sm text-slate-500">
+                                <div className="mt-1 text-sm text-slate-500 line-clamp-2 truncate">
                                     {subtitle}
                                 </div>
                             )}

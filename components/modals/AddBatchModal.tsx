@@ -84,7 +84,7 @@ export function AddBatchModal({ isOpen, onClose, courseId, subjects = [], onBatc
                 courseId,
             };
 
-            await BatchesService.postApiBatches(request);
+            await BatchesService.postApiBatches({ requestBody: request });
 
             // Reset form and notify parent
             resetForm();

@@ -9,6 +9,8 @@ import { Plus, Calendar, Search, Filter } from 'lucide-react';
 import { BatchGridCard } from '@/components/dashboard/batches/BatchGridCard';
 import { BatchesFilterModal } from '@/components/dashboard/batches/BatchesFilterModal';
 import { AddBatchModal } from '@/components/modals/AddBatchModal';
+import { EditBatchModal } from '@/components/modals/EditBatchModal';
+import { DeleteConfirmModal } from '@/components/modals/DeleteConfirmModal';
 
 // Extended batch type
 interface ExtendedBatch extends Batch {
@@ -39,6 +41,9 @@ export default function BatchesPage() {
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [isAddBatchModalOpen, setIsAddBatchModalOpen] = useState(false);
   const [selectedCourseForAdd, setSelectedCourseForAdd] = useState<number | null>(null);
+  const [isEditBatchModalOpen, setIsEditBatchModalOpen] = useState(false);
+  const [isDeleteBatchModelOpen, setIsDeleteBatchModelOpen] = useState(false);
+  const [selectedBatch, setSelectedBatch] = useState<Batch | null>(null);
 
   // Initialize filters from URL if present
   useEffect(() => {
@@ -57,39 +62,43 @@ export default function BatchesPage() {
     try {
       setLoading(true);
       // 1. Fetch exams
-      const examsResponse = await ExamsService.getExams(business.id);
+      const examsResponse = await ExamsService.getApiBusinessExams({ businessId: business.id, include: 'courses' });
       const fetchedExams = examsResponse.data || [];
       setExams(fetchedExams);
 
       // 2. Fetch courses from all exams and flatten
-      const coursesPromises = fetchedExams
-        .filter(exam => exam.id)
-        .map(async exam => {
-          try {
-            const res = await ExamsService.getApiExamsWithCourses(exam.id!);
-            return (res.data?.courses || []).map(c => ({ ...c, examId: exam.id })); // Inject examId
-          } catch {
-            return [];
-          }
-        });
+      const coursesLists = fetchedExams.map(async (exam: Exam) => {
+        if (!exam.courses) return [];
+        // Inject examId and examName into each course (subjects already included)
+        return exam.courses.map(course => ({
+          ...course,
+          examId: exam.id,
+          examName: exam.name
+        })) as [];
+      });
 
-      const coursesResults = await Promise.all(coursesPromises);
-      const allCourses = coursesResults.flat();
-      setCourses(allCourses);
+      const coursesArrays = await Promise.all(coursesLists);
+      const flatCourses = coursesArrays.flat();
+
+      // Sort by creation date (newest first)
+      flatCourses.sort((a, b) => {
+        return new Date(b.createdAt || '').getTime() - new Date(a.createdAt || '').getTime();
+      });
+      setCourses(flatCourses);
 
       // 3. Fetch batches for all courses
-      const batchesPromises = allCourses
+      const batchesPromises = flatCourses
         .filter(course => course.id)
         .map(async (course) => {
           try {
-            const response = await BatchesService.getApiBatchesCourse(course.id!);
+            const response = await BatchesService.getApiBatchesCourse({ courseId: course.id! });
             const batches = response.data || [];
-
             // Enhance batches with course and exam context
             const richBatchesPromises = batches.map(async (batch) => {
               try {
-                const usersResponse = await BatchesService.getApiBatchesWithUsers(batch.id!);
-                const count = usersResponse.data?.batchUsers?.length || 0;
+                const usersResponse = await BatchesService.getApiBatchesWithUsers({ id: batch.id! });
+                const count = usersResponse?.data?.length || 0;
+
                 return {
                   ...batch,
                   courseId: course.id,
@@ -193,11 +202,25 @@ export default function BatchesPage() {
   };
 
   const handleEditBatch = (batch: Batch) => {
-    console.log("Edit batch", batch.id);
+    setSelectedBatch(batch);
+    setIsEditBatchModalOpen(true);
   };
 
   const handleDeleteBatch = (batch: Batch) => {
-    console.log("Delete batch", batch.id);
+    setSelectedBatch(batch);
+    setIsDeleteBatchModelOpen(true);
+  };
+
+  const confirmDeleteBatch = async () => {
+    if (!selectedBatch?.id) return;
+    try {
+      await BatchesService.deleteApiBatches({ id: selectedBatch.id });
+      await fetchData();
+      setIsDeleteBatchModelOpen(false);
+      setSelectedBatch(null);
+    } catch (err) {
+      console.error('Error deleting batch:', err);
+    }
   };
 
   if (isLoading || !isInitialized) {
@@ -209,7 +232,7 @@ export default function BatchesPage() {
   }
 
   return (
-      <>
+    <>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -243,8 +266,8 @@ export default function BatchesPage() {
           <button
             onClick={() => setIsFilterModalOpen(true)}
             className={`flex items-center px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${activeFiltersCount > 0
-                ? 'bg-blue-50 border-blue-200 text-blue-700'
-                : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+              ? 'bg-blue-50 border-blue-200 text-blue-700'
+              : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
               }`}
           >
             <Filter className="h-4 w-4 mr-2" />
@@ -325,6 +348,34 @@ export default function BatchesPage() {
           }}
           courseId={selectedCourseForAdd}
           onBatchCreated={fetchData}
+        />
+      )}
+
+      {/* Edit Batch Modal */}
+      {selectedBatch && selectedBatch.id && isEditBatchModalOpen && (
+        <EditBatchModal
+          isOpen={isEditBatchModalOpen}
+          onClose={() => {
+            setIsEditBatchModalOpen(false);
+            setSelectedBatch(null);
+          }}
+          batch={selectedBatch}
+          onBatchUpdated={fetchData}
+        />
+      )}
+
+      {/* delete Batch confirmation Modal */}
+      {isDeleteBatchModelOpen && (
+        <DeleteConfirmModal
+          isOpen={isDeleteBatchModelOpen}
+          onClose={() => {
+            setIsDeleteBatchModelOpen(false);
+            setSelectedBatch(null);
+          }}
+          onConfirm={confirmDeleteBatch}
+          title="Delete Batch"
+          message="Are you sure you want to delete this batch? This action cannot be undone."
+          itemName={selectedBatch?.codeName}
         />
       )}
     </>

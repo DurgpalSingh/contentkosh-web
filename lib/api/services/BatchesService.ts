@@ -147,7 +147,7 @@ export class BatchesService {
     })> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/api/batches/{id}/with-users',
+            url: '/api/batches/{id}/users',
             path: {
                 'id': id,
             },

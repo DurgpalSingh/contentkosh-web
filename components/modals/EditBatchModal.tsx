@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { BatchesService, UpdateBatchRequest, Batch } from '@/lib/api';
 import { validateRequired, validateDateRange } from '@/lib/validation';
+import { toISODateTime } from '@/lib/utils';
 
 interface EditBatchModalProps {
     isOpen: boolean;
@@ -66,12 +67,12 @@ export function EditBatchModal({ isOpen, onClose, batch, onBatchUpdated }: EditB
             const request: UpdateBatchRequest = {
                 codeName: codeName.trim(),
                 displayName: displayName.trim(),
-                startDate,
-                endDate,
+                startDate: toISODateTime(startDate),
+                endDate: toISODateTime(endDate),
                 isActive,
             };
 
-            await BatchesService.putApiBatches(batch.id!, request);
+            await BatchesService.putApiBatches({ id: batch.id!, requestBody: request });
 
             onBatchUpdated();
             onClose();
