@@ -12,131 +12,143 @@ import { AddBatchModal } from '@/components/modals/AddBatchModal';
 import { EditBatchModal } from '@/components/modals/EditBatchModal';
 import { DeleteConfirmModal } from '@/components/modals/DeleteConfirmModal';
 
-// Extended batch type
+/* ===================== TYPES ===================== */
+
 interface ExtendedBatch extends Batch {
   courseId?: number;
   courseName?: string;
-  examId?: number; // Add examId for filtering
+  examId?: number;
   memberCount?: number;
 }
 
+
 export default function BatchesPage() {
-  const { user, business, isAuthenticated, isLoading, isInitialized } = useAuthStore();
+  const { business, isAuthenticated, isLoading, isInitialized } =
+    useAuthStore();
+
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Data state
+  /* ---------- STATE ---------- */
+
   const [exams, setExams] = useState<Exam[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [allBatches, setAllBatches] = useState<ExtendedBatch[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Filter state
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedExamIds, setSelectedExamIds] = useState<number[]>([]);
   const [selectedCourseIds, setSelectedCourseIds] = useState<number[]>([]);
 
-  // Modal states
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [isAddBatchModalOpen, setIsAddBatchModalOpen] = useState(false);
-  const [selectedCourseForAdd, setSelectedCourseForAdd] = useState<number | null>(null);
   const [isEditBatchModalOpen, setIsEditBatchModalOpen] = useState(false);
   const [isDeleteBatchModelOpen, setIsDeleteBatchModelOpen] = useState(false);
+
+  const [selectedCourseForAdd, setSelectedCourseForAdd] = useState<number | null>(null);
   const [selectedBatch, setSelectedBatch] = useState<Batch | null>(null);
 
-  // Initialize filters from URL if present
+  /* ---------- INIT FROM URL ---------- */
+
   useEffect(() => {
     const courseIdParam = searchParams.get('courseId');
     if (courseIdParam) {
-      const courseId = parseInt(courseIdParam);
-      if (!isNaN(courseId)) {
-        setSelectedCourseIds([courseId]);
-      }
+      const id = Number(courseIdParam);
+      if (!isNaN(id)) setSelectedCourseIds([id]);
     }
   }, [searchParams]);
+
+  /* ---------- FETCH DATA ---------- */
+
+  const fetchExamsAndCourses = async (businessId: number) => {
+    const response = await ExamsService.getApiBusinessExams({
+      businessId,
+      include: 'courses',
+    });
+
+    const exams: Exam[] = response.data ?? [];
+
+    const courses: Course[] = exams.flatMap((exam) =>
+      (exam.courses ?? []).map((course) => ({
+        ...course,
+        examId: exam.id,
+        examName: exam.name,
+      }))
+    );
+
+    courses.sort((a, b) => {
+      const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return timeB - timeA;
+    });
+
+    return { exams, courses };
+  };
+
+  const fetchBatchesForCourses = async (
+    courses: Course[]
+  ): Promise<ExtendedBatch[]> => {
+    const requests = courses
+      .filter((course) => course.id)
+      .map((course) =>
+        BatchesService.getApiBatchesCourse({ courseId: course.id! })
+          .then((res) =>
+            (res.data ?? []).map((batch) => ({
+              ...batch,
+              courseId: course.id,
+              courseName: course.name,
+              examId: course.examId,
+            }))
+          )
+          .catch(() => [])
+      );
+
+    const results = await Promise.all(requests);
+    return results.flat();
+  };
+
+  const enrichBatchesWithMemberCount = async (
+    batches: ExtendedBatch[]
+  ): Promise<ExtendedBatch[]> => {
+    const requests = batches.map((batch) =>
+      BatchesService.getApiBatchesWithUsers({ id: batch.id! })
+        .then((res) => ({
+          ...batch,
+          memberCount: res.data?.length ?? 0,
+        }))
+        .catch(() => ({
+          ...batch,
+          memberCount: 0,
+        }))
+    );
+
+    return Promise.all(requests);
+  };
 
   const fetchData = useCallback(async () => {
     if (!business?.id) return;
 
+    setLoading(true);
+    setError(null);
+
     try {
-      setLoading(true);
-      // 1. Fetch exams
-      const examsResponse = await ExamsService.getApiBusinessExams({ businessId: business.id, include: 'courses' });
-      const fetchedExams = examsResponse.data || [];
-      setExams(fetchedExams);
+      const { exams, courses } = await fetchExamsAndCourses(business.id);
+      setExams(exams);
+      setCourses(courses);
 
-      // 2. Fetch courses from all exams and flatten
-      const coursesLists = fetchedExams.map(async (exam: Exam) => {
-        if (!exam.courses) return [];
-        // Inject examId and examName into each course (subjects already included)
-        return exam.courses.map(course => ({
-          ...course,
-          examId: exam.id,
-          examName: exam.name
-        })) as [];
+      const rawBatches = await fetchBatchesForCourses(courses);
+      const enriched = await enrichBatchesWithMemberCount(rawBatches);
+
+      enriched.sort((a, b) => {
+        const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return timeB - timeA;
       });
 
-      const coursesArrays = await Promise.all(coursesLists);
-      const flatCourses = coursesArrays.flat();
-
-      // Sort by creation date (newest first)
-      flatCourses.sort((a, b) => {
-        return new Date(b.createdAt || '').getTime() - new Date(a.createdAt || '').getTime();
-      });
-      setCourses(flatCourses);
-
-      // 3. Fetch batches for all courses
-      const batchesPromises = flatCourses
-        .filter(course => course.id)
-        .map(async (course) => {
-          try {
-            const response = await BatchesService.getApiBatchesCourse({ courseId: course.id! });
-            const batches = response.data || [];
-            // Enhance batches with course and exam context
-            const richBatchesPromises = batches.map(async (batch) => {
-              try {
-                const usersResponse = await BatchesService.getApiBatchesWithUsers({ id: batch.id! });
-                const count = usersResponse?.data?.length || 0;
-
-                return {
-                  ...batch,
-                  courseId: course.id,
-                  courseName: course.name,
-                  examId: course.examId, // Pass through examId
-                  memberCount: count
-                };
-              } catch {
-                return {
-                  ...batch,
-                  courseId: course.id,
-                  courseName: course.name,
-                  examId: course.examId,
-                  memberCount: 0
-                };
-              }
-            });
-
-            return await Promise.all(richBatchesPromises);
-
-          } catch (err) {
-            console.warn(`Failed to fetch batches for course ${course.id}`, err);
-            return [];
-          }
-        });
-
-      const batchesArrays = await Promise.all(batchesPromises);
-      const flatBatches = batchesArrays.flat();
-
-      // Sort by creation date (newest first)
-      flatBatches.sort((a, b) => {
-        return new Date(b.createdAt || '').getTime() - new Date(a.createdAt || '').getTime();
-      });
-
-      setAllBatches(flatBatches);
-      setError(null);
-    } catch (err: any) {
-      console.error('Error fetching data:', err);
+      setAllBatches(enriched);
+    } catch (err) {
+      console.error(err);
       setError('Failed to load batches. Please try again.');
     } finally {
       setLoading(false);
@@ -149,52 +161,41 @@ export default function BatchesPage() {
     }
   }, [isAuthenticated, business?.id, fetchData]);
 
-  // Derived state: Filtered batches
+  /* ---------- FILTERED DATA ---------- */
+
   const filteredBatches = useMemo(() => {
-    return allBatches.filter(batch => {
-      // Search filter
-      const matchesSearch = batch.displayName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    return allBatches.filter((batch) => {
+      const matchesSearch =
+        batch.displayName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         batch.codeName?.toLowerCase().includes(searchQuery.toLowerCase());
 
-      // Exam filter
-      // If exams selected, batch must belong to one of them
-      const matchesExam = selectedExamIds.length === 0 ||
+      const matchesExam =
+        selectedExamIds.length === 0 ||
         (batch.examId && selectedExamIds.includes(batch.examId));
 
-      // Course filter
-      const matchesCourse = selectedCourseIds.length === 0 ||
+      const matchesCourse =
+        selectedCourseIds.length === 0 ||
         (batch.courseId && selectedCourseIds.includes(batch.courseId));
 
       return matchesSearch && matchesExam && matchesCourse;
     });
   }, [allBatches, searchQuery, selectedExamIds, selectedCourseIds]);
 
-  // Filter Logic:
-  // If user filters by Exam, we technically don't *need* to filter by Course if they haven't selected any courses.
-  // But if they selected Exam A, and we show batches from Exam A.
-  // If they ALSO selected Course B (which is under Exam B), then the interaction of ANDing them returns empty.
-  // The Modal ensures that if you select Exam A, you ideally only see Courses from A to pick.
-  // But if a user previously picked Course B, then switched to Exam A, we might have a conflict or just 0 results.
-  // The Modal handles the selection UI. The Page handles the AND logic. This is fine.
+  const activeFiltersCount =
+    selectedExamIds.length + selectedCourseIds.length;
 
-  // Handlers
-  const handleApplyFilters = (newExamIds: number[], newCourseIds: number[]) => {
-    setSelectedExamIds(newExamIds);
-    setSelectedCourseIds(newCourseIds);
-  };
-
-  const activeFiltersCount = selectedExamIds.length + selectedCourseIds.length;
+  /* ---------- HANDLERS ---------- */
 
   const handleAddBatchClick = () => {
     if (selectedCourseIds.length === 1) {
       setSelectedCourseForAdd(selectedCourseIds[0]);
-      setIsAddBatchModalOpen(true);
     } else if (courses.length > 0) {
       setSelectedCourseForAdd(courses[0].id!);
-      setIsAddBatchModalOpen(true);
     } else {
-      alert("Please create a course first.");
+      alert('Please create a course first.');
+      return;
     }
+    setIsAddBatchModalOpen(true);
   };
 
   const handleViewStudents = (batch: Batch) => {
@@ -213,15 +214,13 @@ export default function BatchesPage() {
 
   const confirmDeleteBatch = async () => {
     if (!selectedBatch?.id) return;
-    try {
-      await BatchesService.deleteApiBatches({ id: selectedBatch.id });
-      await fetchData();
-      setIsDeleteBatchModelOpen(false);
-      setSelectedBatch(null);
-    } catch (err) {
-      console.error('Error deleting batch:', err);
-    }
+    await BatchesService.deleteApiBatches({ id: selectedBatch.id });
+    setIsDeleteBatchModelOpen(false);
+    setSelectedBatch(null);
+    fetchData();
   };
+
+  /* ---------- LOADING ---------- */
 
   if (isLoading || !isInitialized) {
     return (
@@ -231,6 +230,8 @@ export default function BatchesPage() {
     );
   }
 
+  /* ---------- UI ---------- */
+
   return (
     <>
       <div className="space-y-6">
@@ -238,26 +239,25 @@ export default function BatchesPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Batches</h1>
-            <p className="text-gray-600 mt-1">Manage student batches and enrollment</p>
+            <p className="text-gray-600 mt-1">
+              Manage student batches and enrollment
+            </p>
           </div>
           <button
             onClick={handleAddBatchClick}
-            className="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+            className="inline-flex items-center px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
           >
             <Plus className="h-5 w-5 mr-2" />
             Add Batch
           </button>
         </div>
 
-        {/* Filters and Search */}
+        {/* Search & Filters */}
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-gray-400" />
-            </div>
+            <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
             <input
-              type="text"
-              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 sm:text-sm transition-colors"
+              className="w-full pl-10 pr-3 py-2 border rounded-lg"
               placeholder="Search batches..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -265,15 +265,12 @@ export default function BatchesPage() {
           </div>
           <button
             onClick={() => setIsFilterModalOpen(true)}
-            className={`flex items-center px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${activeFiltersCount > 0
-              ? 'bg-blue-50 border-blue-200 text-blue-700'
-              : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
-              }`}
+            className="flex items-center px-4 py-2 border rounded-lg"
           >
             <Filter className="h-4 w-4 mr-2" />
             Filters
             {activeFiltersCount > 0 && (
-              <span className="ml-2 bg-blue-100 text-blue-800 py-0.5 px-2 rounded-full text-xs">
+              <span className="ml-2 text-xs bg-blue-100 px-2 rounded-full">
                 {activeFiltersCount}
               </span>
             )}
@@ -282,33 +279,13 @@ export default function BatchesPage() {
 
         {/* Content */}
         {loading ? (
-          <div className="flex justify-center py-12">
-            <LoadingSpinner size="lg" />
-          </div>
+          <LoadingSpinner size="lg" />
         ) : error ? (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 text-sm">
-            {error}
-          </div>
+          <div className="text-red-600">{error}</div>
         ) : filteredBatches.length === 0 ? (
-          <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl p-12 text-center">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 mb-4">
-              <Calendar className="h-6 w-6 text-gray-400" />
-            </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No batches found</h3>
-            <p className="text-gray-500 mb-6">
-              {searchQuery || activeFiltersCount > 0
-                ? "Try adjusting your filters or search query."
-                : "Get started by adding a new batch."}
-            </p>
-            {!searchQuery && activeFiltersCount === 0 && (
-              <button
-                onClick={handleAddBatchClick}
-                className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Batch
-              </button>
-            )}
+          <div className="text-center py-12">
+            <Calendar className="mx-auto h-10 w-10 text-gray-400" />
+            <p className="mt-4 text-gray-500">No batches found</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -327,7 +304,7 @@ export default function BatchesPage() {
         )}
       </div>
 
-      {/* Filter Modal */}
+      {/* Modals */}
       <BatchesFilterModal
         isOpen={isFilterModalOpen}
         onClose={() => setIsFilterModalOpen(false)}
@@ -335,46 +312,43 @@ export default function BatchesPage() {
         allCourses={courses}
         initialSelectedExamIds={selectedExamIds}
         initialSelectedCourseIds={selectedCourseIds}
-        onApplyFilters={handleApplyFilters}
+        onApplyFilters={(e, c) => {
+          setSelectedExamIds(e);
+          setSelectedCourseIds(c);
+        }}
       />
 
-      {/* Add Batch Modal */}
       {selectedCourseForAdd && isAddBatchModalOpen && (
         <AddBatchModal
           isOpen={isAddBatchModalOpen}
+          courseId={selectedCourseForAdd}
           onClose={() => {
             setIsAddBatchModalOpen(false);
             setSelectedCourseForAdd(null);
           }}
-          courseId={selectedCourseForAdd}
           onBatchCreated={fetchData}
         />
       )}
 
-      {/* Edit Batch Modal */}
-      {selectedBatch && selectedBatch.id && isEditBatchModalOpen && (
+      {selectedBatch && isEditBatchModalOpen && (
         <EditBatchModal
           isOpen={isEditBatchModalOpen}
+          batch={selectedBatch}
           onClose={() => {
             setIsEditBatchModalOpen(false);
             setSelectedBatch(null);
           }}
-          batch={selectedBatch}
           onBatchUpdated={fetchData}
         />
       )}
 
-      {/* delete Batch confirmation Modal */}
       {isDeleteBatchModelOpen && (
         <DeleteConfirmModal
           isOpen={isDeleteBatchModelOpen}
-          onClose={() => {
-            setIsDeleteBatchModelOpen(false);
-            setSelectedBatch(null);
-          }}
+          onClose={() => setIsDeleteBatchModelOpen(false)}
           onConfirm={confirmDeleteBatch}
           title="Delete Batch"
-          message="Are you sure you want to delete this batch? This action cannot be undone."
+          message="Are you sure you want to delete this batch?"
           itemName={selectedBatch?.codeName}
         />
       )}

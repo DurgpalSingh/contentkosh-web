@@ -28,8 +28,8 @@ export default function UsersPage() {
         const response = await BusinessUsersService.getApiUsersBusinessUsers(business.id);
         console.log('Users response:', response);
         // Filter only admins
-        const admins = (response.data || []).filter(u => u.role === 'ADMIN' || u.role === 'SUPERADMIN');
-        setUsers(admins);
+        // const admins = (response.data || []).filter(u => u.role === 'ADMIN' || u.role === 'SUPERADMIN');
+        setUsers(response.data || []);
       } catch (err: any) {
         console.error('Error fetching users:', err);
         setError(err.body?.message || 'Failed to fetch users');
