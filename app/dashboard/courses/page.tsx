@@ -9,13 +9,14 @@ import { AddCourseModal } from '@/components/modals/AddCourseModal';
 import { EditCourseModal } from '@/components/modals/EditCourseModal';
 import { DeleteConfirmModal } from '@/components/modals/DeleteConfirmModal';
 
-import { ExamsService, CoursesService, SubjectsService, Exam, Course, Subject } from '@/lib/api';
+import { ExamsService, CoursesService, Exam, Course, Subject } from '@/lib/api';
 import { Plus, BookOpen, Search } from 'lucide-react';
 import { CourseGridCard } from '@/components/dashboard/courses/CourseGridCard';
 import { CourseFilter } from '@/components/dashboard/courses/CourseFilter';
 
 interface ExtendedCourse extends Course {
   examName?: string;
+  examId?: number;
   subjects?: Subject[];
 }
 
@@ -25,12 +26,12 @@ export default function CoursesPage() {
   const searchParams = useSearchParams();
 
   const [exams, setExams] = useState<Exam[]>([]);
-  const [allCourses, setAllCourses] = useState<ExtendedCourse[]>([]);
+  const [courses, setCourses] = useState<ExtendedCourse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedExamIds, setSelectedExamIds] = useState<number[]>([]);
+  const [selectedExamId, setSelectedExamId] = useState<number | undefined>(undefined);
 
   const [isAddCourseModalOpen, setIsAddCourseModalOpen] = useState(false);
   const [selectedExamForAdd, setSelectedExamForAdd] = useState<number | null>(null);
@@ -40,84 +41,115 @@ export default function CoursesPage() {
 
   const [isDeleteCourseModalOpen, setIsDeleteCourseModalOpen] = useState(false);
 
-  useEffect(() => {
-    const examIdParam = searchParams.get('examId');
-    if (examIdParam) {
-      const examId = parseInt(examIdParam);
-      if (!isNaN(examId)) {
-        setSelectedExamIds([examId]);
-      }
-    }
-  }, [searchParams]);
-
-  const fetchData = useCallback(async () => {
+  // Fetch list of exams (once on mount)
+  const fetchExams = useCallback(async () => {
     if (!business?.id) return;
 
     try {
       setLoading(true);
+      setError(null);
+
       const examsResponse = await ExamsService.getApiBusinessExams({
         businessId: business.id,
-        include: 'courses.subjects',
       });
+
       const fetchedExams = examsResponse.data || [];
       setExams(fetchedExams);
 
-      const coursesLists = fetchedExams.map((exam: Exam) => {
-        if (!exam.courses) return [];
-        return exam.courses.map(course => ({
-          ...course,
-          examId: exam.id,
-          examName: exam.name
-        })) as ExtendedCourse[];
-      });
+      // Determine initial selected exam
+      let initialExamId: number | undefined;
 
-      const coursesArrays = await Promise.all(coursesLists);
-      const flatCourses = coursesArrays.flat();
+      const examIdParam = searchParams.get('examId');
+      if (examIdParam) {
+        const parsed = parseInt(examIdParam, 10);
+        if (!isNaN(parsed) && fetchedExams.some((e) => e.id === parsed)) {
+          initialExamId = parsed;
+        }
+      }
 
-      flatCourses.sort((a, b) => {
-        return new Date(b.createdAt || '').getTime() - new Date(a.createdAt || '').getTime();
-      });
+      // Default to first exam if no valid param
+      if (initialExamId === undefined && fetchedExams.length > 0) {
+        initialExamId = fetchedExams[0].id!;
+      }
 
-      setAllCourses(flatCourses);
-      setError(null);
+      setSelectedExamId(initialExamId);
     } catch (err: any) {
-      console.error('Error fetching data:', err);
+      console.error('Error fetching exams:', err);
+      setError('Failed to load exams. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }, [business?.id, searchParams]);
+
+  // Fetch courses for selected exam
+  const fetchCourses = useCallback(async (examId: number) => {
+    if (!examId) return;
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      const coursesResponse = await CoursesService.getApiExamsCourses({
+        examId,
+        include: 'subjects', 
+      });
+
+      const fetchedCourses = (coursesResponse.data || []) as Course[];
+
+      const extendedCourses: ExtendedCourse[] = fetchedCourses.map((course) => ({
+        ...course,
+        examId,
+        examName: exams.find((e) => e.id === examId)?.name,
+      }));
+
+      // Sort newest first
+      extendedCourses.sort(
+        (a, b) => new Date(b.createdAt || '').getTime() - new Date(a.createdAt || '').getTime()
+      );
+
+      setCourses(extendedCourses);
+    } catch (err: any) {
+      console.error('Error fetching courses:', err);
       setError('Failed to load courses. Please try again.');
     } finally {
       setLoading(false);
     }
-  }, [business?.id]);
+  }, [exams]);
 
+  // Initial exams load
   useEffect(() => {
     if (isAuthenticated && business?.id) {
-      fetchData();
+      fetchExams();
     }
-  }, [isAuthenticated, business?.id, fetchData]);
+  }, [isAuthenticated, business?.id, fetchExams]);
+
+  // Load courses when selected exam changes
+  useEffect(() => {
+    if (selectedExamId !== undefined) {
+      fetchCourses(selectedExamId);
+      // Optional: Update URL to keep selected exam in query params
+      // router.replace(`?examId=${selectedExamId}`, { scroll: false });
+    }
+  }, [selectedExamId, fetchCourses]);
 
   const filteredCourses = useMemo(() => {
-    return allCourses.filter(course => {
-      const matchesSearch =
-        course.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        course.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    if (!searchQuery.trim()) return courses;
 
-      const matchesExam =
-        selectedExamIds.length === 0 ||
-        (course.examId && selectedExamIds.includes(course.examId));
-
-      return matchesSearch && matchesExam;
-    });
-  }, [allCourses, searchQuery, selectedExamIds]);
+    const lowerQuery = searchQuery.toLowerCase();
+    return courses.filter(
+      (course) =>
+        course.name?.toLowerCase().includes(lowerQuery) ||
+        course.description?.toLowerCase().includes(lowerQuery)
+    );
+  }, [courses, searchQuery]);
 
   const handleAddCourseClick = () => {
-    if (selectedExamIds.length === 1) {
-      setSelectedExamForAdd(selectedExamIds[0]);
-      setIsAddCourseModalOpen(true);
-    } else if (exams.length > 0) {
-      setSelectedExamForAdd(exams[0].id!);
-      setIsAddCourseModalOpen(true);
-    } else {
-      alert("Please create an exam first.");
+    if (exams.length === 0) {
+      alert('Please create an exam first.');
+      return;
     }
+    setSelectedExamForAdd(selectedExamId ?? exams[0].id!);
+    setIsAddCourseModalOpen(true);
   };
 
   const handleViewBatches = (course: Course) => {
@@ -125,6 +157,7 @@ export default function CoursesPage() {
   };
 
   const handleViewSubjects = (course: ExtendedCourse) => {
+    if (!course.examId) return;
     router.push(`/dashboard/courses/${course.id}/subjects?examId=${course.examId}`);
   };
 
@@ -140,16 +173,19 @@ export default function CoursesPage() {
 
   const confirmDeleteCourse = async () => {
     if (!selectedCourse?.id || !selectedCourse.examId) return;
+
     try {
       await CoursesService.deleteApiExamsCourses({
         examId: selectedCourse.examId,
         courseId: selectedCourse.id,
       });
-      await fetchData();
-      setIsDeleteCourseModalOpen(false);
-      setSelectedCourse(null);
+      // Refresh current exam's courses
+      if (selectedExamId) fetchCourses(selectedExamId);
     } catch (err) {
       console.error('Error deleting course:', err);
+    } finally {
+      setIsDeleteCourseModalOpen(false);
+      setSelectedCourse(null);
     }
   };
 
@@ -181,9 +217,9 @@ export default function CoursesPage() {
           </Button>
         </div>
 
-        {/* Filters and Search */}
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
+        {/* Filters & Search */}
+        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+          <div className="relative flex-1 w-full sm:w-auto">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Search className="h-5 w-5 text-gray-400" />
             </div>
@@ -195,21 +231,30 @@ export default function CoursesPage() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
+
           <CourseFilter
             exams={exams}
-            selectedExamIds={selectedExamIds}
-            onSelectionChange={setSelectedExamIds}
+            selectedExamId={selectedExamId}
+            onSelectionChange={setSelectedExamId}
           />
         </div>
 
-        {/* Content */}
+        {/* Content Area */}
         {loading ? (
           <div className="flex justify-center py-12">
             <LoadingSpinner size="lg" />
           </div>
         ) : error ? (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 text-sm">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-red-700 text-center">
             {error}
+          </div>
+        ) : exams.length === 0 ? (
+          <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl p-12 text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 mb-4">
+              <BookOpen className="h-6 w-6 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No exams found</h3>
+            <p className="text-gray-500 mb-6">Create your first exam to start adding courses.</p>
           </div>
         ) : filteredCourses.length === 0 ? (
           <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl p-12 text-center">
@@ -218,14 +263,15 @@ export default function CoursesPage() {
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">No courses found</h3>
             <p className="text-gray-500 mb-6">
-              {searchQuery || selectedExamIds.length > 0
-                ? "Try adjusting your filters or search query."
-                : "Get started by adding a new course."}
+              {searchQuery
+                ? 'No courses match your search query.'
+                : 'This exam has no courses yet.'}
             </p>
-            {!searchQuery && selectedExamIds.length === 0 && (
+            {!searchQuery && (
               <Button
                 onClick={handleAddCourseClick}
-                className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium"
+                variant="outline"
+                className="mt-4"
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Add Course
@@ -249,8 +295,8 @@ export default function CoursesPage() {
         )}
       </div>
 
-      {/* Add Course Modal */}
-      {selectedExamForAdd && isAddCourseModalOpen && (
+      {/* Modals */}
+      {isAddCourseModalOpen && selectedExamForAdd && (
         <AddCourseModal
           isOpen={isAddCourseModalOpen}
           onClose={() => {
@@ -258,12 +304,11 @@ export default function CoursesPage() {
             setSelectedExamForAdd(null);
           }}
           examId={selectedExamForAdd}
-          onCourseCreated={fetchData}
+          onCourseCreated={() => selectedExamId && fetchCourses(selectedExamId)}
         />
       )}
 
-      {/* Edit Course Modal */}
-      {selectedCourse && selectedCourse.examId && isEditCourseModalOpen && (
+      {isEditCourseModalOpen && selectedCourse && selectedCourse.examId && (
         <EditCourseModal
           isOpen={isEditCourseModalOpen}
           onClose={() => {
@@ -272,11 +317,10 @@ export default function CoursesPage() {
           }}
           course={selectedCourse}
           examId={selectedCourse.examId}
-          onCourseUpdated={fetchData}
+          onCourseUpdated={() => selectedExamId && fetchCourses(selectedExamId)}
         />
       )}
 
-      {/* Delete Course Confirmation Modal */}
       {isDeleteCourseModalOpen && (
         <DeleteConfirmModal
           isOpen={isDeleteCourseModalOpen}
@@ -287,7 +331,7 @@ export default function CoursesPage() {
           onConfirm={confirmDeleteCourse}
           title="Delete Course"
           message="Are you sure you want to delete this course? This will also delete all subjects under it. This action cannot be undone."
-          itemName={selectedCourse?.name}
+          itemName={selectedCourse?.name ?? 'this course'}
         />
       )}
     </>

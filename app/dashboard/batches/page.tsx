@@ -13,8 +13,6 @@ import { AddBatchModal } from '@/components/modals/AddBatchModal';
 import { EditBatchModal } from '@/components/modals/EditBatchModal';
 import { DeleteConfirmModal } from '@/components/modals/DeleteConfirmModal';
 
-/* ===================== TYPES ===================== */
-
 interface ExtendedBatch extends Batch {
   courseId?: number;
   courseName?: string;
@@ -23,9 +21,7 @@ interface ExtendedBatch extends Batch {
 }
 
 export default function BatchesPage() {
-  const { business, isAuthenticated, isLoading, isInitialized } =
-    useAuthStore();
-
+  const { business, isAuthenticated, isLoading, isInitialized } = useAuthStore();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -33,168 +29,153 @@ export default function BatchesPage() {
 
   const [exams, setExams] = useState<Exam[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
-  const [allBatches, setAllBatches] = useState<ExtendedBatch[]>([]);
+  const [batches, setBatches] = useState<ExtendedBatch[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedExamIds, setSelectedExamIds] = useState<number[]>([]);
-  const [selectedCourseIds, setSelectedCourseIds] = useState<number[]>([]);
+  const [selectedCourseId, setSelectedCourseId] = useState<number | undefined>(undefined);
 
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [isAddBatchModalOpen, setIsAddBatchModalOpen] = useState(false);
+  const [selectedCourseForAdd, setSelectedCourseForAdd] = useState<number | null>(null);
+
   const [isEditBatchModalOpen, setIsEditBatchModalOpen] = useState(false);
+  const [selectedBatch, setSelectedBatch] = useState<Batch | null>(null);
   const [isDeleteBatchModalOpen, setIsDeleteBatchModalOpen] = useState(false);
 
-  const [selectedCourseForAdd, setSelectedCourseForAdd] = useState<number | null>(null);
-  const [selectedBatch, setSelectedBatch] = useState<Batch | null>(null);
-
-  /* ---------- INIT FROM URL ---------- */
-
-  useEffect(() => {
-    const courseIdParam = searchParams.get('courseId');
-    if (courseIdParam) {
-      const id = Number(courseIdParam);
-      if (!isNaN(id)) setSelectedCourseIds([id]);
-    }
-  }, [searchParams]);
-
-  /* ---------- FETCH DATA ---------- */
-
-  const fetchExamsAndCourses = async (businessId: number) => {
-    const response = await ExamsService.getApiBusinessExams({
-      businessId,
-      include: 'courses',
-    });
-
-    const exams: Exam[] = response.data ?? [];
-
-    const courses: Course[] = exams.flatMap((exam) =>
-      (exam.courses ?? []).map((course) => ({
-        ...course,
-        examId: exam.id,
-        examName: exam.name,
-      }))
-    );
-
-    courses.sort((a, b) => {
-      const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-      const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-      return timeB - timeA;
-    });
-
-    return { exams, courses };
-  };
-
-  const fetchBatchesForCourses = async (
-    courses: Course[]
-  ): Promise<ExtendedBatch[]> => {
-    const requests = courses
-      .filter((course) => course.id)
-      .map((course) =>
-        BatchesService.getApiBatchesCourse({ courseId: course.id! })
-          .then((res) =>
-            (res.data ?? []).map((batch) => ({
-              ...batch,
-              courseId: course.id,
-              courseName: course.name,
-              examId: course.examId,
-            }))
-          )
-          .catch(() => [])
-      );
-
-    const results = await Promise.all(requests);
-    return results.flat();
-  };
-
-  const enrichBatchesWithMemberCount = async (
-    batches: ExtendedBatch[]
-  ): Promise<ExtendedBatch[]> => {
-    const requests = batches.map((batch) =>
-      BatchesService.getApiBatchesWithUsers({ id: batch.id! })
-        .then((res) => ({
-          ...batch,
-          memberCount: res.data?.length ?? 0,
+  function extractCoursesFromExams(exams: Exam[]): Course[] {
+    return exams
+      .flatMap((exam) =>
+        (exam.courses ?? []).map((course) => ({
+          ...course,
+          examId: exam.id,
+          examName: exam.name,
         }))
-        .catch(() => ({
-          ...batch,
-          memberCount: 0,
-        }))
-    );
+      )
+      .sort((a, b) => {
+        const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return tb - ta;
+      });
+  }
 
-    return Promise.all(requests);
-  };
 
-  const fetchData = useCallback(async () => {
+  // Load exams + all courses once
+  const fetchExamsAndCourses = useCallback(async () => {
     if (!business?.id) return;
 
     setLoading(true);
     setError(null);
 
     try {
-      const { exams, courses } = await fetchExamsAndCourses(business.id);
-      setExams(exams);
-      setCourses(courses);
-
-      const rawBatches = await fetchBatchesForCourses(courses);
-      const enriched = await enrichBatchesWithMemberCount(rawBatches);
-
-      enriched.sort((a, b) => {
-        const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-        const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-        return timeB - timeA;
+      const res = await ExamsService.getApiBusinessExams({
+        businessId: business.id,
+        include: 'courses',
       });
 
-      setAllBatches(enriched);
+      const fetchedExams = res.data ?? [];
+      setExams(fetchedExams);
+
+      const allCourses = extractCoursesFromExams(fetchedExams);
+      setCourses(allCourses);
+
+      // Set initial selected course
+      let initialCourseId: number | undefined;
+      const courseIdParam = searchParams.get('courseId');
+      if (courseIdParam) {
+        const id = Number(courseIdParam);
+        if (!isNaN(id) && allCourses.some((c) => c.id === id)) {
+          initialCourseId = id;
+        }
+      }
+
+      // Default to first course if no valid param
+      if (initialCourseId === undefined && allCourses.length > 0) {
+        initialCourseId = allCourses[0].id!;
+      }
+
+      setSelectedCourseId(initialCourseId);
     } catch (err) {
-      console.error(err);
-      setError('Failed to load batches. Please try again.');
+      console.error('Failed to load exams/courses:', err);
+      setError('Failed to load courses and exams');
     } finally {
       setLoading(false);
     }
-  }, [business?.id]);
+  }, [business?.id, searchParams]);
+
+  // Load batches only for currently selected course
+  const fetchBatches = useCallback(async (courseId: number) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const res = await BatchesService.getApiBatchesCourse({ courseId, include: 'batchUsers' });
+
+      let extended = (res.data ?? []).map((batch) => {
+        const course = courses.find((c) => c.id === courseId);
+        return {
+          ...batch,
+          memberCount: batch?.batchUsers?.length ?? 0,
+          courseId,
+          courseName: course?.name,
+          examId: course?.examId,
+        };
+      });
+
+      extended.sort((a, b) => {
+        const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return tb - ta;
+      });
+
+      setBatches(extended);
+    } catch (err) {
+      console.error('Failed to load batches:', err);
+      setError('Failed to load batches');
+    } finally {
+      setLoading(false);
+    }
+  }, [courses]);
 
   useEffect(() => {
     if (isAuthenticated && business?.id) {
-      fetchData();
+      fetchExamsAndCourses();
     }
-  }, [isAuthenticated, business?.id, fetchData]);
+  }, [isAuthenticated, business?.id, fetchExamsAndCourses]);
+
+  useEffect(() => {
+    if (selectedCourseId !== undefined) {
+      fetchBatches(selectedCourseId);
+    }
+  }, [selectedCourseId, fetchBatches]);
 
   /* ---------- FILTERED DATA ---------- */
 
   const filteredBatches = useMemo(() => {
-    return allBatches.filter((batch) => {
+    return batches.filter((batch) => {
       const matchesSearch =
-        batch.displayName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        batch.codeName?.toLowerCase().includes(searchQuery.toLowerCase());
+        (batch.displayName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          batch.codeName?.toLowerCase().includes(searchQuery.toLowerCase()));
 
       const matchesExam =
         selectedExamIds.length === 0 ||
         (batch.examId && selectedExamIds.includes(batch.examId));
 
-      const matchesCourse =
-        selectedCourseIds.length === 0 ||
-        (batch.courseId && selectedCourseIds.includes(batch.courseId));
-
-      return matchesSearch && matchesExam && matchesCourse;
+      return matchesSearch && matchesExam;
     });
-  }, [allBatches, searchQuery, selectedExamIds, selectedCourseIds]);
-
-  const activeFiltersCount =
-    selectedExamIds.length + selectedCourseIds.length;
+  }, [batches, searchQuery, selectedExamIds]);
 
   /* ---------- HANDLERS ---------- */
 
   const handleAddBatchClick = () => {
-    if (selectedCourseIds.length === 1) {
-      setSelectedCourseForAdd(selectedCourseIds[0]);
-    } else if (courses.length > 0) {
-      setSelectedCourseForAdd(courses[0].id!);
-    } else {
+    if (courses.length === 0) {
       alert('Please create a course first.');
       return;
     }
+    setSelectedCourseForAdd(selectedCourseId ?? courses[0].id!);
     setIsAddBatchModalOpen(true);
   };
 
@@ -214,13 +195,16 @@ export default function BatchesPage() {
 
   const confirmDeleteBatch = async () => {
     if (!selectedBatch?.id) return;
-    await BatchesService.deleteApiBatches({ id: selectedBatch.id });
-    setIsDeleteBatchModalOpen(false);
-    setSelectedBatch(null);
-    fetchData();
+    try {
+      await BatchesService.deleteApiBatches({ id: selectedBatch.id });
+      if (selectedCourseId) fetchBatches(selectedCourseId);
+    } catch (err) {
+      console.error('Delete failed:', err);
+    } finally {
+      setIsDeleteBatchModalOpen(false);
+      setSelectedBatch(null);
+    }
   };
-
-  /* ---------- LOADING ---------- */
 
   if (isLoading || !isInitialized) {
     return (
@@ -239,25 +223,20 @@ export default function BatchesPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Batches</h1>
-            <p className="text-gray-600 mt-1">
-              Manage student batches and enrollment
-            </p>
+            <p className="text-gray-600 mt-1">Manage student batches and enrollment</p>
           </div>
-          <Button
-            onClick={handleAddBatchClick}
-            className="inline-flex items-center px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white"
-          >
+          <Button onClick={handleAddBatchClick} className='bg-blue-600 hover:bg-blue-500'>
             <Plus className="h-5 w-5 mr-2" />
             Add Batch
           </Button>
         </div>
 
-        {/* Search & Filters */}
+        {/* Search & Filter */}
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
             <input
-              className="w-full pl-10 pr-3 py-2 border rounded-lg"
+              className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="Search batches..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -265,13 +244,13 @@ export default function BatchesPage() {
           </div>
           <Button
             onClick={() => setIsFilterModalOpen(true)}
-            className="flex items-center px-4 py-2 border rounded-lg bg-white hover:bg-gray-50 text-gray-700"
+            className="flex items-center px-4 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 text-gray-700"
           >
             <Filter className="h-4 w-4 mr-2" />
             Filters
-            {activeFiltersCount > 0 && (
-              <span className="ml-2 text-xs bg-blue-100 px-2 rounded-full">
-                {activeFiltersCount}
+            {selectedCourseId && (
+              <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 rounded-full">
+                1
               </span>
             )}
           </Button>
@@ -279,13 +258,28 @@ export default function BatchesPage() {
 
         {/* Content */}
         {loading ? (
-          <LoadingSpinner size="lg" />
+          <div className="flex justify-center py-12">
+            <LoadingSpinner size="lg" />
+          </div>
         ) : error ? (
-          <div className="text-red-600">{error}</div>
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-red-700 text-center">
+            {error}
+          </div>
+        ) : courses.length === 0 ? (
+          <div className="text-center py-12">
+            <Calendar className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+            <h3 className="text-lg font-medium text-gray-900">No courses found</h3>
+            <p className="text-gray-600 mt-2">Create a course first to manage batches</p>
+          </div>
         ) : filteredBatches.length === 0 ? (
           <div className="text-center py-12">
-            <Calendar className="mx-auto h-10 w-10 text-gray-400" />
-            <p className="mt-4 text-gray-500">No batches found</p>
+            <Calendar className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+            <h3 className="text-lg font-medium text-gray-900">No batches found</h3>
+            <p className="text-gray-600 mt-2">
+              {searchQuery
+                ? 'Try adjusting your search'
+                : 'This course has no batches yet'}
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -304,20 +298,23 @@ export default function BatchesPage() {
         )}
       </div>
 
-      {/* Modals */}
+      {/* Filter Modal */}
       <BatchesFilterModal
         isOpen={isFilterModalOpen}
         onClose={() => setIsFilterModalOpen(false)}
         exams={exams}
-        allCourses={courses}
-        initialSelectedExamIds={selectedExamIds}
-        initialSelectedCourseIds={selectedCourseIds}
-        onApplyFilters={(e, c) => {
-          setSelectedExamIds(e);
-          setSelectedCourseIds(c);
+        courses={courses}
+        selectedExamIds={selectedExamIds}
+        selectedCourseId={selectedCourseId}
+        onApply={(examIds, courseId) => {
+          setSelectedExamIds(examIds);
+          if (courseId !== undefined) {
+            setSelectedCourseId(courseId);
+          }
         }}
       />
 
+      {/* Add Batch Modal */}
       {selectedCourseForAdd && isAddBatchModalOpen && (
         <AddBatchModal
           isOpen={isAddBatchModalOpen}
@@ -326,10 +323,11 @@ export default function BatchesPage() {
             setIsAddBatchModalOpen(false);
             setSelectedCourseForAdd(null);
           }}
-          onBatchCreated={fetchData}
+          onBatchCreated={() => selectedCourseId && fetchBatches(selectedCourseId)}
         />
       )}
 
+      {/* Edit Batch Modal */}
       {selectedBatch && isEditBatchModalOpen && (
         <EditBatchModal
           isOpen={isEditBatchModalOpen}
@@ -338,18 +336,22 @@ export default function BatchesPage() {
             setIsEditBatchModalOpen(false);
             setSelectedBatch(null);
           }}
-          onBatchUpdated={fetchData}
+          onBatchUpdated={() => selectedCourseId && fetchBatches(selectedCourseId)}
         />
       )}
 
+      {/* Delete Confirmation */}
       {isDeleteBatchModalOpen && (
         <DeleteConfirmModal
           isOpen={isDeleteBatchModalOpen}
-          onClose={() => setIsDeleteBatchModalOpen(false)}
+          onClose={() => {
+            setIsDeleteBatchModalOpen(false);
+            setSelectedBatch(null);
+          }}
           onConfirm={confirmDeleteBatch}
           title="Delete Batch"
           message="Are you sure you want to delete this batch?"
-          itemName={selectedBatch?.codeName}
+          itemName={selectedBatch?.codeName ?? 'this batch'}
         />
       )}
     </>

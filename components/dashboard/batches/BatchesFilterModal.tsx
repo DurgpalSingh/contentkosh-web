@@ -1,88 +1,111 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { Exam, Course } from '@/lib/api';
-import { HierarchicalFilterModal, FilterSection } from '@/components/common/HierarchicalFilterModal';
+import { HierarchicalFilterModal, FilterItem, FilterSection } from '@/components/common/HierarchicalFilterModal'; // ← your reusable component
 
 interface BatchesFilterModalProps {
     isOpen: boolean;
     onClose: () => void;
     exams: Exam[];
-    allCourses: Course[];
-    initialSelectedExamIds: number[];
-    initialSelectedCourseIds: number[];
-    onApplyFilters: (examIds: number[], courseIds: number[]) => void;
+    courses: Course[];
+    selectedExamIds: number[];
+    selectedCourseId?: number;
+    onApply: (examIds: number[], courseId?: number) => void;
 }
 
 export function BatchesFilterModal({
     isOpen,
     onClose,
     exams,
-    allCourses,
-    initialSelectedExamIds,
-    initialSelectedCourseIds,
-    onApplyFilters,
+    courses,
+    selectedExamIds,
+    selectedCourseId,
+    onApply,
 }: BatchesFilterModalProps) {
-    const [selectedExamIds, setSelectedExamIds] = useState<number[]>(initialSelectedExamIds);
-    const [selectedCourseIds, setSelectedCourseIds] = useState<number[]>(initialSelectedCourseIds);
+    const [localExamIds, setLocalExamIds] = useState<number[]>(selectedExamIds);
+    const [localCourseId, setLocalCourseId] = useState<number | undefined>(selectedCourseId);
 
-    // Reset state when modal opens
+    // Sync when modal opens
     useEffect(() => {
         if (isOpen) {
-            setSelectedExamIds(initialSelectedExamIds);
-            setSelectedCourseIds(initialSelectedCourseIds);
+            setLocalExamIds(selectedExamIds);
+            setLocalCourseId(selectedCourseId);
         }
-    }, [isOpen, initialSelectedExamIds, initialSelectedCourseIds]);
+    }, [isOpen, selectedExamIds, selectedCourseId]);
 
-    const filteredCourses = useMemo(() => {
-        if (selectedExamIds.length === 0) {
-            return allCourses;
+    // Filter courses based on currently selected exams
+    const visibleCourses = localExamIds.length === 0
+        ? courses
+        : courses.filter((c) => c.examId && localExamIds.includes(c.examId));
+
+    // Auto-select first course if none is selected
+    useEffect(() => {
+        if (visibleCourses.length > 0 && localCourseId === undefined) {
+            setLocalCourseId(visibleCourses[0].id);
         }
-        return allCourses.filter(course => course.examId && selectedExamIds.includes(course.examId));
-    }, [allCourses, selectedExamIds]);
+    }, [visibleCourses, localCourseId]);
 
-    const toggleExam = (examId: number) => {
-        setSelectedExamIds(prev =>
-            prev.includes(examId) ? prev.filter(id => id !== examId) : [...prev, examId]
-        );
-    };
-
-    const toggleCourse = (courseId: number) => {
-        setSelectedCourseIds(prev =>
-            prev.includes(courseId) ? prev.filter(id => id !== courseId) : [...prev, courseId]
-        );
-    };
-
-    const handleApply = () => {
-        onApplyFilters(selectedExamIds, selectedCourseIds);
-        onClose();
-    };
-
-    const handleClearAll = () => {
-        setSelectedExamIds([]);
-        setSelectedCourseIds([]);
-    };
-
+    // Prepare sections for HierarchicalFilterModal
     const sections: FilterSection[] = [
+        // Section 1: Exams (multi-select)
         {
             id: 'exams',
             title: 'Exams',
-            items: exams.map(e => ({ id: e.id!, label: e.name || 'Unknown' })),
-            selectedIds: selectedExamIds,
-            onToggle: toggleExam,
-            emptyMessage: 'No exams found.',
-            theme: 'blue'
+            items: exams.map((e) => ({
+                id: e.id!,
+                label: e.name || 'Unnamed Exam',
+            })),
+            selectedIds: localExamIds,
+            onToggle: (id: number) => {
+                setLocalExamIds((prev) =>
+                    prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+                );
+            },
+            emptyMessage: 'No exams available.',
+            theme: 'blue',
         },
+        // Section 2: Courses (single-select only - we fake it as multi but enforce single)
         {
             id: 'courses',
-            title: 'Courses',
-            items: filteredCourses.map(c => ({ id: c.id!, label: c.name || 'Unknown' })),
-            selectedIds: selectedCourseIds,
-            onToggle: toggleCourse,
-            emptyMessage: selectedExamIds.length > 0 ? "No courses for selected exams." : "No courses found.",
-            theme: 'purple'
-        }
+            title: 'Courses (Required* - select one)',
+            items: visibleCourses.map((c) => ({
+                id: c.id!,
+                label: c.name || 'Unnamed Course',
+                subLabel: c.examName ? `(${c.examName})` : undefined,
+            })),
+            selectedIds: localCourseId !== undefined ? [localCourseId] : [],
+            onToggle: (id: number) => {
+                // Enforce single selection - clicking same deselects nothing (keeps current)
+                setLocalCourseId(id);
+            },
+            emptyMessage:
+                visibleCourses.length === 0
+                    ? localExamIds.length > 0
+                        ? 'No courses found for selected exams'
+                        : 'No courses available'
+                    : 'Select one course',
+            theme: 'purple',
+        },
     ];
+
+    const handleClearAll = () => {
+        // Only clear exams — never clear course
+        setLocalExamIds([]);
+        // Course remains selected (or auto-select first visible)
+        if (visibleCourses.length > 0) {
+            setLocalCourseId(visibleCourses[0].id);
+        }
+    };
+
+    const handleApply = () => {
+        // Always send a course id (we guaranteed it's set)
+        const finalCourseId = localCourseId ?? visibleCourses[0]?.id;
+        if (finalCourseId !== undefined) {
+            onApply(localExamIds, finalCourseId);
+        }
+        onClose();
+    };
 
     return (
         <HierarchicalFilterModal

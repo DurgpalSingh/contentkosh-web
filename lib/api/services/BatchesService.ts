@@ -205,6 +205,7 @@ export class BatchesService {
     public static getApiBatchesCourse({
         courseId,
         active,
+        include,
     }: {
         /**
          * Course ID
@@ -214,6 +215,7 @@ export class BatchesService {
          * Filter by active status (true for active only, false for all)
          */
         active?: boolean,
+        include?: string
     }): CancelablePromise<(ApiResponse & {
         data?: Array<Batch>;
     })> {
@@ -225,6 +227,7 @@ export class BatchesService {
             },
             query: {
                 'active': active,
+                'include':include,
             },
             errors: {
                 400: `Invalid course ID`,
