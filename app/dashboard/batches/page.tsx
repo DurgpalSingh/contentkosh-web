@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { Button } from '@/components/ui/button';
 import { BatchesService, ExamsService, Batch, Course, Exam } from '@/lib/api';
 import { Plus, Calendar, Search, Filter } from 'lucide-react';
 import { BatchGridCard } from '@/components/dashboard/batches/BatchGridCard';
@@ -20,7 +21,6 @@ interface ExtendedBatch extends Batch {
   examId?: number;
   memberCount?: number;
 }
-
 
 export default function BatchesPage() {
   const { business, isAuthenticated, isLoading, isInitialized } =
@@ -44,7 +44,7 @@ export default function BatchesPage() {
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [isAddBatchModalOpen, setIsAddBatchModalOpen] = useState(false);
   const [isEditBatchModalOpen, setIsEditBatchModalOpen] = useState(false);
-  const [isDeleteBatchModelOpen, setIsDeleteBatchModelOpen] = useState(false);
+  const [isDeleteBatchModalOpen, setIsDeleteBatchModalOpen] = useState(false);
 
   const [selectedCourseForAdd, setSelectedCourseForAdd] = useState<number | null>(null);
   const [selectedBatch, setSelectedBatch] = useState<Batch | null>(null);
@@ -209,13 +209,13 @@ export default function BatchesPage() {
 
   const handleDeleteBatch = (batch: Batch) => {
     setSelectedBatch(batch);
-    setIsDeleteBatchModelOpen(true);
+    setIsDeleteBatchModalOpen(true);
   };
 
   const confirmDeleteBatch = async () => {
     if (!selectedBatch?.id) return;
     await BatchesService.deleteApiBatches({ id: selectedBatch.id });
-    setIsDeleteBatchModelOpen(false);
+    setIsDeleteBatchModalOpen(false);
     setSelectedBatch(null);
     fetchData();
   };
@@ -243,13 +243,13 @@ export default function BatchesPage() {
               Manage student batches and enrollment
             </p>
           </div>
-          <button
+          <Button
             onClick={handleAddBatchClick}
-            className="inline-flex items-center px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+            className="inline-flex items-center px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white"
           >
             <Plus className="h-5 w-5 mr-2" />
             Add Batch
-          </button>
+          </Button>
         </div>
 
         {/* Search & Filters */}
@@ -263,9 +263,9 @@ export default function BatchesPage() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <button
+          <Button
             onClick={() => setIsFilterModalOpen(true)}
-            className="flex items-center px-4 py-2 border rounded-lg"
+            className="flex items-center px-4 py-2 border rounded-lg bg-white hover:bg-gray-50 text-gray-700"
           >
             <Filter className="h-4 w-4 mr-2" />
             Filters
@@ -274,7 +274,7 @@ export default function BatchesPage() {
                 {activeFiltersCount}
               </span>
             )}
-          </button>
+          </Button>
         </div>
 
         {/* Content */}
@@ -342,10 +342,10 @@ export default function BatchesPage() {
         />
       )}
 
-      {isDeleteBatchModelOpen && (
+      {isDeleteBatchModalOpen && (
         <DeleteConfirmModal
-          isOpen={isDeleteBatchModelOpen}
-          onClose={() => setIsDeleteBatchModelOpen(false)}
+          isOpen={isDeleteBatchModalOpen}
+          onClose={() => setIsDeleteBatchModalOpen(false)}
           onConfirm={confirmDeleteBatch}
           title="Delete Batch"
           message="Are you sure you want to delete this batch?"

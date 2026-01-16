@@ -1,6 +1,9 @@
-import { Subject } from '@/lib/api';
-import { MoreVertical, Edit, Trash2, BookOpen } from 'lucide-react';
+'use client';
+
 import { useState } from 'react';
+import { MoreVertical, Edit, Trash2, BookOpen } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Subject } from '@/lib/api';
 
 interface SubjectGridCardProps {
   subject: Subject;
@@ -8,12 +11,15 @@ interface SubjectGridCardProps {
   onDelete?: (subject: Subject) => void;
 }
 
-export function SubjectGridCard({ subject, onEdit, onDelete }: SubjectGridCardProps) {
+export function SubjectGridCard({
+  subject,
+  onEdit,
+  onDelete,
+}: SubjectGridCardProps) {
   const [showMenu, setShowMenu] = useState(false);
 
   return (
     <div className="group relative rounded-xl border border-slate-200 bg-white p-4 hover:bg-slate-50 transition-colors duration-150">
-
       <div className="flex items-start gap-4">
         {/* Icon block */}
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
@@ -36,9 +42,13 @@ export function SubjectGridCard({ subject, onEdit, onDelete }: SubjectGridCardPr
           </p>
 
           <div className="mt-2 text-xs text-slate-400">
-            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${subject.status === "ACTIVE" ? 'bg-green-100 text-green-800' : 'bg-slate-100 text-slate-800'
-              }`}>
-              {subject.status === "ACTIVE" ? 'Active' : 'Inactive'}
+            <span
+              className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${subject.status === 'ACTIVE'
+                  ? 'bg-green-100 text-green-800'
+                  : 'bg-slate-100 text-slate-800'
+                }`}
+            >
+              {subject.status === 'ACTIVE' ? 'Active' : 'Inactive'}
             </span>
           </div>
         </div>
@@ -46,41 +56,49 @@ export function SubjectGridCard({ subject, onEdit, onDelete }: SubjectGridCardPr
         {/* Actions */}
         {(onEdit || onDelete) && (
           <div className="relative opacity-0 group-hover:opacity-100 transition-opacity">
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-slate-500 hover:text-slate-700 hover:bg-slate-200"
               onClick={() => setShowMenu(!showMenu)}
-              className="rounded-full p-1.5 hover:bg-slate-200 text-slate-500"
               aria-label="Open menu"
             >
               <MoreVertical className="h-4 w-4" />
-            </button>
+            </Button>
 
             {showMenu && (
               <>
-                <div className="fixed inset-0 z-10" onClick={() => setShowMenu(false)} />
-                <div className="absolute right-0 mt-1 w-32 rounded-lg border border-slate-200 bg-white shadow-lg z-20 py-1">
+                <div
+                  className="fixed inset-0 z-10"
+                  onClick={() => setShowMenu(false)}
+                />
+                <div className="absolute right-0 mt-1 w-36 rounded-lg border border-slate-200 bg-white shadow-lg z-20 py-1">
                   {onEdit && (
-                    <button
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
                       onClick={() => {
                         setShowMenu(false);
                         onEdit(subject);
                       }}
-                      className="flex w-full items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
                     >
                       <Edit className="mr-2 h-4 w-4" />
                       Edit
-                    </button>
+                    </Button>
                   )}
+
                   {onDelete && (
-                    <button
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start px-4 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700"
                       onClick={() => {
                         setShowMenu(false);
                         onDelete(subject);
                       }}
-                      className="flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50"
                     >
                       <Trash2 className="mr-2 h-4 w-4" />
                       Delete
-                    </button>
+                    </Button>
                   )}
                 </div>
               </>

@@ -4,12 +4,13 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { Button } from '@/components/ui/button';
 import { BusinessUsersService } from '@/lib/api';
 import { BusinessUser } from '@/lib/api';
 import { Users, Mail, Calendar, Shield, User } from 'lucide-react';
 
 export default function UsersPage() {
-  const { user, business, isAuthenticated, isLoading, isInitialized, initializeAuth } = useAuthStore();
+  const { user, business, isAuthenticated, isLoading, isInitialized } = useAuthStore();
   const router = useRouter();
   const [users, setUsers] = useState<BusinessUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,14 +25,9 @@ export default function UsersPage() {
       }
 
       try {
-        console.log('Fetching users for business:', business.id);
         const response = await BusinessUsersService.getApiUsersBusinessUsers(business.id);
-        console.log('Users response:', response);
-        // Filter only admins
-        // const admins = (response.data || []).filter(u => u.role === 'ADMIN' || u.role === 'SUPERADMIN');
         setUsers(response.data || []);
       } catch (err: any) {
-        console.error('Error fetching users:', err);
         setError(err.body?.message || 'Failed to fetch users');
       } finally {
         setLoading(false);
@@ -56,60 +52,60 @@ export default function UsersPage() {
   }
 
   return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Admins</h1>
-            <p className="text-gray-600">Manage administrators in your institute</p>
-          </div>
-          <div className="flex space-x-3">
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center">
-              <User className="h-4 w-4 mr-2" />
-              Add Admin
-            </button>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Admins</h1>
+          <p className="text-gray-600">Manage administrators in your institute</p>
+        </div>
+        <div className="flex space-x-3">
+          <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+            <User className="h-4 w-4 mr-2" />
+            Add Admin
+          </Button>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <LoadingSpinner size="lg" />
+        </div>
+      ) : error ? (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+          <div className="flex items-center">
+            <div className="text-red-600 mr-3">
+              <Shield className="h-5 w-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-red-800">Error</h3>
+              <p className="text-sm text-red-600 mt-1">{error}</p>
+            </div>
           </div>
         </div>
-
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <LoadingSpinner size="lg" />
+      ) : users.length === 0 ? (
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-12 text-center">
+          <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No admins found</h3>
+          <p className="text-gray-600 mb-4">There are no admin users in your institute yet.</p>
+          <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+            Add First Admin
+          </Button>
+        </div>
+      ) : (
+        <div className="bg-white shadow rounded-lg">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h3 className="text-lg font-medium text-gray-900">
+              All Admins ({users.length})
+            </h3>
           </div>
-        ) : error ? (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-            <div className="flex items-center">
-              <div className="text-red-600 mr-3">
-                <Shield className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-red-800">Error</h3>
-                <p className="text-sm text-red-600 mt-1">{error}</p>
-              </div>
-            </div>
+          <div className="divide-y divide-gray-200">
+            {users.map((businessUser) => (
+              <UserCard key={businessUser.id} businessUser={businessUser} />
+            ))}
           </div>
-        ) : users.length === 0 ? (
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-12 text-center">
-            <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No admins found</h3>
-            <p className="text-gray-600 mb-4">There are no admin users in your institute yet.</p>
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-              Add First Admin
-            </button>
-          </div>
-        ) : (
-          <div className="bg-white shadow rounded-lg">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-medium text-gray-900">
-                All Admins ({users.length})
-              </h3>
-            </div>
-            <div className="divide-y divide-gray-200">
-              {users.map((businessUser) => (
-                <UserCard key={businessUser.id} businessUser={businessUser} />
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -156,7 +152,11 @@ function UserCard({ businessUser }: { businessUser: BusinessUser }) {
               <h4 className="text-sm font-medium text-gray-900 truncate">
                 {businessUser.user?.name || 'Unknown User'}
               </h4>
-              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRoleColor(businessUser.role)}`}>
+              <span
+                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRoleColor(
+                  businessUser.role
+                )}`}
+              >
                 {getRoleIcon(businessUser.role)}
                 <span className="ml-1">{businessUser.role || 'Unknown'}</span>
               </span>
@@ -167,6 +167,7 @@ function UserCard({ businessUser }: { businessUser: BusinessUser }) {
             </div>
           </div>
         </div>
+
         <div className="flex items-center space-x-4">
           <div className="text-sm text-gray-500">
             <div className="flex items-center">
@@ -174,18 +175,18 @@ function UserCard({ businessUser }: { businessUser: BusinessUser }) {
               <span>
                 {businessUser.createdAt
                   ? new Date(businessUser.createdAt).toLocaleDateString()
-                  : 'Unknown date'
-                }
+                  : 'Unknown date'}
               </span>
             </div>
           </div>
-          <div className="flex space-x-2">
-            <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">
+
+          <div className="flex space-x-3">
+            <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-800 hover:bg-blue-50">
               Edit
-            </button>
-            <button className="text-red-600 hover:text-red-800 text-sm font-medium">
+            </Button>
+            <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-800 hover:bg-red-50">
               Remove
-            </button>
+            </Button>
           </div>
         </div>
       </div>

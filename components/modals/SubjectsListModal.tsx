@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Plus, Edit, Trash2, FileText, Calendar } from 'lucide-react';
+import { X, Plus, Edit, Trash2, FileText } from 'lucide-react';
+import { Button } from '@/components/ui/button';    
 import { Course, Subject } from '@/lib/api';
 
 interface SubjectsListModalProps {
@@ -20,7 +21,7 @@ export function SubjectsListModal({
     course,
     onAddSubject,
     onEditSubject,
-    onDeleteSubject
+    onDeleteSubject,
 }: SubjectsListModalProps) {
     if (!isOpen) return null;
 
@@ -44,12 +45,14 @@ export function SubjectsListModal({
                             {course.name} ({subjects.length} subjects)
                         </p>
                     </div>
-                    <button
+                    <Button
+                        variant="ghost"
+                        size="icon"
                         onClick={onClose}
-                        className="p-2 text-slate-400 hover:text-slate-500 rounded-full hover:bg-slate-100 transition-colors"
+                        className="text-slate-400 hover:text-slate-600"
                     >
                         <X className="h-5 w-5" />
-                    </button>
+                    </Button>
                 </div>
 
                 {/* Content */}
@@ -63,25 +66,21 @@ export function SubjectsListModal({
                             <p className="text-slate-500 mb-6">
                                 Add subjects to this course to organize content.
                             </p>
-                            <button
-                                onClick={onAddSubject}
-                                className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors"
-                            >
-                                <Plus className="h-5 w-5 mr-2" />
+                            <Button onClick={onAddSubject}>
+                                <Plus className="mr-2 h-5 w-5" />
                                 Add First Subject
-                            </button>
+                            </Button>
                         </div>
                     ) : (
                         <div className="space-y-4">
                             <div className="flex justify-end mb-4">
-                                <button
-                                    onClick={onAddSubject}
-                                    className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors"
-                                >
-                                    <Plus className="h-4 w-4 mr-1.5" />
+                               
+                                <Button onClick={onAddSubject} size="sm">
+                                    <Plus className="mr-1.5 h-4 w-4" />
                                     Add Subject
-                                </button>
+                                </Button>
                             </div>
+
                             <div className="grid gap-4">
                                 {subjects.map((subject) => (
                                     <div
@@ -102,31 +101,43 @@ export function SubjectsListModal({
                                                     </p>
                                                 )}
                                                 <div className="flex items-center mt-1 space-x-3 text-xs text-slate-400">
-                                                    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${subject.isActive ? 'bg-green-50 text-green-700' : 'bg-slate-100 text-slate-600'
-                                                        }`}>
+                                                    <span
+                                                        className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${subject.isActive
+                                                                ? 'bg-green-50 text-green-700'
+                                                                : 'bg-slate-100 text-slate-600'
+                                                            }`}
+                                                    >
                                                         {subject.isActive ? 'Active' : 'Inactive'}
                                                     </span>
                                                     <span>
-                                                        Created {subject.createdAt ? new Date(subject.createdAt).toLocaleDateString() : 'N/A'}
+                                                        Created{' '}
+                                                        {subject.createdAt
+                                                            ? new Date(subject.createdAt).toLocaleDateString()
+                                                            : 'N/A'}
                                                     </span>
                                                 </div>
                                             </div>
                                         </div>
-                                        <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button
+                                        <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 text-slate-400 hover:text-blue-600 hover:bg-blue-50"
                                                 onClick={() => onEditSubject(subject)}
-                                                className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
                                                 title="Edit Subject"
                                             >
                                                 <Edit className="h-4 w-4" />
-                                            </button>
-                                            <button
+                                            </Button>
+
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 text-slate-400 hover:text-red-600 hover:bg-red-50"
                                                 onClick={() => onDeleteSubject(subject)}
-                                                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
                                                 title="Delete Subject"
                                             >
                                                 <Trash2 className="h-4 w-4" />
-                                            </button>
+                                            </Button>
                                         </div>
                                     </div>
                                 ))}
@@ -135,13 +146,11 @@ export function SubjectsListModal({
                     )}
                 </div>
 
+                {/* Footer */}
                 <div className="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-end">
-                    <button
-                        onClick={onClose}
-                        className="px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors bg-white"
-                    >
+                    <Button variant="outline" onClick={onClose}>
                         Close
-                    </button>
+                    </Button>
                 </div>
             </div>
         </div>

@@ -1,15 +1,16 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, BookOpen, Search } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { ExamGridCard } from '@/components/dashboard/exams/ExamGridCard';
+import { Button } from '@/components/ui/button';
 import { AddExamModal } from '@/components/modals/AddExamModal';
 import { EditExamModal } from '@/components/modals/EditExamModal';
 import { DeleteConfirmModal } from '@/components/modals/DeleteConfirmModal';
 import { ExamsService, Exam } from '@/lib/api';
+import { Plus, BookOpen } from 'lucide-react';
+import { ExamGridCard } from '@/components/dashboard/exams/ExamGridCard';
 
 export default function ExamsPage() {
     const { user, business, isAuthenticated, isLoading, isInitialized } = useAuthStore();
@@ -30,7 +31,10 @@ export default function ExamsPage() {
 
         try {
             setLoading(true);
-            const response = await ExamsService.getApiBusinessExams({ businessId: business.id, include : 'courses' });
+            const response = await ExamsService.getApiBusinessExams({
+                businessId: business.id,
+                include: 'courses',
+            });
             const examsList = response?.data || [];
             const sortedExams = [...examsList].sort(
                 (a, b) =>
@@ -65,13 +69,15 @@ export default function ExamsPage() {
     const confirmDeleteExam = async () => {
         if (!selectedExam?.id || !business?.id) return;
         try {
-            await ExamsService.deleteApiBusinessExams({ businessId: business.id, id: selectedExam.id });
+            await ExamsService.deleteApiBusinessExams({
+                businessId: business.id,
+                id: selectedExam.id,
+            });
             await fetchExams();
             setIsDeleteModalOpen(false);
             setSelectedExam(null);
         } catch (err) {
             console.error('Error deleting exam:', err);
-            // Could add toast notification here
         }
     };
 
@@ -96,16 +102,14 @@ export default function ExamsPage() {
                         <h1 className="text-3xl font-bold text-gray-900">Exams</h1>
                         <p className="text-gray-600 mt-1">Manage your exams and their details</p>
                     </div>
-                    <button
+                    <Button
                         onClick={() => setIsAddExamModalOpen(true)}
                         className="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
                     >
                         <Plus className="h-5 w-5 mr-2" />
                         Add Exam
-                    </button>
+                    </Button>
                 </div>
-
-                {/* Search bar could go here in future */}
 
                 {/* Content */}
                 {loading ? (
@@ -123,13 +127,13 @@ export default function ExamsPage() {
                         </div>
                         <h3 className="text-lg font-medium text-gray-900 mb-2">No exams created</h3>
                         <p className="text-gray-500 mb-6">Get started by creating your first exam.</p>
-                        <button
+                        <Button
                             onClick={() => setIsAddExamModalOpen(true)}
                             className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium"
                         >
                             <Plus className="h-4 w-4 mr-2" />
                             Create Exam
-                        </button>
+                        </Button>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

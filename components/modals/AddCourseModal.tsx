@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { CoursesService, CreateCourseRequest } from '@/lib/api';
 import { validateEntityName, validateDateRange } from '@/lib/validation';
 import { toISODateTime } from '@/lib/utils';
@@ -14,7 +15,12 @@ interface AddCourseModalProps {
     onCourseCreated: () => void;
 }
 
-export function AddCourseModal({ isOpen, onClose, examId, onCourseCreated }: AddCourseModalProps) {
+export function AddCourseModal({
+    isOpen,
+    onClose,
+    examId,
+    onCourseCreated,
+}: AddCourseModalProps) {
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [startDate, setStartDate] = useState<Date | undefined>(undefined);
@@ -23,7 +29,6 @@ export function AddCourseModal({ isOpen, onClose, examId, onCourseCreated }: Add
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Close modal on Escape key press
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape' && isOpen) {
@@ -35,7 +40,6 @@ export function AddCourseModal({ isOpen, onClose, examId, onCourseCreated }: Add
         return () => document.removeEventListener('keydown', handleKeyDown);
     }, [isOpen, onClose]);
 
-    // Reset form to initial state
     const resetForm = () => {
         setName('');
         setDescription('');
@@ -48,9 +52,7 @@ export function AddCourseModal({ isOpen, onClose, examId, onCourseCreated }: Add
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        const validationError =
-            validateEntityName(name, 'Course name', 100);
-
+        const validationError = validateEntityName(name, 'Course name', 100);
         if (validationError) {
             setError(validationError);
             return;
@@ -69,17 +71,18 @@ export function AddCourseModal({ isOpen, onClose, examId, onCourseCreated }: Add
         setError(null);
 
         try {
-            // Build request and call API
             const request: CreateCourseRequest = {
                 name: name.trim(),
                 description: description.length ? description.trim() : description,
                 startDate: toISODateTime(startDate),
                 endDate: toISODateTime(endDate),
-                status: isActive ? "ACTIVE" : "INACTIVE",
+                status: isActive ? 'ACTIVE' : 'INACTIVE',
                 examId,
             };
 
             await CoursesService.postApiExamsCourses({ examId, requestBody: request });
+
+            resetForm();
             onCourseCreated();
             onClose();
         } catch (err: any) {
@@ -110,24 +113,30 @@ export function AddCourseModal({ isOpen, onClose, examId, onCourseCreated }: Add
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-green-500 to-green-600">
                     <h2 className="text-xl font-semibold text-white">Add New Course</h2>
-                    <button
+
+                    <Button
+                        variant="ghost"
+                        size="icon"
                         onClick={handleClose}
-                        className="p-1 text-white/80 hover:text-white transition-colors"
+                        className="text-white/80 hover:text-white hover:bg-white/20"
                     >
                         <X className="h-5 w-5" />
-                    </button>
+                    </Button>
                 </div>
 
                 {/* Form */}
-                <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                <form onSubmit={handleSubmit} className="p-6 space-y-5">
                     {error && (
                         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
                             {error}
                         </div>
                     )}
 
-                    <div>
-                        <label htmlFor="course-name" className="block text-sm font-medium text-gray-700 mb-1">
+                    <div className="space-y-1.5">
+                        <label
+                            htmlFor="course-name"
+                            className="block text-sm font-medium text-gray-700"
+                        >
                             Course Name <span className="text-red-500">*</span>
                         </label>
                         <input
@@ -137,14 +146,17 @@ export function AddCourseModal({ isOpen, onClose, examId, onCourseCreated }: Add
                             onChange={(e) => setName(e.target.value)}
                             placeholder="e.g., Civil Services Foundation Course"
                             maxLength={100}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors focus-visible:ring-green-500 focus-visible:ring-offset-1"
                             disabled={loading}
                         />
                         <p className="mt-1 text-xs text-gray-500">{name.length}/100 characters</p>
                     </div>
 
-                    <div>
-                        <label htmlFor="course-description" className="block text-sm font-medium text-gray-700 mb-1">
+                    <div className="space-y-1.5">
+                        <label
+                            htmlFor="course-description"
+                            className="block text-sm font-medium text-gray-700"
+                        >
                             Description
                         </label>
                         <textarea
@@ -153,27 +165,35 @@ export function AddCourseModal({ isOpen, onClose, examId, onCourseCreated }: Add
                             onChange={(e) => setDescription(e.target.value)}
                             placeholder="Brief description of the course..."
                             rows={3}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors resize-none"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors resize-none focus-visible:ring-green-500 focus-visible:ring-offset-1"
                             disabled={loading}
                         />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label htmlFor="course-start-date" className="block text-sm font-medium text-gray-700 mb-1">
+                        <div className="space-y-1.5">
+                            <label className="block text-sm font-medium text-gray-700">
                                 Start Date
                             </label>
-                            <DatePicker date={startDate} setDate={setStartDate} disabled={loading} />
+                            <DatePicker
+                                date={startDate}
+                                setDate={setStartDate}
+                                disabled={loading}
+                            />
                         </div>
-                        <div>
-                            <label htmlFor="course-end-date" className="block text-sm font-medium text-gray-700 mb-1">
+                        <div className="space-y-1.5">
+                            <label className="block text-sm font-medium text-gray-700">
                                 End Date
                             </label>
-                            <DatePicker date={endDate} setDate={setEndDate} disabled={loading} />
+                            <DatePicker
+                                date={endDate}
+                                setDate={setEndDate}
+                                disabled={loading}
+                            />
                         </div>
                     </div>
 
-                    <div className="flex items-center">
+                    <div className="flex items-center space-x-2">
                         <input
                             id="course-active"
                             type="checkbox"
@@ -182,38 +202,54 @@ export function AddCourseModal({ isOpen, onClose, examId, onCourseCreated }: Add
                             className="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
                             disabled={loading}
                         />
-                        <label htmlFor="course-active" className="ml-2 text-sm text-gray-700">
+                        <label htmlFor="course-active" className="text-sm text-gray-700">
                             Active (visible to students)
                         </label>
                     </div>
 
                     {/* Actions */}
                     <div className="flex justify-end space-x-3 pt-4">
-                        <button
+                        <Button
                             type="button"
+                            variant="outline"
                             onClick={handleClose}
-                            className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                             disabled={loading}
                         >
                             Cancel
-                        </button>
-                        <button
+                        </Button>
+
+                        <Button
                             type="submit"
-                            className="px-4 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                            className="bg-green-600 hover:bg-green-700 text-white"
                             disabled={loading}
                         >
                             {loading ? (
                                 <>
-                                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                    <svg
+                                        className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <circle
+                                            className="opacity-25"
+                                            cx="12"
+                                            cy="12"
+                                            r="10"
+                                            stroke="currentColor"
+                                            strokeWidth="4"
+                                        />
+                                        <path
+                                            className="opacity-75"
+                                            fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                        />
                                     </svg>
                                     Creating...
                                 </>
                             ) : (
                                 'Create Course'
                             )}
-                        </button>
+                        </Button>
                     </div>
                 </form>
             </div>

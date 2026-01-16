@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { Button } from '@/components/ui/button';
 import { AddCourseModal } from '@/components/modals/AddCourseModal';
 import { EditCourseModal } from '@/components/modals/EditCourseModal';
 import { DeleteConfirmModal } from '@/components/modals/DeleteConfirmModal';
@@ -13,30 +14,24 @@ import { Plus, BookOpen, Search } from 'lucide-react';
 import { CourseGridCard } from '@/components/dashboard/courses/CourseGridCard';
 import { CourseFilter } from '@/components/dashboard/courses/CourseFilter';
 
-// Extended course type to include exam name for display
 interface ExtendedCourse extends Course {
   examName?: string;
-  subjects?: Subject[]; // Ensure subjects is strongly typed
+  subjects?: Subject[];
 }
 
-
-
 export default function CoursesPage() {
-  const { user, business, isAuthenticated, isLoading, isInitialized, initializeAuth} = useAuthStore();
+  const { user, business, isAuthenticated, isLoading, isInitialized } = useAuthStore();
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Data state
   const [exams, setExams] = useState<Exam[]>([]);
   const [allCourses, setAllCourses] = useState<ExtendedCourse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Filter state
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedExamIds, setSelectedExamIds] = useState<number[]>([]);
 
-  // Modal states
   const [isAddCourseModalOpen, setIsAddCourseModalOpen] = useState(false);
   const [selectedExamForAdd, setSelectedExamForAdd] = useState<number | null>(null);
 
@@ -45,7 +40,6 @@ export default function CoursesPage() {
 
   const [isDeleteCourseModalOpen, setIsDeleteCourseModalOpen] = useState(false);
 
-  // Initialize filters from URL if present
   useEffect(() => {
     const examIdParam = searchParams.get('examId');
     if (examIdParam) {
@@ -61,31 +55,15 @@ export default function CoursesPage() {
 
     try {
       setLoading(true);
-      // Fetch all exams first
-      const examsResponse = await ExamsService.getApiBusinessExams({ businessId: business.id, include : 'courses.subjects' });
+      const examsResponse = await ExamsService.getApiBusinessExams({
+        businessId: business.id,
+        include: 'courses.subjects',
+      });
       const fetchedExams = examsResponse.data || [];
       setExams(fetchedExams);
-      // // Fetch courses for all exams (flattening the list) using include=subjects
-      // const coursesPromises = fetchedExams.map(async (exam: Exam) => {
-      //   if (!exam.id) return [];
-      //   try {
-      //     const response = await CoursesService.getApiExamsCourses({ examId: exam.id, include: 'subjects' });
-      //     const rawCourses = response.data || [];
 
-      //     // Inject examId and examName into each course (subjects already included)
-      //     return rawCourses.map(course => ({
-      //       ...course,
-      //       examId: exam.id,
-      //       examName: exam.name
-      //     })) as ExtendedCourse[];
-      //   } catch (err) {
-      //     console.warn(`Failed to fetch courses for exam ${exam.id}`, err);
-      //     return [];
-      //   }
-      // });
-      const coursesLists = fetchedExams.map(async (exam: Exam) => {
+      const coursesLists = fetchedExams.map((exam: Exam) => {
         if (!exam.courses) return [];
-        // Inject examId and examName into each course (subjects already included)
         return exam.courses.map(course => ({
           ...course,
           examId: exam.id,
@@ -96,7 +74,6 @@ export default function CoursesPage() {
       const coursesArrays = await Promise.all(coursesLists);
       const flatCourses = coursesArrays.flat();
 
-      // Sort by creation date (newest first)
       flatCourses.sort((a, b) => {
         return new Date(b.createdAt || '').getTime() - new Date(a.createdAt || '').getTime();
       });
@@ -117,22 +94,20 @@ export default function CoursesPage() {
     }
   }, [isAuthenticated, business?.id, fetchData]);
 
-  // Derived state: Filtered courses
   const filteredCourses = useMemo(() => {
     return allCourses.filter(course => {
-      // Search filter
-      const matchesSearch = course.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      const matchesSearch =
+        course.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         course.description?.toLowerCase().includes(searchQuery.toLowerCase());
 
-      // Exam filter
-      const matchesExam = selectedExamIds.length === 0 ||
+      const matchesExam =
+        selectedExamIds.length === 0 ||
         (course.examId && selectedExamIds.includes(course.examId));
 
       return matchesSearch && matchesExam;
     });
   }, [allCourses, searchQuery, selectedExamIds]);
 
-  // Handlers
   const handleAddCourseClick = () => {
     if (selectedExamIds.length === 1) {
       setSelectedExamForAdd(selectedExamIds[0]);
@@ -150,7 +125,6 @@ export default function CoursesPage() {
   };
 
   const handleViewSubjects = (course: ExtendedCourse) => {
-    // Navigate to dedicated course subjects page
     router.push(`/dashboard/courses/${course.id}/subjects?examId=${course.examId}`);
   };
 
@@ -167,7 +141,10 @@ export default function CoursesPage() {
   const confirmDeleteCourse = async () => {
     if (!selectedCourse?.id || !selectedCourse.examId) return;
     try {
-      await CoursesService.deleteApiExamsCourses({examId: selectedCourse.examId, courseId: selectedCourse.id});
+      await CoursesService.deleteApiExamsCourses({
+        examId: selectedCourse.examId,
+        courseId: selectedCourse.id,
+      });
       await fetchData();
       setIsDeleteCourseModalOpen(false);
       setSelectedCourse(null);
@@ -175,10 +152,6 @@ export default function CoursesPage() {
       console.error('Error deleting course:', err);
     }
   };
-
-
-
-
 
   if (isLoading || !isInitialized) {
     return (
@@ -189,21 +162,23 @@ export default function CoursesPage() {
   }
 
   return (
-      <>
+    <>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Courses</h1>
-            <p className="text-gray-600 mt-1">Manage your courses, view subjects and batches</p>
+            <p className="text-gray-600 mt-1">
+              Manage your courses, view subjects and batches
+            </p>
           </div>
-          <button
+          <Button
             onClick={handleAddCourseClick}
             className="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
           >
             <Plus className="h-5 w-5 mr-2" />
             Add Course
-          </button>
+          </Button>
         </div>
 
         {/* Filters and Search */}
@@ -248,13 +223,13 @@ export default function CoursesPage() {
                 : "Get started by adding a new course."}
             </p>
             {!searchQuery && selectedExamIds.length === 0 && (
-              <button
+              <Button
                 onClick={handleAddCourseClick}
                 className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium"
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Add Course
-              </button>
+              </Button>
             )}
           </div>
         ) : (
@@ -315,7 +290,6 @@ export default function CoursesPage() {
           itemName={selectedCourse?.name}
         />
       )}
-
     </>
   );
-} 
+}

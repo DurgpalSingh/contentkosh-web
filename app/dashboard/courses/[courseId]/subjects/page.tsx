@@ -2,7 +2,9 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useAuthStore } from '@/store/useAuthStore';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { Button } from '@/components/ui/button';
 import { AddSubjectModal } from '@/components/modals/AddSubjectModal';
 import { EditSubjectModal } from '@/components/modals/EditSubjectModal';
 import { DeleteConfirmModal } from '@/components/modals/DeleteConfirmModal';
@@ -23,7 +25,6 @@ export default function CourseSubjectsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Modals
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -42,7 +43,7 @@ export default function CourseSubjectsPage() {
 
       const data = response.data as Course | undefined;
       setCourse(data || null);
-      const sortedSubjects = [...data?.subjects || []].sort(
+      const sortedSubjects = [...(data?.subjects || [])].sort(
         (a, b) =>
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
@@ -100,17 +101,18 @@ export default function CourseSubjectsPage() {
   return (
     <>
       <div className="space-y-8">
-
         {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="flex items-start gap-3">
-            <button
-              onClick={() => router.back()}
+            <Button
+              variant="ghost"
+              size="icon"
               className="mt-1 rounded-md p-1.5 text-slate-500 hover:bg-slate-100"
+              onClick={() => router.back()}
               aria-label="Go back"
             >
               <ArrowLeft className="h-4 w-4" />
-            </button>
+            </Button>
 
             <div>
               <h1 className="text-lg font-medium text-slate-500">
@@ -122,13 +124,13 @@ export default function CourseSubjectsPage() {
             </div>
           </div>
 
-          <button
+          <Button
             onClick={handleAdd}
             className="inline-flex items-center gap-2 rounded-lg border border-blue-600 bg-white px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 transition-colors"
           >
             <Plus className="h-4 w-4" />
             Add Subject
-          </button>
+          </Button>
         </div>
 
         {/* Divider */}
@@ -156,13 +158,13 @@ export default function CourseSubjectsPage() {
               Start by adding subjects to organize lessons and materials for this course.
             </p>
 
-            <button
+            <Button
               onClick={handleAdd}
               className="mt-6 inline-flex items-center gap-2 rounded-lg border border-blue-600 bg-white px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50"
             >
               <Plus className="h-4 w-4" />
               Add Subject
-            </button>
+            </Button>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">

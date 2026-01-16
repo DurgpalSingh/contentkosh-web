@@ -2,23 +2,29 @@
 
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
-import { BatchesService, CreateBatchRequest, Subject } from '@/lib/api';
-import { validateRequired } from '@/lib/validation';
-import { DatePicker } from '@/components/ui/date-picker';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { BatchesService, CreateBatchRequest, Subject } from '@/lib/api';
+import { validateRequired } from '@/lib/validation';
+import { DatePicker } from '@/components/ui/date-picker';
 import { batchSchema } from '@/lib/schemas';
 
 interface AddBatchModalProps {
     isOpen: boolean;
     onClose: () => void;
     courseId: number;
-    subjects?: Subject[]; // Inherited subjects from the course
+    subjects?: Subject[];
     onBatchCreated: () => void;
 }
 
-export function AddBatchModal({ isOpen, onClose, courseId, subjects = [], onBatchCreated }: AddBatchModalProps) {
+export function AddBatchModal({
+    isOpen,
+    onClose,
+    courseId,
+    subjects = [],
+    onBatchCreated,
+}: AddBatchModalProps) {
     const [codeName, setCodeName] = useState('');
     const [displayName, setDisplayName] = useState('');
     const [startDate, setStartDate] = useState<Date | undefined>(undefined);
@@ -27,7 +33,6 @@ export function AddBatchModal({ isOpen, onClose, courseId, subjects = [], onBatc
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Close modal on Escape key press
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape' && isOpen) {
@@ -39,7 +44,6 @@ export function AddBatchModal({ isOpen, onClose, courseId, subjects = [], onBatc
         return () => document.removeEventListener('keydown', handleKeyDown);
     }, [isOpen, onClose]);
 
-    // Reset form to initial state
     const resetForm = () => {
         setCodeName('');
         setDisplayName('');
@@ -52,16 +56,15 @@ export function AddBatchModal({ isOpen, onClose, courseId, subjects = [], onBatc
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        // Zod validation
         const result = batchSchema.safeParse({
             codeName,
             displayName,
             startDate,
-            endDate
+            endDate,
         });
 
         if (!result.success) {
-            setError(result.error.issues[0].message); // Fix: issues instead of errors
+            setError(result.error.issues[0]?.message || 'Validation failed');
             return;
         }
 
@@ -71,22 +74,17 @@ export function AddBatchModal({ isOpen, onClose, courseId, subjects = [], onBatc
         setError(null);
 
         try {
-            // Ensure dates are in ISO format for the backend
-            const isoStartDate = data.startDate.toISOString();
-            const isoEndDate = data.endDate.toISOString();
-
             const request: CreateBatchRequest = {
                 codeName: data.codeName,
                 displayName: data.displayName,
-                startDate: isoStartDate,
-                endDate: isoEndDate,
+                startDate: data.startDate.toISOString(),
+                endDate: data.endDate.toISOString(),
                 isActive,
                 courseId,
             };
 
             await BatchesService.postApiBatches({ requestBody: request });
 
-            // Reset form and notify parent
             resetForm();
             onBatchCreated();
             onClose();
@@ -118,55 +116,56 @@ export function AddBatchModal({ isOpen, onClose, courseId, subjects = [], onBatc
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-purple-500 to-purple-600">
                     <h2 className="text-xl font-semibold text-white">Add New Batch</h2>
-                    <button
+
+                    <Button
+                        variant="ghost"
+                        size="icon"
                         onClick={handleClose}
-                        className="p-1 text-white/80 hover:text-white transition-colors"
+                        className="text-white/80 hover:text-white hover:bg-white/20"
                     >
                         <X className="h-5 w-5" />
-                    </button>
+                    </Button>
                 </div>
 
                 {/* Form */}
-                <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                <form onSubmit={handleSubmit} className="p-6 space-y-5">
                     {error && (
                         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
                             {error}
                         </div>
                     )}
 
-                    <div>
-                        <Label htmlFor="batch-code-name" className="mb-1 block">
+                    <div className="space-y-1.5">
+                        <Label htmlFor="batch-code-name">
                             Code Name <span className="text-red-500">*</span>
                         </Label>
                         <Input
                             id="batch-code-name"
-                            type="text"
                             value={codeName}
                             onChange={(e) => setCodeName(e.target.value)}
                             placeholder="e.g., BATCH-2024-A"
-                            className="focus-visible:ring-purple-500"
                             disabled={loading}
+                            className="focus-visible:ring-purple-500 focus-visible:ring-offset-1"
                         />
                     </div>
 
-                    <div>
-                        <Label htmlFor="batch-display-name" className="mb-1 block">
+                    <div className="space-y-1.5">
+                        <Label htmlFor="batch-display-name">
                             Display Name <span className="text-red-500">*</span>
                         </Label>
                         <Input
                             id="batch-display-name"
-                            type="text"
                             value={displayName}
                             onChange={(e) => setDisplayName(e.target.value)}
                             placeholder="e.g., January 2024 Batch"
-                            className="focus-visible:ring-purple-500"
                             disabled={loading}
+                            className="focus-visible:ring-purple-500 focus-visible:ring-offset-1"
                         />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <Label className="mb-1 block">
+                        <div className="space-y-1.5">
+                            <Label>
                                 Start Date <span className="text-red-500">*</span>
                             </Label>
                             <DatePicker
@@ -175,8 +174,8 @@ export function AddBatchModal({ isOpen, onClose, courseId, subjects = [], onBatc
                                 disabled={loading}
                             />
                         </div>
-                        <div>
-                            <Label className="mb-1 block">
+                        <div className="space-y-1.5">
+                            <Label>
                                 End Date <span className="text-red-500">*</span>
                             </Label>
                             <DatePicker
@@ -205,22 +204,38 @@ export function AddBatchModal({ isOpen, onClose, courseId, subjects = [], onBatc
                     <div className="flex justify-end space-x-3 pt-4">
                         <Button
                             type="button"
-                            variant="secondary"
+                            variant="outline"
                             onClick={handleClose}
                             disabled={loading}
                         >
                             Cancel
                         </Button>
+
                         <Button
                             type="submit"
-                            className="bg-purple-600 hover:bg-purple-700"
+                            className="bg-purple-600 hover:bg-purple-700 text-white"
                             disabled={loading}
                         >
                             {loading ? (
                                 <>
-                                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                    <svg
+                                        className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <circle
+                                            className="opacity-25"
+                                            cx="12"
+                                            cy="12"
+                                            r="10"
+                                            stroke="currentColor"
+                                            strokeWidth="4"
+                                        />
+                                        <path
+                                            className="opacity-75"
+                                            fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                        />
                                     </svg>
                                     Creating...
                                 </>

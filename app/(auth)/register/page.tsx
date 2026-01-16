@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/store/useAuthStore';
 import { authApi } from '@/lib/auth';
 import { ROUTES } from '@/lib/constants';
@@ -42,7 +43,6 @@ export default function RegisterPage() {
     setError(null);
 
     try {
-      // Prepare data for API (remove confirmPassword and role as they're not in RegisterRequest)
       const registerData: RegisterRequest = {
         name: data.name,
         email: data.email,
@@ -51,14 +51,11 @@ export default function RegisterPage() {
 
       const response = await authApi.register(registerData);
       if (response.user && response.token) {
-        // Set the token before fetching business info
         authApi.setToken(response.token);
-        
-        // For registration, we'll fetch business info separately since register doesn't return it
+
         const businessResponse = await authApi.getBusiness();
         login(response.user, businessResponse, response.token);
-        
-        // Redirect to dashboard after successful registration
+
         router.push(ROUTES.DASHBOARD);
       } else {
         setError('Invalid response from server');
@@ -87,14 +84,14 @@ export default function RegisterPage() {
             </Link>
           </p>
         </div>
-        
+
         <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md">
+            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm">
               {error}
             </div>
           )}
-          
+
           <div className="space-y-4">
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700">
@@ -128,7 +125,6 @@ export default function RegisterPage() {
               )}
             </div>
 
-            
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Password
@@ -163,13 +159,13 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <button
+            <Button
               type="submit"
               disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? 'Creating account...' : 'Create account'}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

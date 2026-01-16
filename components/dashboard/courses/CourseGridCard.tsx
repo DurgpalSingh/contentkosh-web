@@ -1,4 +1,6 @@
-import { Course } from '@/lib/api';
+'use client';
+
+import { useState } from 'react';
 import {
     Clock,
     MoreVertical,
@@ -8,7 +10,8 @@ import {
     FileText,
     Layers,
 } from 'lucide-react';
-import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Course } from '@/lib/api';
 
 interface CourseGridCardProps {
     course: Course;
@@ -59,15 +62,17 @@ export function CourseGridCard({
 
                     {/* Menu */}
                     <div className="relative ml-2">
-                        <button
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-slate-500 hover:text-slate-700 hover:bg-slate-100"
                             onClick={(e) => {
                                 e.stopPropagation();
                                 setShowMenu(!showMenu);
                             }}
-                            className="p-1 rounded-full hover:bg-slate-100 text-slate-500 transition-colors"
                         >
                             <MoreVertical className="h-5 w-5" />
-                        </button>
+                        </Button>
 
                         {showMenu && (
                             <>
@@ -77,30 +82,33 @@ export function CourseGridCard({
                                 />
                                 <div className="absolute right-0 mt-1 w-32 bg-white border border-slate-200 rounded-lg shadow-lg z-20 py-1">
                                     {onEdit && (
-                                        <button
+                                        <Button
+                                            variant="ghost"
+                                            className="w-full justify-start px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 setShowMenu(false);
                                                 onEdit(course);
                                             }}
-                                            className="flex items-center w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
                                         >
                                             <Edit className="h-4 w-4 mr-2" />
                                             Edit
-                                        </button>
+                                        </Button>
                                     )}
+
                                     {onDelete && (
-                                        <button
+                                        <Button
+                                            variant="ghost"
+                                            className="w-full justify-start px-4 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700"
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 setShowMenu(false);
                                                 onDelete(course);
                                             }}
-                                            className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
                                         >
                                             <Trash2 className="h-4 w-4 mr-2" />
                                             Delete
-                                        </button>
+                                        </Button>
                                     )}
                                 </div>
                             </>
@@ -161,20 +169,23 @@ export function CourseGridCard({
 
             {/* Actions */}
             <div className="p-4 bg-slate-50 border-t border-slate-100 mt-auto flex space-x-2">
-                <button
+                <Button
+                    variant="outline"
+                    className="flex-1 border-slate-300 text-slate-700 hover:bg-slate-50"
                     onClick={() => onViewSubjects(course)}
-                    className="flex-1 flex items-center justify-center px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors text-sm font-medium"
                 >
                     <Layers className="h-4 w-4 mr-2" />
                     Subjects
-                </button>
-                <button
+                </Button>
+
+                <Button
+                    variant="outline"
+                    className="flex-1 border-blue-600 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
                     onClick={() => onViewBatches(course)}
-                    className="flex-1 flex items-center justify-center px-4 py-2 bg-white border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors text-sm font-medium"
                 >
                     <Calendar className="h-4 w-4 mr-2" />
                     Batches
-                </button>
+                </Button>
             </div>
         </div>
     );

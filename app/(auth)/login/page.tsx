@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/store/useAuthStore';
 import { authApi } from '@/lib/auth';
 import { ROUTES } from '@/lib/constants';
@@ -37,30 +38,21 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      console.log('Attempting login with:', data);
       const response = await authApi.login(data as LoginRequest);
-      console.log('Login response:', response);
-      
+
       if (response.user && response.token) {
-        console.log('Login successful, calling login function');
         login(response.user, null, response.token);
-        
-        let profile = await authApi.getProfile();
+
+        const profile = await authApi.getProfile();
         if (profile) {
-          console.log('Profile:', profile);
           setProfile(profile);
         }
 
-
-        // For now, redirect to dashboard - you can add role-based routing later
-        console.log('Redirecting to dashboard');
         router.push(ROUTES.DASHBOARD);
       } else {
-        console.error('Invalid response from server:', response);
         setError('Invalid response from server');
       }
     } catch (err) {
-      console.error('Login error:', err);
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally {
       setIsLoading(false);
@@ -87,7 +79,7 @@ export default function LoginPage() {
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md">
+            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm">
               {error}
             </div>
           )}
@@ -108,7 +100,7 @@ export default function LoginPage() {
                 <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
               )}
             </div>
-            
+
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Password
@@ -127,13 +119,13 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <button
+            <Button
               type="submit"
               disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? 'Signing in...' : 'Sign in'}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

@@ -17,8 +17,9 @@ import {
   X,
   User,
   ClipboardList,
-  GraduationCap
+  GraduationCap,
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -65,13 +66,16 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         <div className="fixed inset-y-0 left-0 flex w-64 flex-col bg-blue-50">
           <div className="flex h-16 items-center justify-between px-4 border-b border-blue-100 bg-white">
             <h1 className="text-xl font-bold text-slate-900">{getDisplayName()}</h1>
-            <button
-              onClick={() => setSidebarOpen(false)}
+            <Button
+              variant="ghost"
+              size="icon"
               className="text-slate-400 hover:text-slate-600"
+              onClick={() => setSidebarOpen(false)}
             >
               <X className="h-6 w-6" />
-            </button>
+            </Button>
           </div>
+
           <nav className="flex-1 space-y-1 px-3 py-4">
             {navigation.map((item) => {
               const active = isActiveLink(item.href);
@@ -85,12 +89,16 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     }`}
                   onClick={() => setSidebarOpen(false)}
                 >
-                  <item.icon className={`mr-3 h-5 w-5 ${active ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
+                  <item.icon
+                    className={`mr-3 h-5 w-5 ${active ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'
+                      }`}
+                  />
                   {item.name}
                 </Link>
               );
             })}
           </nav>
+
           <div className="border-t border-blue-100 p-4">
             <div className="flex items-center">
               <div className="flex-shrink-0">
@@ -103,13 +111,15 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 <p className="text-xs text-slate-500">{user?.email}</p>
               </div>
             </div>
-            <button
+
+            <Button
+              variant="ghost"
+              className="mt-4 w-full justify-start px-3 py-2 text-sm font-medium text-slate-600 hover:bg-white hover:text-red-600"
               onClick={handleLogout}
-              className="mt-4 flex w-full items-center px-3 py-2 text-sm font-medium text-slate-600 hover:bg-white hover:text-red-600 rounded-lg transition-colors"
             >
               <LogOut className="mr-3 h-5 w-5" />
               Sign out
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -120,6 +130,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           <div className="flex h-16 items-center px-5 bg-white border-b border-blue-100 shadow-sm z-10">
             <h1 className="text-xl font-bold text-slate-800 tracking-tight">{getDisplayName()}</h1>
           </div>
+
           <nav className="flex-1 space-y-1 px-3 py-6">
             {navigation.map((item) => {
               const active = isActiveLink(item.href);
@@ -132,12 +143,16 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     : 'text-slate-600 hover:bg-white hover:text-slate-900 hover:shadow-sm'
                     }`}
                 >
-                  <item.icon className={`mr-3 h-5 w-5 ${active ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
+                  <item.icon
+                    className={`mr-3 h-5 w-5 ${active ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'
+                      }`}
+                  />
                   {item.name}
                 </Link>
-              )
+              );
             })}
           </nav>
+
           <div className="border-t border-slate-200 p-4 bg-slate-50/50">
             <div className="flex items-center p-2 rounded-lg hover:bg-white hover:shadow-sm transition-all cursor-default">
               <div className="flex-shrink-0">
@@ -150,13 +165,15 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 <p className="text-xs text-slate-500">{user?.email}</p>
               </div>
             </div>
-            <button
+
+            <Button
+              variant="ghost"
+              className="mt-3 w-full justify-start px-3 py-2 text-sm font-medium text-slate-600 hover:bg-white hover:text-red-600 hover:shadow-sm"
               onClick={handleLogout}
-              className="mt-3 flex w-full items-center px-3 py-2 text-sm font-medium text-slate-600 hover:bg-white hover:text-red-600 hover:shadow-sm rounded-lg transition-all"
             >
               <LogOut className="mr-3 h-5 w-5" />
               Sign out
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -166,23 +183,21 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         {/* Top bar */}
         <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center justify-between gap-x-4 border-b border-slate-200 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
           <div className="flex items-center gap-x-4">
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="icon"
               className="-m-2.5 p-2.5 text-slate-700 lg:hidden"
               onClick={() => setSidebarOpen(true)}
             >
               <Menu className="h-6 w-6" />
-            </button>
+            </Button>
             {/* Current Page Title Placeholder or Breadcrumb could go here */}
           </div>
 
           <div className="flex items-center gap-x-4 lg:gap-x-6">
-            <button
-              type="button"
-              className="-m-2.5 p-2.5 text-slate-400 hover:text-slate-500"
-            >
+            <Button variant="ghost" size="icon" className="-m-2.5 p-2.5 text-slate-400 hover:text-slate-500">
               <Bell className="h-6 w-6" />
-            </button>
+            </Button>
           </div>
         </div>
 
