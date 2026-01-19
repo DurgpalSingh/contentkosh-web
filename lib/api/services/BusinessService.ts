@@ -58,7 +58,7 @@ export class BusinessService {
      * @returns any Business fetched successfully
      * @throws ApiError
      */
-    public static getApiBusiness1({
+    public static getApiBusinessById({
         id,
     }: {
         /**

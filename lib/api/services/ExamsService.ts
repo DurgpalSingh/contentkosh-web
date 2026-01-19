@@ -60,7 +60,9 @@ export class ExamsService {
          * Comma-separated list of relations to include
          */
         include?: string,
-    }): CancelablePromise<any> {
+    }): CancelablePromise<(ApiResponse & {
+        data?: Exam[];
+    })> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/business/{businessId}/exams',
@@ -82,7 +84,7 @@ export class ExamsService {
      * @returns any Exam fetched successfully
      * @throws ApiError
      */
-    public static getApiBusinessExams1({
+    public static getApiBusinessExam({
         businessId,
         id,
         fields,
@@ -104,7 +106,9 @@ export class ExamsService {
          * Comma-separated list of relations to include
          */
         include?: string,
-    }): CancelablePromise<any> {
+    }): CancelablePromise<(ApiResponse & {
+        data?: Exam;
+    })> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/business/{businessId}/exams/{id}',
@@ -140,7 +144,9 @@ export class ExamsService {
          */
         id: number,
         requestBody: UpdateExamRequest,
-    }): CancelablePromise<any> {
+    }): CancelablePromise<(ApiResponse & {
+        data?: Exam;
+    })> {
         return __request(OpenAPI, {
             method: 'PUT',
             url: '/api/business/{businessId}/exams/{id}',
@@ -172,7 +178,7 @@ export class ExamsService {
          * Exam ID
          */
         id: number,
-    }): CancelablePromise<any> {
+    }): CancelablePromise<ApiResponse> {
         return __request(OpenAPI, {
             method: 'DELETE',
             url: '/api/business/{businessId}/exams/{id}',

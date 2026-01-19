@@ -85,7 +85,7 @@ export class BusinessUsersService {
      * @returns any Business user fetched successfully
      * @throws ApiError
      */
-    public static getApiUsersBusinessUsers1(
+    public static getApiUsersBusinessUsersById(
         id: number,
     ): CancelablePromise<(ApiResponse & {
         data?: BusinessUser;
