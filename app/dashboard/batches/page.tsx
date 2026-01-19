@@ -172,7 +172,7 @@ export default function BatchesPage() {
 
   const handleAddBatchClick = () => {
     if (courses.length === 0) {
-      alert('Please create a course first.');
+      console.log('Please create a course first.');
       return;
     }
     setSelectedCourseForAdd(selectedCourseId ?? courses[0].id!);
@@ -250,7 +250,7 @@ export default function BatchesPage() {
             Filters
             {selectedCourseId && (
               <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 rounded-full">
-                1
+                { selectedExamIds.length + (selectedCourseId !== undefined ? 1 : 0)}
               </span>
             )}
           </Button>

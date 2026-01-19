@@ -11,9 +11,13 @@ export interface FilterItem {
 export interface FilterSection {
     id: string;
     title: string;
-    items: FilterItem[]; // These should be already filtered by the parent if dependent on other sections
+    items: FilterItem[];
+    selectionType: 'single' | 'multiple';
     selectedIds: number[];
+    selectedId: number | null;
     onToggle: (id: number) => void;
+    onSelect?: (id: number) => void;
+
     emptyMessage: string;
     theme?: 'blue' | 'purple' | 'green' | 'slate';
 }
@@ -37,9 +41,13 @@ export function HierarchicalFilterModal({
 }: HierarchicalFilterModalProps) {
     if (!isOpen) return null;
 
-    const totalSelected = sections.reduce((acc, section) => acc + section.selectedIds.length, 0);
+    const totalSelected = sections.reduce((acc, section) => {
+        if (section.selectionType === 'multiple') {
+            return acc + (section.selectedIds?.length ?? 0);
+        }
+        return acc + (section.selectedId != null ? 1 : 0);
+    }, 0);
 
-    // Helper to get theme classes
     const getThemeClasses = (theme: string = 'slate', isSelected: boolean) => {
         if (!isSelected) return 'bg-white border-transparent hover:border-slate-200 mb-1';
 
@@ -67,106 +75,119 @@ export function HierarchicalFilterModal({
     };
 
     const getCheckboxClasses = (theme: string = 'slate') => {
-        const base = "h-4 w-4 border-slate-300 rounded focus:ring-offset-0";
+        const base = 'h-4 w-4 border-slate-300 rounded';
         switch (theme) {
-            case 'blue': return `${base} text-blue-600 focus:ring-blue-500`;
-            case 'purple': return `${base} text-purple-600 focus:ring-purple-500`;
-            case 'green': return `${base} text-green-600 focus:ring-green-500`;
-            default: return `${base} text-slate-600 focus:ring-slate-500`;
+            case 'blue': return `${base} text-blue-600`;
+            case 'purple': return `${base} text-purple-600`;
+            case 'green': return `${base} text-green-600`;
+            default: return `${base} text-slate-600`;
+        }
+    };
+
+    const getRadioClasses = (theme: string = 'slate') => {
+        const base = 'h-4 w-4 border-slate-300';
+        switch (theme) {
+            case 'blue': return `${base} text-blue-600`;
+            case 'purple': return `${base} text-purple-600`;
+            case 'green': return `${base} text-green-600`;
+            default: return `${base} text-slate-600`;
         }
     };
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+            <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
-            <div className={`relative bg-white rounded-xl shadow-2xl w-full flex flex-col overflow-hidden max-h-[90vh] ${sections.length === 1 ? 'max-w-md' :
-                    sections.length === 2 ? 'max-w-4xl' : 'max-w-5xl'
-                }`}>
+            <div className="relative bg-white rounded-xl shadow-2xl w-full max-h-[90vh] overflow-hidden">
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-                    <div className="flex items-center space-x-2">
+                <div className="flex items-center justify-between px-6 py-4 border-b">
+                    <div className="flex items-center gap-2">
                         <Filter className="h-5 w-5 text-blue-600" />
-                        <h2 className="text-lg font-bold text-slate-900">{title}</h2>
+                        <h2 className="font-bold text-lg">{title}</h2>
                     </div>
-                    <button onClick={onClose} className="p-2 text-slate-400 hover:bg-slate-100 rounded-full transition-colors">
-                        <X className="h-5 w-5" />
+                    <button onClick={onClose}>
+                        <X className="h-5 w-5 text-slate-400" />
                     </button>
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 overflow-y-auto p-6">
-                    <div className={`grid gap-6 ${sections.length === 1 ? 'grid-cols-1' :
-                            sections.length === 2 ? 'grid-cols-1 md:grid-cols-2' :
-                                'grid-cols-1 md:grid-cols-3'
-                        }`}>
-                        {sections.map((section, index) => (
-                            <div key={section.id} className="space-y-3">
-                                <div className="flex items-center justify-between">
-                                    <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wider">
-                                        {sections.length > 1 ? `${index + 1}. ` : ''}{section.title}
-                                    </h3>
-                                    <span className="text-xs text-slate-500">{section.selectedIds.length} selected</span>
-                                </div>
-                                <div className="bg-slate-50 rounded-lg p-2 border border-slate-200 max-h-[60vh] overflow-y-auto space-y-1">
-                                    {section.items.map(item => {
-                                        const isSelected = section.selectedIds.includes(item.id);
-                                        return (
-                                            <label
-                                                key={item.id}
-                                                className={`flex items-start p-2 rounded-md border cursor-pointer transition-all ${getThemeClasses(section.theme, isSelected)}`}
-                                            >
-                                                <input
-                                                    type="checkbox"
-                                                    className={`mt-0.5 ${getCheckboxClasses(section.theme)}`}
-                                                    checked={isSelected}
-                                                    onChange={() => section.onToggle(item.id)}
-                                                />
-                                                <div className="ml-2 overflow-hidden">
-                                                    <span className={`block text-sm font-medium truncate ${getTextClasses(section.theme, isSelected)}`}>
-                                                        {item.label}
-                                                    </span>
-                                                    {item.subLabel && (
-                                                        <span className="block text-[10px] text-slate-400 font-mono truncate">
-                                                            {item.subLabel}
-                                                        </span>
-                                                    )}
+                <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 overflow-y-auto">
+                    {sections.map(section => (
+                        <div key={section.id}>
+                            <h3 className="text-xs font-semibold uppercase mb-2">
+                                {section.title}
+                            </h3>
+
+                            <div className="bg-slate-50 border rounded-lg p-2 space-y-1 max-h-[50vh] overflow-y-auto">
+                                {section.items.map(item => {
+                                    const isSelected =
+                                        section.selectionType === 'multiple'
+                                            ? section.selectedIds?.includes(item.id)
+                                            : section.selectedId === item.id;
+
+                                    return (
+                                        <label
+                                            key={item.id}
+                                            className={`flex items-start p-2 rounded-md border cursor-pointer transition-all ${getThemeClasses(
+                                                section.theme,
+                                                !!isSelected
+                                            )}`}
+                                        >
+                                            <input
+                                                type={section.selectionType === 'multiple' ? 'checkbox' : 'radio'}
+                                                name={section.selectionType === 'single' ? section.id : undefined}
+                                                checked={!!isSelected}
+                                                className={`mt-0.5 ${section.selectionType === 'multiple'
+                                                        ? getCheckboxClasses(section.theme)
+                                                        : getRadioClasses(section.theme)
+                                                    }`}
+                                                onChange={() => {
+                                                    if (section.selectionType === 'multiple') {
+                                                        section.onToggle?.(item.id);
+                                                    } else {
+                                                        section.onSelect?.(item.id);
+                                                    }
+                                                }}
+                                            />
+                                            <div className="ml-2">
+                                                <div className={getTextClasses(section.theme, !!isSelected)}>
+                                                    {item.label}
                                                 </div>
-                                            </label>
-                                        );
-                                    })}
-                                    {section.items.length === 0 && (
-                                        <p className="text-xs text-slate-400 italic p-2">{section.emptyMessage}</p>
-                                    )}
-                                </div>
+                                                {item.subLabel && (
+                                                    <div className="text-[10px] text-slate-400 font-mono">
+                                                        {item.subLabel}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </label>
+                                    );
+                                })}
+
+                                {section.items.length === 0 && (
+                                    <p className="text-xs italic text-slate-400 p-2">
+                                        {section.emptyMessage}
+                                    </p>
+                                )}
                             </div>
-                        ))}
-                    </div>
+                        </div>
+                    ))}
                 </div>
 
                 {/* Footer */}
-                <div className="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-between items-center">
+                <div className="border-t px-6 py-4 flex justify-between">
                     <button
                         onClick={onClearAll}
-                        className="text-sm font-medium text-red-600 hover:text-red-800 transition-colors"
                         disabled={totalSelected === 0}
+                        className="text-sm text-red-600 disabled:opacity-40"
                     >
                         Clear All Filters
                     </button>
-                    <div className="flex space-x-3">
-                        <button
-                            onClick={onClose}
-                            className="px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors bg-white"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            onClick={onApply}
-                            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm"
-                        >
-                            Apply Filters
-                        </button>
-                    </div>
+                    <button
+                        onClick={onApply}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg"
+                    >
+                        Apply Filters
+                    </button>
                 </div>
             </div>
         </div>

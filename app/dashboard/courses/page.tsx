@@ -145,7 +145,7 @@ export default function CoursesPage() {
 
   const handleAddCourseClick = () => {
     if (exams.length === 0) {
-      alert('Please create an exam first.');
+      console.log('Please create an exam first.');
       return;
     }
     setSelectedExamForAdd(selectedExamId ?? exams[0].id!);

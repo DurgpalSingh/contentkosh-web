@@ -25,6 +25,7 @@ export default function UsersPage() {
       }
 
       try {
+        console.log('Fetching users for business ID:', business.id);
         const response = await BusinessUsersService.getApiUsersBusinessUsers(business.id);
         setUsers(response.data || []);
       } catch (err: any) {

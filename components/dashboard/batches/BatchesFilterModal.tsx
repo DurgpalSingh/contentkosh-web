@@ -1,8 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Exam, Course } from '@/lib/api';
-import { HierarchicalFilterModal, FilterItem, FilterSection } from '@/components/common/HierarchicalFilterModal'; // ← your reusable component
+import {
+    HierarchicalFilterModal,
+    FilterSection,
+} from '@/components/common/HierarchicalFilterModal';
 
 interface BatchesFilterModalProps {
     isOpen: boolean;
@@ -23,26 +26,27 @@ export function BatchesFilterModal({
     selectedCourseId,
     onApply,
 }: BatchesFilterModalProps) {
-    const [localExamIds, setLocalExamIds] = useState<number[]>(selectedExamIds);
-    const [localCourseId, setLocalCourseId] = useState<number | undefined>(selectedCourseId);
 
-    // Sync when modal opens
+    const [localExamIds, setLocalExamIds] = useState<number[]>(selectedExamIds);
+    const [localCourseId, setLocalCourseId] = useState<number | null>(
+        selectedCourseId ?? null
+    );
+
     useEffect(() => {
         if (isOpen) {
             setLocalExamIds(selectedExamIds);
-            setLocalCourseId(selectedCourseId);
+            setLocalCourseId(selectedCourseId ?? null);
         }
     }, [isOpen, selectedExamIds, selectedCourseId]);
 
-    // Filter courses based on currently selected exams
-    const visibleCourses = localExamIds.length === 0
-        ? courses
-        : courses.filter((c) => c.examId && localExamIds.includes(c.examId));
+    const visibleCourses = useMemo(() => {
+        if (localExamIds.length === 0) return courses;
+        return courses.filter(c => c.examId && localExamIds.includes(c.examId));
+    }, [courses, localExamIds]);
 
-    // Auto-select first course if none is selected
     useEffect(() => {
-        if (visibleCourses.length > 0 && localCourseId === undefined) {
-            setLocalCourseId(visibleCourses[0].id);
+        if (visibleCourses.length > 0 && localCourseId === null) {
+            setLocalCourseId(visibleCourses[0].id!);
         }
     }, [visibleCourses, localCourseId]);
 
@@ -52,38 +56,38 @@ export function BatchesFilterModal({
         {
             id: 'exams',
             title: 'Exams',
-            items: exams.map((e) => ({
+            selectionType: 'multiple',
+            items: exams.map(e => ({
                 id: e.id!,
                 label: e.name || 'Unnamed Exam',
             })),
             selectedIds: localExamIds,
-            onToggle: (id: number) => {
-                setLocalExamIds((prev) =>
-                    prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+            onToggle: (id) => {
+                setLocalExamIds(prev =>
+                    prev.includes(id)
+                        ? prev.filter(x => x !== id)
+                        : [...prev, id]
                 );
+                setLocalCourseId(null);
             },
             emptyMessage: 'No exams available.',
             theme: 'blue',
         },
-        // Section 2: Courses (single-select only - we fake it as multi but enforce single)
+        // Section 2: Courses (single-select only)
         {
             id: 'courses',
-            title: 'Courses (Required* - select one)',
-            items: visibleCourses.map((c) => ({
+            title: 'Course (Required)',
+            selectionType: 'single',
+            items: visibleCourses.map(c => ({
                 id: c.id!,
                 label: c.name || 'Unnamed Course',
                 subLabel: c.examName ? `(${c.examName})` : undefined,
             })),
-            selectedIds: localCourseId !== undefined ? [localCourseId] : [],
-            onToggle: (id: number) => {
-                // Enforce single selection - clicking same deselects nothing (keeps current)
-                setLocalCourseId(id);
-            },
+            selectedId: localCourseId,
+            onSelect: (id) => setLocalCourseId(id),
             emptyMessage:
                 visibleCourses.length === 0
-                    ? localExamIds.length > 0
-                        ? 'No courses found for selected exams'
-                        : 'No courses available'
+                    ? 'No courses available for selected exams'
                     : 'Select one course',
             theme: 'purple',
         },
@@ -93,17 +97,12 @@ export function BatchesFilterModal({
         // Only clear exams — never clear course
         setLocalExamIds([]);
         // Course remains selected (or auto-select first visible)
-        if (visibleCourses.length > 0) {
-            setLocalCourseId(visibleCourses[0].id);
-        }
+        setLocalCourseId(visibleCourses[0]?.id ?? null);
     };
 
     const handleApply = () => {
-        // Always send a course id (we guaranteed it's set)
-        const finalCourseId = localCourseId ?? visibleCourses[0]?.id;
-        if (finalCourseId !== undefined) {
-            onApply(localExamIds, finalCourseId);
-        }
+        if (!localCourseId) return;
+        onApply(localExamIds, localCourseId);
         onClose();
     };
 
