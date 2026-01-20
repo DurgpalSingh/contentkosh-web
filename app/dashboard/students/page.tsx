@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import {
@@ -37,19 +38,13 @@ interface StudentData {
     isActive: boolean;
     role: string;
     createdAt?: string;
-    batches: Array<{
-        batchId: number;
-        batchName: string;
-        batchCode: string;
-        courseName: string;
-        enrolledAt: string;
-        isActive: boolean;
-        feeStatus: 'Paid' | 'Pending' | 'Partial' | 'Overdue';
-    }>;
+    batches: Array<Batch>;
 }
 
 export default function StudentsPage() {
     const { business, isAuthenticated, isLoading, isInitialized } = useAuthStore();
+    const searchParams = useSearchParams();
+    const batchIdFromUrl = searchParams.get('batchId');
 
     const [students, setStudents] = useState<StudentData[]>([]);
     const [batches, setBatches] = useState<ExtendedBatch[]>([]);
@@ -92,12 +87,12 @@ export default function StudentsPage() {
             // 2. Fetch batches WITH batchUsers
             const batchRequests = courses.map((course) =>
                 BatchesService.getApiBatchesCourse({
-                    courseId: course.id,
+                    courseId: course.id!,
                     include: 'batchUsers',
                 }).then((res) =>
                     (res.data ?? []).map((batch) => ({
                         ...batch,
-                        courseId: course.id,
+                        courseId: course.id!,
                         examId: course.examId,
                         courseName: course.name,
                     }))
@@ -121,7 +116,7 @@ export default function StudentsPage() {
             const studentMap = new Map<number, StudentData>();
 
             for (const user of businessUsers) {
-                if (!user.id) continue;
+                if (!user?.id) continue;
 
                 studentMap.set(user.id, {
                     id: user.id,
@@ -139,11 +134,12 @@ export default function StudentsPage() {
             // 5. Attach batches to students using batchUsers
             for (const batch of allBatches) {
                 for (const batchUser of batch.batchUsers ?? []) {
+                    if (!batchUser.userId) continue;
                     const student = studentMap.get(batchUser.userId);
                     if (!student) continue;
 
                     student.batches.push({
-                        batchId: batch.id,
+                        batchId: batch.id!,
                         batchName: batch.displayName ?? 'Unknown Batch',
                         batchCode: batch.codeName ?? '',
                         courseName: batch.courseName ?? 'Unknown Course',
@@ -170,6 +166,16 @@ export default function StudentsPage() {
             fetchData();
         }
     }, [isAuthenticated, business?.id, fetchData]);
+
+    // Auto-filter by batch from URL params
+    useEffect(() => {
+        if (batchIdFromUrl && batches.length > 0) {
+            const targetBatch = batches.find(batch => batch.id === parseInt(batchIdFromUrl));
+            if (targetBatch) {
+                setSelectedBatch(targetBatch.displayName || 'Unknown Batch');
+            }
+        }
+    }, [batchIdFromUrl, batches]);
 
     const filteredStudents = students.filter((student) => {
         if (searchQuery) {
@@ -222,13 +228,28 @@ export default function StudentsPage() {
         if (!selectedStudent) return;
 
         try {
-            await BusinessUsersService.deleteApiUsersBusinessUsers(selectedStudent.id);
+            // If student has batches, show confirmation for which batch to remove from
+            if (selectedStudent.batches.length > 1) {
+                console.log('This student is in multiple batches. Use the Edit option to remove from specific batches.');
+                setIsDeleteModalOpen(false);
+                setSelectedStudent(null);
+                return;
+            }
+
+            if (selectedStudent.batches.length === 1) {
+                // Remove from the single batch
+                await BatchUsersService.postApiBatchesRemoveUser({
+                    userId: selectedStudent.userId,
+                    batchId: selectedStudent.batches[0].batchId,
+                });
+            }
+
             await fetchData();
             setIsDeleteModalOpen(false);
             setSelectedStudent(null);
         } catch (err) {
-            console.error('Error deleting student:', err);
-            alert('Failed to delete student');
+            console.error('Error removing student from batch:', err);
+            alert('Failed to remove student from batch');
         }
     };
 
@@ -309,8 +330,8 @@ export default function StudentsPage() {
                                 setSelectedStudent(null);
                             }}
                             onConfirm={confirmDeleteStudent}
-                            title="Delete Student"
-                            message="Are you sure you want to delete this student? This will remove them from all batches."
+                            title="Remove Student from Batch"
+                            message="Are you sure you want to remove this student from their batch(es)?"
                             itemName={selectedStudent.name}
                         />}
                     </div>

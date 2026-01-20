@@ -16,6 +16,18 @@ export type User = {
      */
     name?: string;
     /**
+     * User mobile number
+     */
+    mobile?: string;
+    /**
+     * User role
+     */
+    role?: 'ADMIN' | 'TEACHER' | 'STUDENT' | 'USER';
+    /**
+     * User status
+     */
+    status?: 'ACTIVE' | 'INACTIVE';
+    /**
      * User creation timestamp
      */
     createdAt?: string;

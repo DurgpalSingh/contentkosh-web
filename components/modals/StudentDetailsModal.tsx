@@ -227,13 +227,6 @@ export function StudentDetailsModal({ isOpen, onClose, student }: StudentDetails
                         </div>
                     </div>
                 </div>
-
-                {/* Footer */}
-                <div className="flex justify-end px-6 py-4 border-t border-gray-200 bg-gray-50">
-                    <Button variant="secondary" onClick={onClose}>
-                        Close
-                    </Button>
-                </div>
             </div>
         </div>
     );

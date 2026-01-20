@@ -106,16 +106,22 @@ export class BatchUsersService {
     /**
      * Get all users for a batch
      * @param batchId Batch ID
+     * @param role Filter users by role
      * @returns any Batch users fetched successfully
      * @throws ApiError
      */
     public static getApiBatchesUsers({
         batchId,
+        role,
     }: {
         /**
          * Batch ID
          */
         batchId: number,
+        /**
+         * Filter users by role
+         */
+        role?: 'STUDENT' | 'TEACHER' | 'ADMIN' | 'USER',
     }): CancelablePromise<(ApiResponse & {
         data?: Array<{
             /**
@@ -143,6 +149,18 @@ export class BatchUsersService {
                  * User name
                  */
                 name?: string;
+                /**
+                 * User mobile
+                 */
+                mobile?: string;
+                /**
+                 * User role
+                 */
+                role?: 'ADMIN' | 'TEACHER' | 'STUDENT' | 'USER';
+                /**
+                 * User status
+                 */
+                status?: 'ACTIVE' | 'INACTIVE';
             };
         }>;
     })> {
@@ -151,6 +169,9 @@ export class BatchUsersService {
             url: '/api/batches/{batchId}/users',
             path: {
                 'batchId': batchId,
+            },
+            query: {
+                'role': role,
             },
             errors: {
                 400: `Invalid batch ID`,

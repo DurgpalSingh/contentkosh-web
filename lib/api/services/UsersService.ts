@@ -75,4 +75,33 @@ export class UsersService {
             },
         });
     }
+     /**
+     * Get all users for a specific business
+     * @param businessId Business ID
+     * @param role Filter users by role
+     * @returns any Users fetched successfully
+     * @throws ApiError
+     */
+    public static getApiBusinessUsers(
+        businessId: number,
+        role?: 'ADMIN' | 'TEACHER' | 'STUDENT' | 'USER',
+    ): CancelablePromise<(ApiResponse & {
+        data?: Array<User>;
+    })> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/business/{businessId}/users',
+            path: {
+                'businessId': businessId,
+            },
+            query: {
+                'role': role,
+            },
+            errors: {
+                403: `Forbidden - No access to this business`,
+                404: `Business not found`,
+                500: `Internal server error`,
+            },
+        });
+    }
 }
