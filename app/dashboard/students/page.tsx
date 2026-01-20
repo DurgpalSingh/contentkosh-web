@@ -73,12 +73,14 @@ export default function StudentsPage() {
         setError(null);
 
         try {
+            // 1. Fetch exams → courses
             const examsResponse = await ExamsService.getApiBusinessExams({
                 businessId: business.id,
                 include: 'courses',
             });
 
             const exams: Exam[] = examsResponse.data ?? [];
+
             const courses: Course[] = exams.flatMap((exam) =>
                 (exam.courses ?? []).map((course) => ({
                     ...course,
@@ -87,70 +89,73 @@ export default function StudentsPage() {
                 }))
             );
 
+            // 2. Fetch batches WITH batchUsers
             const batchRequests = courses.map((course) =>
-                BatchesService.getApiBatchesCourse({ courseId: course.id! }).then(
-                    (res) =>
-                        (res.data ?? []).map((batch) => ({
-                            ...batch,
-                            courseId: course.id,
-                            examId: course.examId,
-                            courseName: course.name,
-                        }))
+                BatchesService.getApiBatchesCourse({
+                    courseId: course.id,
+                    include: 'batchUsers',
+                }).then((res) =>
+                    (res.data ?? []).map((batch) => ({
+                        ...batch,
+                        courseId: course.id,
+                        examId: course.examId,
+                        courseName: course.name,
+                    }))
                 )
             );
 
             const batchResponses = await Promise.all(batchRequests);
-            const allBatches = batchResponses.flat();
+            const allBatches: ExtendedBatch[] = batchResponses.flat();
             setBatches(allBatches);
 
-            const studentsResponse = await BusinessUsersService.getApiUsersBusinessUsers(
-                business.id,
-                'STUDENT'
-            );
-
-            console.log(studentsResponse.data);
+            // 3. Fetch all students (business users)
+            const studentsResponse =
+                await BusinessUsersService.getApiUsersBusinessUsers(
+                    business.id,
+                    'STUDENT'
+                );
 
             const businessUsers = studentsResponse.data ?? [];
 
-            const studentsWithBatches = await Promise.all(
-                businessUsers.map(async (businessUser) => {
-                    const userId = businessUser.user?.id;
-                    if (!userId) return null;
+            // 4. Create a map of students
+            const studentMap = new Map<number, StudentData>();
 
-                    const userBatchesResponse = await BatchUsersService.getApiBatchesUser({
-                        userId,
+            for (const user of businessUsers) {
+                if (!user.id) continue;
+
+                studentMap.set(user.id, {
+                    id: user.id,
+                    userId: user.id,
+                    name: user.name ?? 'Unknown',
+                    email: user.email ?? '',
+                    phone: user.mobile ?? 'Not Provided',
+                    isActive: user.status === 'ACTIVE',
+                    role: user.role ?? 'STUDENT',
+                    createdAt: user.createdAt,
+                    batches: [],
+                });
+            }
+
+            // 5. Attach batches to students using batchUsers
+            for (const batch of allBatches) {
+                for (const batchUser of batch.batchUsers ?? []) {
+                    const student = studentMap.get(batchUser.userId);
+                    if (!student) continue;
+
+                    student.batches.push({
+                        batchId: batch.id,
+                        batchName: batch.displayName ?? 'Unknown Batch',
+                        batchCode: batch.codeName ?? '',
+                        courseName: batch.courseName ?? 'Unknown Course',
+                        enrolledAt: batchUser.createdAt ?? '',
+                        isActive: batchUser.isActive ?? true,
+                        feeStatus: 'Paid',
                     });
-                    console.log("users details", userBatchesResponse.data);
+                }
+            }
 
-                    const userBatches = (userBatchesResponse.data ?? []).map((batchUser) => {
-                        const batch = allBatches.find((b) => b.id === batchUser.batch?.id);
-                        return {
-                            batchId: batchUser.batch?.id ?? 0,
-                            batchName: batchUser.batch?.displayName ?? 'Unknown Batch',
-                            batchCode: batchUser.batch?.codeName ?? '',
-                            courseName: batch?.courseName ?? 'Unknown Course',
-                            enrolledAt: batchUser.createdAt ?? '',
-                            isActive: batchUser.isActive ?? true,
-                            feeStatus: 'Paid' as const,
-                        };
-                    });
-
-                    return {
-                        id: businessUser.id!,
-                        userId: businessUser.user?.id ?? 0,
-                        name: businessUser.user?.name ?? 'Unknown',
-                        email: businessUser.user?.email ?? '',
-                        phone: '+91 98765 43210',
-                        isActive: businessUser.isActive ?? true,
-                        role: businessUser.role ?? 'STUDENT',
-                        createdAt: businessUser.createdAt,
-                        batches: userBatches,
-                    };
-                })
-            );
-
-            const validStudents = studentsWithBatches.filter(Boolean) as StudentData[];
-            setStudents(validStudents);
+            // 6. Final list
+            setStudents(Array.from(studentMap.values()));
         } catch (err) {
             console.error('Error fetching data:', err);
             setError('Failed to load students');
@@ -158,6 +163,7 @@ export default function StudentsPage() {
             setLoading(false);
         }
     }, [business?.id]);
+
 
     useEffect(() => {
         if (isAuthenticated && business?.id) {
@@ -214,7 +220,7 @@ export default function StudentsPage() {
 
     const confirmDeleteStudent = async () => {
         if (!selectedStudent) return;
-        
+
         try {
             await BusinessUsersService.deleteApiUsersBusinessUsers(selectedStudent.id);
             await fetchData();
@@ -271,6 +277,7 @@ export default function StudentsPage() {
                     isOpen={isAddStudentModalOpen}
                     onClose={() => setIsAddStudentModalOpen(false)}
                     onStudentAdded={fetchData}
+                    batches={batches}
                 />
 
                 {selectedStudent && (
@@ -284,17 +291,18 @@ export default function StudentsPage() {
                             student={selectedStudent}
                         />}
 
-                       {isEditModalOpen && <EditStudentModal
+                        {isEditModalOpen && <EditStudentModal
                             isOpen={isEditModalOpen}
                             onClose={() => {
                                 setIsEditModalOpen(false);
                                 setSelectedStudent(null);
                             }}
                             student={selectedStudent}
+                            allBatches={batches}
                             onStudentUpdated={fetchData}
                         />}
 
-                        {isDeleteModalOpen&& <DeleteConfirmModal
+                        {isDeleteModalOpen && <DeleteConfirmModal
                             isOpen={isDeleteModalOpen}
                             onClose={() => {
                                 setIsDeleteModalOpen(false);

@@ -66,7 +66,7 @@ export class BusinessUsersService {
     })> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/api/users/business/{businessId}/users',
+            url: '/api/business/{businessId}/users',
             path: {
                 'businessId': businessId,
             },

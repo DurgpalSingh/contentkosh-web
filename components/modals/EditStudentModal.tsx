@@ -1,213 +1,268 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
-import { BusinessUsersService, UpdateBusinessUserRequest } from '@/lib/api';
+import { useEffect, useState } from 'react';
+import { X, Trash2 } from 'lucide-react';
+import { Batch } from '@/lib/api';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 interface StudentData {
-    id: number;
-    userId: number;
-    name: string;
-    email: string;
-    phone?: string;
-    isActive: boolean;
-    role: string;
-    createdAt?: string;
-    batches: Array<{
-        batchId: number;
-        batchName: string;
-        batchCode: string;
-        courseName: string;
-        enrolledAt: string;
-        isActive: boolean;
-        feeStatus: 'Paid' | 'Pending' | 'Partial' | 'Overdue';
-    }>;
+  id: number;
+  name: string;
+  email: string;
+  phone?: string;
+  isActive: boolean;
+  batches: Array<Batch>;
 }
 
 interface EditStudentModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    student: StudentData;
-    onStudentUpdated: () => void;
+  isOpen: boolean;
+  onClose: () => void;
+  student: StudentData;
+  allBatches: Array<Batch>;
+  onStudentUpdated: () => void;
 }
 
-export function EditStudentModal({ isOpen, onClose, student, onStudentUpdated }: EditStudentModalProps) {
-    const [isActive, setIsActive] = useState(student.isActive);
-    const [role, setRole] = useState(student.role);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+export function EditStudentModal({
+  isOpen,
+  onClose,
+  student,
+  allBatches,
+  onStudentUpdated,
+}: EditStudentModalProps) {
+  const [name, setName] = useState(student.name);
+  const [email, setEmail] = useState(student.email);
+  const [phone, setPhone] = useState(student.phone || '');
+  const [isActive, setIsActive] = useState(student.isActive);
+  const [selectedBatchId, setSelectedBatchId] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        if (isOpen) {
-            setIsActive(student.isActive);
-            setRole(student.role);
-            setError(null);
-        }
-    }, [isOpen, student]);
+  useEffect(() => {
+    if (!isOpen) return;
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setLoading(true);
-        setError(null);
+    setName(student.name);
+    setEmail(student.email);
+    setPhone(student.phone || '');
+    setIsActive(student.isActive);
+    setSelectedBatchId('');
+    setError(null);
+  }, [isOpen, student]);
 
-        try {
-            const request: UpdateBusinessUserRequest = {
-                role: role as 'STUDENT' | 'TEACHER' | 'ADMIN' | 'SUPERADMIN',
-                isActive,
-            };
+  const enrolledBatchIds = student.batches.map((b) => b.batchId);
+  const availableBatches = allBatches.filter(
+    (b) => !enrolledBatchIds.includes(b.id)
+  );
 
-            await BusinessUsersService.putApiUsersBusinessUsers(student.id, request);
+  const handleUpdateStudent = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-            onStudentUpdated();
-            onClose();
-        } catch (err: unknown) {
-            console.error('Error updating student:', err);
-            const error = err as { body?: { message?: string } };
-            setError(error.body?.message || 'Failed to update student');
-        } finally {
-            setLoading(false);
-        }
-    };
+    if (!name || !email) {
+      setError('Name and email are required');
+      return;
+    }
 
-    const handleClose = () => {
-        setError(null);
-        onClose();
-    };
+    setLoading(true);
+    setError(null);
 
-    if (!isOpen) return null;
+    try {
+        // update student API call
 
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-            {/* Backdrop */}
-            <div
-                className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-                onClick={handleClose}
-            />
+      onStudentUpdated();
+      onClose();
+    } catch (err: any) {
+      setError(err?.body?.message || 'Failed to update student');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-            {/* Modal */}
-            <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
-                {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-green-500 to-green-600">
-                    <h2 className="text-xl font-semibold text-white">Edit Student</h2>
-                    <button
-                        onClick={handleClose}
-                        className="p-1 text-white/80 hover:text-white transition-colors"
-                    >
-                        <X className="h-5 w-5" />
-                    </button>
-                </div>
+  const handleAddBatch = async () => {
+    if (!selectedBatchId) return;
 
-                {/* Form */}
-                <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                    {error && (
-                        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                            {error}
-                        </div>
-                    )}
+    setLoading(true);
+    setError(null);
 
-                    {/* Student Info (Read-only) */}
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                        <h3 className="font-semibold text-gray-900 mb-2">{student.name}</h3>
-                        <p className="text-sm text-gray-600">{student.email}</p>
-                        {student.phone && (
-                            <p className="text-sm text-gray-600">{student.phone}</p>
-                        )}
-                    </div>
+    try {
+        // add batch to student API call
 
-                    {/* Role Selection */}
-                    <div>
-                        <Label htmlFor="role" className="mb-1 block">
-                            Role <span className="text-red-500">*</span>
-                        </Label>
-                        <select
-                            id="role"
-                            value={role}
-                            onChange={(e) => setRole(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                            disabled={loading}
-                        >
-                            <option value="STUDENT">Student</option>
-                            <option value="TEACHER">Teacher</option>
-                            <option value="ADMIN">Admin</option>
-                        </select>
-                    </div>
+      onStudentUpdated();
+    } catch (err: any) {
+      setError(err?.body?.message || 'Failed to add batch');
+    } finally {
+      setLoading(false);
+      setSelectedBatchId('');
+    }
+  };
 
-                    {/* Status Toggle */}
-                    <div className="flex items-center space-x-2">
-                        <input
-                            id="isActive"
-                            type="checkbox"
-                            checked={isActive}
-                            onChange={(e) => setIsActive(e.target.checked)}
-                            className="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
-                            disabled={loading}
-                        />
-                        <Label htmlFor="isActive" className="font-normal">
-                            Active (can access the system)
-                        </Label>
-                    </div>
+  const handleRemoveBatch = async (batchId: number) => {
+    setLoading(true);
+    setError(null);
 
-                    {/* Batch Information (Read-only) */}
-                    {student.batches.length > 0 && (
-                        <div>
-                            <Label className="mb-2 block">Current Batch Enrollments</Label>
-                            <div className="space-y-2 max-h-32 overflow-y-auto">
-                                {student.batches.map((batch, index) => (
-                                    <div
-                                        key={index}
-                                        className="flex items-center justify-between p-2 bg-gray-50 rounded text-sm"
-                                    >
-                                        <div>
-                                            <span className="font-medium">{batch.batchName}</span>
-                                            <span className="text-gray-500 ml-2">({batch.courseName})</span>
-                                        </div>
-                                        <span
-                                            className={`px-2 py-1 text-xs rounded-full ${
-                                                batch.isActive
-                                                    ? 'bg-green-100 text-green-700'
-                                                    : 'bg-gray-100 text-gray-600'
-                                            }`}
-                                        >
-                                            {batch.isActive ? 'Active' : 'Inactive'}
-                                        </span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
+    try {
+        // remove batch from student API call
 
-                    {/* Actions */}
-                    <div className="flex justify-end space-x-3 pt-4">
-                        <Button
-                            type="button"
-                            variant="secondary"
-                            onClick={handleClose}
-                            disabled={loading}
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            type="submit"
-                            className="bg-green-600 hover:bg-green-700"
-                            disabled={loading}
-                        >
-                            {loading ? (
-                                <>
-                                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                                    </svg>
-                                    Updating...
-                                </>
-                            ) : (
-                                'Update Student'
-                            )}
-                        </Button>
-                    </div>
-                </form>
-            </div>
+      onStudentUpdated();
+    } catch (err: any) {
+      setError(err?.body?.message || 'Failed to remove batch');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/40"
+        onClick={onClose}
+      />
+
+      {/* Modal */}
+      <div className="relative w-full max-w-md rounded-xl bg-white shadow-lg">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b">
+          <div>
+            <h2 className="text-lg font-semibold">Edit Student</h2>
+            <p className="text-sm text-muted-foreground">
+              Update student details and batch enrollment.
+            </p>
+          </div>
+          <button onClick={onClose}>
+            <X className="h-5 w-5 text-muted-foreground" />
+          </button>
         </div>
-    );
+
+        {/* Form */}
+        <form
+          onSubmit={handleUpdateStudent}
+          className="px-6 py-5 space-y-5"
+        >
+          {error && (
+            <div className="text-sm text-red-600 bg-red-50 border border-red-200 px-3 py-2 rounded-md">
+              {error}
+            </div>
+          )}
+
+          {/* Editable Fields */}
+          <div>
+            <Label>Full Name *</Label>
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              disabled={loading}
+            />
+          </div>
+
+          <div>
+            <Label>Email *</Label>
+            <Input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={loading}
+            />
+          </div>
+
+          <div>
+            <Label>Phone</Label>
+            <Input
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              disabled={loading}
+            />
+          </div>
+
+          {/* Status */}
+          <div className="flex items-center gap-2">
+            <input
+              id="active"
+              type="checkbox"
+              checked={isActive}
+              onChange={(e) => setIsActive(e.target.checked)}
+              disabled={loading}
+              className="h-4 w-4"
+            />
+            <Label htmlFor="active" className="font-normal">
+              Active (can access the system)
+            </Label>
+          </div>
+
+          <hr />
+
+          {/* Current Batches */}
+          {student.batches.length > 0 && (
+            <div>
+              <Label className="mb-2 block">Current Batches</Label>
+              <div className="space-y-2">
+                {student.batches.map((batch) => (
+                  <div
+                    key={batch.batchId}
+                    className="flex items-center justify-between text-sm"
+                  >
+                    <span>{batch.batchName}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveBatch(batch.batchId)}
+                      disabled={loading}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Add Batch */}
+          {availableBatches.length > 0 && (
+            <div>
+              <Label>Add to Batch</Label>
+              <div className="flex gap-2">
+                <select
+                  value={selectedBatchId}
+                  onChange={(e) => setSelectedBatchId(e.target.value)}
+                  className="flex-1 rounded-md border px-3 py-2 text-sm"
+                  disabled={loading}
+                >
+                  <option value="">Select batch</option>
+                  {availableBatches.map((batch) => (
+                    <option key={batch.id} value={batch.id}>
+                      {batch.codeName}
+                    </option>
+                  ))}
+                </select>
+                <Button
+                  type="button"
+                  onClick={handleAddBatch}
+                  disabled={!selectedBatchId || loading}
+                >
+                  Add
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Footer */}
+          <div className="flex justify-end gap-3 pt-4">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={onClose}
+              disabled={loading}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={loading}>
+              {loading ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
 }
