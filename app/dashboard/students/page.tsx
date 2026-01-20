@@ -151,7 +151,10 @@ export default function StudentsPage() {
             }
 
             // 6. Final list
-            setStudents(Array.from(studentMap.values()));
+            const studentsWithBatches = Array.from(studentMap.values()).filter(
+                (student) => student.batches.length > 0
+            );
+            setStudents(studentsWithBatches);
         } catch (err) {
             console.error('Error fetching data:', err);
             setError('Failed to load students');
