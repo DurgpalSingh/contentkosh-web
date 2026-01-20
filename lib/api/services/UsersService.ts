@@ -6,7 +6,7 @@ import type { ApiResponse } from '../models/ApiResponse';
 import type { AuthResponse } from '../models/AuthResponse';
 import type { LoginRequest } from '../models/LoginRequest';
 import type { RegisterRequest } from '../models/RegisterRequest';
-import type { UserProfile } from '../models/UserProfile';
+import type { User } from '../models/User';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
@@ -63,7 +63,7 @@ export class UsersService {
      * @throws ApiError
      */
     public static getApiUsersProfile(): CancelablePromise<(ApiResponse & {
-        data?: UserProfile;
+        data?: User;
     })> {
         return __request(OpenAPI, {
             method: 'GET',

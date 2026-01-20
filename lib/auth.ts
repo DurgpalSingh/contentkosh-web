@@ -1,5 +1,5 @@
-import { UsersService, BusinessService, BusinessUsersService } from '@/lib/api';
-import { LoginRequest, RegisterRequest, AuthResponse, Business } from '@/lib/api';
+import { UsersService, BusinessUsersService } from '@/lib/api';
+import { LoginRequest, RegisterRequest, AuthResponse, Business, UserProfile } from '@/lib/api';
 import { OpenAPI } from '@/lib/api';
 
 // Configure the API base URL
@@ -28,10 +28,10 @@ export const authApi = {
     }
   },
 
-  getProfile: async (): Promise<any> => {
+  getProfile: async (): Promise<UserProfile | undefined> => {
     try {
       const response = await UsersService.getApiUsersProfile();
-      return response.data;
+      return response.data as UserProfile;
     } catch (error: any) {
       throw new Error(error.body?.message || 'Failed to fetch profile');
     }

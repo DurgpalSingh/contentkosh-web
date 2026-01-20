@@ -67,9 +67,9 @@ export type BatchUser = {
          */
         isActive?: boolean;
         /**
-         * Business ID
+         * Course ID
          */
-        businessId?: number;
+        courseId?: number;
         /**
          * Batch creation timestamp
          */
@@ -80,4 +80,3 @@ export type BatchUser = {
         updatedAt?: string;
     };
 };
-

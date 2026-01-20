@@ -136,7 +136,7 @@ function TodaySchedule() {
 
   return (
     <div className="bg-white rounded-lg shadow p-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Today's Schedule</h3>
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">Today&apos;s Schedule</h3>
       <div className="space-y-4">
         {schedule.map((classItem, index) => (
           <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">

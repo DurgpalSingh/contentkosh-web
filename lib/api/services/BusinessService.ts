@@ -6,19 +6,22 @@ import type { ApiResponse } from '../models/ApiResponse';
 import type { Business } from '../models/Business';
 import type { CreateBusinessRequest } from '../models/CreateBusinessRequest';
 import type { UpdateBusinessRequest } from '../models/UpdateBusinessRequest';
+import type { UpdateExamRequest } from '../models/UpdateExamRequest';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
 export class BusinessService {
+    
     /**
      * Create business configuration
-     * @param requestBody
      * @returns any Business created successfully
      * @throws ApiError
      */
-    public static postApiBusiness(
+    public static postApiBusiness({
+        requestBody,
+    }: {
         requestBody: CreateBusinessRequest,
-    ): CancelablePromise<(ApiResponse & {
+    }): CancelablePromise<(ApiResponse & {
         data?: Business;
     })> {
         return __request(OpenAPI, {
@@ -52,13 +55,17 @@ export class BusinessService {
     }
     /**
      * Get business configuration by ID
-     * @param id Business ID
      * @returns any Business fetched successfully
      * @throws ApiError
      */
-    public static getApiBusiness1(
+    public static getApiBusinessById({
+        id,
+    }: {
+        /**
+         * Business ID
+         */
         id: number,
-    ): CancelablePromise<(ApiResponse & {
+    }): CancelablePromise<(ApiResponse & {
         data?: Business;
     })> {
         return __request(OpenAPI, {
@@ -75,15 +82,19 @@ export class BusinessService {
     }
     /**
      * Update business configuration
-     * @param id Business ID
-     * @param requestBody
      * @returns any Business updated successfully
      * @throws ApiError
      */
-    public static putApiBusiness(
+    public static putApiBusiness({
+        id,
+        requestBody,
+    }: {
+        /**
+         * Business ID
+         */
         id: number,
         requestBody: UpdateBusinessRequest,
-    ): CancelablePromise<(ApiResponse & {
+    }): CancelablePromise<(ApiResponse & {
         data?: Business;
     })> {
         return __request(OpenAPI, {
@@ -103,13 +114,17 @@ export class BusinessService {
     }
     /**
      * Delete business configuration
-     * @param id Business ID
      * @returns any Business deleted successfully
      * @throws ApiError
      */
-    public static deleteApiBusiness(
+    public static deleteApiBusiness({
+        id,
+    }: {
+        /**
+         * Business ID
+         */
         id: number,
-    ): CancelablePromise<(ApiResponse & {
+    }): CancelablePromise<(ApiResponse & {
         data?: any;
     })> {
         return __request(OpenAPI, {

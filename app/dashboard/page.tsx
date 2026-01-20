@@ -1,32 +1,11 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
-import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
-import { AdminDashboard } from '@/components/dashboard/AdminDashboard';
-import { TeacherDashboard } from '@/components/dashboard/TeacherDashboard';
-import { StudentDashboard } from '@/components/dashboard/StudentDashboard';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { Button } from '@/components/ui/button';
 
 export default function Dashboard() {
-  const { user, business, isAuthenticated, isLoading, isInitialized, initializeAuth, setLoading } = useAuthStore();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!isInitialized) {
-      console.log('Initializing auth...');
-      initializeAuth();
-    }
-  }, [initializeAuth, isInitialized]);
-
-  useEffect(() => {
-    console.log('Auth check - isLoading:', isLoading, 'isAuthenticated:', isAuthenticated, 'user:', user, 'isInitialized:', isInitialized);
-    if (isInitialized && !isAuthenticated) {
-      console.log('Redirecting to login - not authenticated');
-      router.push('/login');
-    }
-  }, [isAuthenticated, isInitialized, router, user]);
+  const { user, isAuthenticated, isLoading, isInitialized } = useAuthStore();
 
   if (!isInitialized || isLoading) {
     return (
@@ -40,34 +19,12 @@ export default function Dashboard() {
     return null;
   }
 
-  // For now, we'll show a default dashboard since user roles aren't implemented yet
-  // In the future, this will be role-based
-  const renderDashboard = () => {
-    console.log('Dashboard render - user:', user, 'isAuthenticated:', isAuthenticated, 'isLoading:', isLoading);
-    // TODO: Implement role-based routing when user roles are added
-    // switch (user.role) {
-    //   case 'admin':
-    //     return <AdminDashboard />;
-    //   case 'teacher':
-    //     return <TeacherDashboard />;
-    //   case 'student':
-    //     return <StudentDashboard />;
-    //   default:
-    //     return <DefaultDashboard />;
-    // }
-    return <DefaultDashboard />;
-  };
-
-  return (
-    <DashboardLayout>
-      {renderDashboard()}
-    </DashboardLayout>
-  );
+  return <DefaultDashboard />;
 }
 
-// Default dashboard for users without specific roles
 function DefaultDashboard() {
   const { business } = useAuthStore();
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -155,18 +112,35 @@ function QuickActions() {
     <div className="bg-white rounded-lg shadow p-6">
       <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
       <div className="space-y-3">
-        <button className="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
-          <div className="font-medium text-gray-900">Create New Batch</div>
-          <div className="text-sm text-gray-500">Set up a new student batch</div>
-        </button>
-        <button className="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
-          <div className="font-medium text-gray-900">Add Course</div>
-          <div className="text-sm text-gray-500">Create a new course</div>
-        </button>
-        <button className="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
-          <div className="font-medium text-gray-900">Send Announcement</div>
-          <div className="text-sm text-gray-500">Notify users about updates</div>
-        </button>
+        <Button
+          variant="outline"
+          className="w-full text-left p-3 h-auto justify-start border-gray-200 hover:bg-gray-50 transition-colors"
+        >
+          <div>
+            <div className="font-medium text-gray-900">Create New Batch</div>
+            <div className="text-sm text-gray-500">Set up a new student batch</div>
+          </div>
+        </Button>
+
+        <Button
+          variant="outline"
+          className="w-full text-left p-3 h-auto justify-start border-gray-200 hover:bg-gray-50 transition-colors"
+        >
+          <div>
+            <div className="font-medium text-gray-900">Add Course</div>
+            <div className="text-sm text-gray-500">Create a new course</div>
+          </div>
+        </Button>
+
+        <Button
+          variant="outline"
+          className="w-full text-left p-3 h-auto justify-start border-gray-200 hover:bg-gray-50 transition-colors"
+        >
+          <div>
+            <div className="font-medium text-gray-900">Send Announcement</div>
+            <div className="text-sm text-gray-500">Notify users about updates</div>
+          </div>
+        </Button>
       </div>
     </div>
   );

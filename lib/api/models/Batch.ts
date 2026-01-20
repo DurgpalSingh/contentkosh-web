@@ -1,6 +1,9 @@
 /* generated using openapi-typescript-codegen -- do not edit */
 /* istanbul ignore file */
 /* tslint:disable */
+
+import { BatchUser } from "./BatchUser";
+
 /* eslint-disable */
 export type Batch = {
     /**
@@ -28,9 +31,9 @@ export type Batch = {
      */
     isActive?: boolean;
     /**
-     * ID of the business this batch belongs to
+     * ID of the course this batch belongs to
      */
-    businessId?: number;
+    courseId?: number;
     /**
      * Batch creation timestamp
      */
@@ -39,15 +42,17 @@ export type Batch = {
      * Batch last update timestamp
      */
     updatedAt?: string;
-    business?: {
+
+    batchUsers?: Array<BatchUser>;
+
+    course?: {
         /**
-         * Business ID
+         * Course ID
          */
         id?: number;
         /**
-         * Business institute name
+         * Course name
          */
-        instituteName?: string;
+        name?: string;
     };
 };
-

@@ -12,13 +12,17 @@ export type CreateCourseRequest = {
      */
     description?: string;
     /**
-     * Duration of the course (e.g., 6 months, 1 year)
+     * Optional start date
      */
-    duration?: string;
+    startDate?: string;
+    /**
+     * Optional end date
+     */
+    endDate?: string;
     /**
      * Whether the course is active
      */
-    isActive?: boolean;
+    status?: "ACTIVE" | "INACTIVE";
     /**
      * ID of the exam this course belongs to (required)
      */

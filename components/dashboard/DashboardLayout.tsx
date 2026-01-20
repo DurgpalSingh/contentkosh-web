@@ -2,20 +2,24 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { ROUTES } from '@/lib/constants';
-import { 
-  Home, 
-  Users, 
-  BookOpen, 
-  Calendar, 
-  Bell, 
-  Settings, 
+import {
+  Home,
+  Users,
+  BookOpen,
+  Calendar,
+  Bell,
+  Settings,
   LogOut,
   Menu,
   X,
-  User
+  User,
+  ClipboardList,
+  GraduationCap,
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -24,143 +28,181 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user, business, logout } = useAuthStore();
+  const router = useRouter();
+  const pathname = usePathname();
 
   const navigation = [
     { name: 'Dashboard', href: ROUTES.DASHBOARD, icon: Home },
-    { name: 'Users', href: ROUTES.ADMIN.USERS, icon: Users },
+    { name: 'Admins', href: ROUTES.ADMIN.USERS, icon: Users },
+    { name: 'Exams', href: '/dashboard/exams', icon: ClipboardList },
     { name: 'Courses', href: '/dashboard/courses', icon: BookOpen },
     { name: 'Batches', href: '/dashboard/batches', icon: Calendar },
+    { name: 'Students', href: '/dashboard/students', icon: GraduationCap },
     { name: 'Announcements', href: ROUTES.ADMIN.ANNOUNCEMENTS, icon: Bell },
     { name: 'Settings', href: '/dashboard/settings', icon: Settings },
   ];
 
   const handleLogout = async () => {
     await logout();
+    router.push('/login');
   };
 
-  // Get the display name - business name if available, otherwise fallback to Contentkosh
   const getDisplayName = () => {
     return business?.instituteName || 'Contentkosh';
   };
 
+  const isActiveLink = (href: string) => {
+    if (href === ROUTES.DASHBOARD) {
+      return pathname === href;
+    }
+    return pathname?.startsWith(href);
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-50">
       {/* Mobile sidebar */}
       <div className={`fixed inset-0 z-50 lg:hidden ${sidebarOpen ? 'block' : 'hidden'}`}>
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)} />
-        <div className="fixed inset-y-0 left-0 flex w-64 flex-col bg-white">
-          <div className="flex h-16 items-center justify-between px-4">
-            <h1 className="text-xl font-bold text-gray-900">{getDisplayName()}</h1>
-            <button
+        <div className="fixed inset-0 bg-slate-600 bg-opacity-75" onClick={() => setSidebarOpen(false)} />
+        <div className="fixed inset-y-0 left-0 flex w-64 flex-col bg-blue-50">
+          <div className="flex h-16 items-center justify-between px-4 border-b border-blue-100 bg-white">
+            <h1 className="text-xl font-bold text-slate-900">{getDisplayName()}</h1>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-slate-400 hover:text-slate-600"
               onClick={() => setSidebarOpen(false)}
-              className="text-gray-400 hover:text-gray-600"
             >
               <X className="h-6 w-6" />
-            </button>
+            </Button>
           </div>
-          <nav className="flex-1 space-y-1 px-2 py-4">
-            {navigation.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className="group flex items-center px-2 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                onClick={() => setSidebarOpen(false)}
-              >
-                <item.icon className="mr-3 h-5 w-5" />
-                {item.name}
-              </Link>
-            ))}
+
+          <nav className="flex-1 space-y-1 px-3 py-4">
+            {navigation.map((item) => {
+              const active = isActiveLink(item.href);
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${active
+                    ? 'bg-blue-100 text-blue-700 shadow-sm'
+                    : 'text-slate-600 hover:bg-white hover:text-slate-900'
+                    }`}
+                  onClick={() => setSidebarOpen(false)}
+                >
+                  <item.icon
+                    className={`mr-3 h-5 w-5 ${active ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'
+                      }`}
+                  />
+                  {item.name}
+                </Link>
+              );
+            })}
           </nav>
-          <div className="border-t border-gray-200 p-4">
+
+          <div className="border-t border-blue-100 p-4">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <div className="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center">
-                  <User className="h-5 w-5 text-gray-600" />
+                <div className="h-9 w-9 rounded-full bg-slate-200 flex items-center justify-center">
+                  <User className="h-5 w-5 text-slate-500" />
                 </div>
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-700">{user?.name || 'User'}</p>
-                <p className="text-xs text-gray-500">{user?.email}</p>
+                <p className="text-sm font-medium text-slate-700">{user?.name || 'User'}</p>
+                <p className="text-xs text-slate-500">{user?.email}</p>
               </div>
             </div>
-            <button
+
+            <Button
+              variant="ghost"
+              className="mt-4 w-full justify-start px-3 py-2 text-sm font-medium text-slate-600 hover:bg-white hover:text-red-600"
               onClick={handleLogout}
-              className="mt-3 flex w-full items-center px-2 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-md"
             >
               <LogOut className="mr-3 h-5 w-5" />
               Sign out
-            </button>
+            </Button>
           </div>
         </div>
       </div>
 
       {/* Desktop sidebar */}
       <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
-        <div className="flex flex-col flex-grow bg-white border-r border-gray-200">
-          <div className="flex h-16 items-center px-4">
-            <h1 className="text-xl font-bold text-gray-900">{getDisplayName()}</h1>
+        <div className="flex flex-col flex-grow bg-blue-50 border-r border-blue-100">
+          <div className="flex h-16 items-center px-5 bg-white border-b border-blue-100 shadow-sm z-10">
+            <h1 className="text-xl font-bold text-slate-800 tracking-tight">{getDisplayName()}</h1>
           </div>
-          <nav className="flex-1 space-y-1 px-2 py-4">
-            {navigation.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className="group flex items-center px-2 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-              >
-                <item.icon className="mr-3 h-5 w-5" />
-                {item.name}
-              </Link>
-            ))}
+
+          <nav className="flex-1 space-y-1 px-3 py-6">
+            {navigation.map((item) => {
+              const active = isActiveLink(item.href);
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${active
+                    ? 'bg-blue-100 text-blue-700 shadow-sm'
+                    : 'text-slate-600 hover:bg-white hover:text-slate-900 hover:shadow-sm'
+                    }`}
+                >
+                  <item.icon
+                    className={`mr-3 h-5 w-5 ${active ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'
+                      }`}
+                  />
+                  {item.name}
+                </Link>
+              );
+            })}
           </nav>
-          <div className="border-t border-gray-200 p-4">
-            <div className="flex items-center">
+
+          <div className="border-t border-slate-200 p-4 bg-slate-50/50">
+            <div className="flex items-center p-2 rounded-lg hover:bg-white hover:shadow-sm transition-all cursor-default">
               <div className="flex-shrink-0">
-                <div className="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center">
-                  <User className="h-5 w-5 text-gray-600" />
+                <div className="h-9 w-9 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center">
+                  <User className="h-5 w-5 text-blue-500" />
                 </div>
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-700">{user?.name || 'User'}</p>
-                <p className="text-xs text-gray-500">{user?.email}</p>
+                <p className="text-sm font-medium text-slate-700">{user?.name || 'User'}</p>
+                <p className="text-xs text-slate-500">{user?.email}</p>
               </div>
             </div>
-            <button
+
+            <Button
+              variant="ghost"
+              className="mt-3 w-full justify-start px-3 py-2 text-sm font-medium text-slate-600 hover:bg-white hover:text-red-600 hover:shadow-sm"
               onClick={handleLogout}
-              className="mt-3 flex w-full items-center px-2 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-md"
             >
               <LogOut className="mr-3 h-5 w-5" />
               Sign out
-            </button>
+            </Button>
           </div>
         </div>
       </div>
 
       {/* Main content */}
-      <div className="lg:pl-64">
+      <div className="lg:pl-64 flex flex-col min-h-screen">
         {/* Top bar */}
-        <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
-          <button
-            type="button"
-            className="-m-2.5 p-2.5 text-gray-700 lg:hidden"
-            onClick={() => setSidebarOpen(true)}
-          >
-            <Menu className="h-6 w-6" />
-          </button>
-          <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
-            <div className="flex flex-1"></div>
-            <div className="flex items-center gap-x-4 lg:gap-x-6">
-              <button
-                type="button"
-                className="-m-2.5 p-2.5 text-gray-400 hover:text-gray-500"
-              >
-                <Bell className="h-6 w-6" />
-              </button>
-            </div>
+        <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center justify-between gap-x-4 border-b border-slate-200 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-x-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="-m-2.5 p-2.5 text-slate-700 lg:hidden"
+              onClick={() => setSidebarOpen(true)}
+            >
+              <Menu className="h-6 w-6" />
+            </Button>
+            {/* Current Page Title Placeholder or Breadcrumb could go here */}
+          </div>
+
+          <div className="flex items-center gap-x-4 lg:gap-x-6">
+            <Button variant="ghost" size="icon" className="-m-2.5 p-2.5 text-slate-400 hover:text-slate-500">
+              <Bell className="h-6 w-6" />
+            </Button>
           </div>
         </div>
 
         {/* Page content */}
-        <main className="py-6">
+        <main className="flex-1 py-8 bg-white/50">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             {children}
           </div>

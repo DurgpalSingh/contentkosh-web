@@ -18,10 +18,16 @@ export class CoursesService {
      * @returns any Course created successfully
      * @throws ApiError
      */
-    public static postApiExamsCourses(
+    public static postApiExamsCourses({
+        examId,
+        requestBody,
+    }: {
+        /**
+         * Exam ID
+         */
         examId: number,
         requestBody: CreateCourseRequest,
-    ): CancelablePromise<(ApiResponse & {
+    }): CancelablePromise<(ApiResponse & {
         data?: Course;
     })> {
         return __request(OpenAPI, {
@@ -46,10 +52,29 @@ export class CoursesService {
      * @returns any Courses fetched successfully
      * @throws ApiError
      */
-    public static getApiExamsCourses(
+    public static getApiExamsCourses({
+        examId,
+        active,
+        fields,
+        include,
+    }: {
+        /**
+         * Exam ID
+         */
         examId: number,
+        /**
+         * Filter by active status (true for active only, false for all)
+         */
         active?: boolean,
-    ): CancelablePromise<(ApiResponse & {
+        /**
+         * Comma-separated list of fields to select (e.g. id,name)
+         */
+        fields?: string,
+        /**
+         * Comma-separated list of relations to include (e.g. subjects)
+         */
+        include?: string,
+    }): CancelablePromise<(ApiResponse & {
         data?: Array<Course>;
     })> {
         return __request(OpenAPI, {
@@ -60,6 +85,8 @@ export class CoursesService {
             },
             query: {
                 'active': active,
+                'fields': fields,
+                'include': include,
             },
             errors: {
                 400: `Invalid exam ID`,
@@ -74,10 +101,29 @@ export class CoursesService {
      * @returns any Course fetched successfully
      * @throws ApiError
      */
-    public static getApiExamsCourses1(
+    public static getApiExamsCourses1({
+        examId,
+        courseId,
+        fields,
+        include,
+    }: {
+        /**
+         * Exam ID
+         */
         examId: number,
+        /**
+         * Course ID
+         */
         courseId: number,
-    ): CancelablePromise<(ApiResponse & {
+        /**
+         * Comma-separated list of fields to select (e.g. id,name)
+         */
+        fields?: string,
+        /**
+         * Comma-separated list of relations to include (e.g. subjects)
+         */
+        include?: string,
+    }): CancelablePromise<(ApiResponse & {
         data?: Course;
     })> {
         return __request(OpenAPI, {
@@ -86,6 +132,10 @@ export class CoursesService {
             path: {
                 'examId': examId,
                 'courseId': courseId,
+            },
+            query: {
+                'fields': fields,
+                'include': include,
             },
             errors: {
                 400: `Invalid course ID`,
@@ -102,11 +152,21 @@ export class CoursesService {
      * @returns any Course updated successfully
      * @throws ApiError
      */
-    public static putApiExamsCourses(
+    public static putApiExamsCourses({
+        examId,
+        courseId,
+        requestBody,
+    }: {
+        /**
+         * Exam ID
+         */
         examId: number,
+        /**
+         * Course ID
+         */
         courseId: number,
         requestBody: UpdateCourseRequest,
-    ): CancelablePromise<(ApiResponse & {
+    }): CancelablePromise<(ApiResponse & {
         data?: Course;
     })> {
         return __request(OpenAPI, {
@@ -132,10 +192,19 @@ export class CoursesService {
      * @returns any Course deleted successfully
      * @throws ApiError
      */
-    public static deleteApiExamsCourses(
+    public static deleteApiExamsCourses({
+        examId,
+        courseId,
+    }: {
+        /**
+         * Exam ID
+         */
         examId: number,
+        /**
+         * Course ID
+         */
         courseId: number,
-    ): CancelablePromise<(ApiResponse & {
+    }): CancelablePromise<(ApiResponse & {
         data?: any;
     })> {
         return __request(OpenAPI, {
@@ -147,33 +216,6 @@ export class CoursesService {
             },
             errors: {
                 400: `Invalid course ID`,
-                500: `Internal server error`,
-            },
-        });
-    }
-    /**
-     * Get course with its subjects under an exam
-     * @param examId Exam ID
-     * @param courseId Course ID
-     * @returns any Course with subjects fetched successfully
-     * @throws ApiError
-     */
-    public static getApiExamsCoursesWithSubjects(
-        examId: number,
-        courseId: number,
-    ): CancelablePromise<(ApiResponse & {
-        data?: CourseWithSubjects;
-    })> {
-        return __request(OpenAPI, {
-            method: 'GET',
-            url: '/api/exams/{examId}/courses/{courseId}/with-subjects',
-            path: {
-                'examId': examId,
-                'courseId': courseId,
-            },
-            errors: {
-                400: `Invalid course ID`,
-                404: `Course not found`,
                 500: `Internal server error`,
             },
         });

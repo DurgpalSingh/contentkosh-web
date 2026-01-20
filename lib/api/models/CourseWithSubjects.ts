@@ -17,13 +17,17 @@ export type CourseWithSubjects = {
      */
     description?: string;
     /**
-     * Duration of the course
+     * Optional start date
      */
-    duration?: string;
+    startDate?: string;
+    /**
+     * Optional end date
+     */
+    endDate?: string;
     /**
      * Whether the course is active
      */
-    isActive?: boolean;
+    status?: "ACTIVE" | "INACTIVE";
     /**
      * ID of the exam this course belongs to
      */

@@ -13,13 +13,25 @@ export type Exam = {
      */
     name?: string;
     /**
+     * Code for the exam (e.g., UPSC2024)
+     */
+    code?: string;
+    /**
      * Description of the exam
      */
     description?: string;
     /**
-     * Whether the exam is active
+     * Status of the exam
      */
-    isActive?: boolean;
+    status?: 'ACTIVE' | 'INACTIVE';
+    /**
+     * Optional start date
+     */
+    startDate?: string;
+    /**
+     * Optional end date
+     */
+    endDate?: string;
     /**
      * ID of the business this exam belongs to
      */
