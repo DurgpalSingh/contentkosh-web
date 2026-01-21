@@ -301,6 +301,7 @@ export default function StudentsPage() {
                     isOpen={isAddStudentModalOpen}
                     onClose={() => setIsAddStudentModalOpen(false)}
                     onStudentAdded={fetchData}
+                    selectedBatch={selectedBatch}
                     batches={batches}
                 />
 

@@ -76,7 +76,6 @@ export function EditStudentModal({
         },
       });
 
-      // 🔥 instant UI update
       setLocalBatches((prev) => [
         ...prev,
         {
@@ -260,12 +259,6 @@ export function EditStudentModal({
               </div>
             </div>
           )}
-
-          <div className="flex justify-end pt-4">
-            <Button variant="secondary" onClick={onClose}>
-              Close
-            </Button>
-          </div>
         </div>
       </div>
     </div>

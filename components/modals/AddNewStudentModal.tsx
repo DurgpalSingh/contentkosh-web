@@ -12,6 +12,7 @@ interface AddNewStudentModalProps {
   isOpen: boolean;
   onClose: () => void;
   onStudentAdded: () => void;
+  selectedBatch: string;
   batches: Array<Batch>;
 }
 
@@ -19,6 +20,7 @@ export function AddNewStudentModal({
   isOpen,
   onClose,
   onStudentAdded,
+  selectedBatch,
   batches,
 }: AddNewStudentModalProps) {
   const { business } = useAuthStore();
@@ -52,12 +54,12 @@ export function AddNewStudentModal({
     try {
       const response = await UsersService.getApiBusinessUsers(business.id, 'STUDENT');
       const users = response.data ?? [];
-      
-      const filtered = users.filter(user => 
+
+      const filtered = users.filter(user =>
         user.name?.toLowerCase().includes(query.toLowerCase()) ||
         user.email?.toLowerCase().includes(query.toLowerCase())
       );
-      
+
       setAvailableUsers(filtered);
       setShowUserList(true);
     } catch (err) {
@@ -66,6 +68,13 @@ export function AddNewStudentModal({
       setSearchLoading(false);
     }
   };
+
+  useEffect(() => {
+    const matchedBatch = batches.find(
+      (batch) => batch.displayName === selectedBatch
+    );
+    setBatchId(matchedBatch?.id ? matchedBatch.id : '');
+  }, [selectedBatch, batches]);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {

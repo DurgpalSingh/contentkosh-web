@@ -37,7 +37,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     { name: 'Exams', href: '/dashboard/exams', icon: ClipboardList },
     { name: 'Courses', href: '/dashboard/courses', icon: BookOpen },
     { name: 'Batches', href: '/dashboard/batches', icon: Calendar },
-    { name: 'Students', href: '/dashboard/students', icon: GraduationCap },
+    { name: 'Batches Details', href: '/dashboard/students', icon: GraduationCap },
     { name: 'Announcements', href: ROUTES.ADMIN.ANNOUNCEMENTS, icon: Bell },
     { name: 'Settings', href: '/dashboard/settings', icon: Settings },
   ];
