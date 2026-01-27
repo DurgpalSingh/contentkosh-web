@@ -35,17 +35,18 @@ export default function CourseSubjectsPage() {
 
     setLoading(true);
     try {
-      const response = await CoursesService.getApiExamsCourses1({
+      const response = await CoursesService.getApiExamsCourses1(
         examId,
         courseId,
-        include: 'subjects',
-      });
+        undefined,
+        'subjects'
+      );
 
       const data = response.data as Course | undefined;
       setCourse(data || null);
       const sortedSubjects = [...(data?.subjects || [])].sort(
         (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
       );
       setSubjects(sortedSubjects);
       setError(null);

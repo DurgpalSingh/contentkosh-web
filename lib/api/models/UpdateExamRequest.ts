@@ -8,20 +8,33 @@ export type UpdateExamRequest = {
      */
     name?: string;
     /**
-     * Code for the exam
-     */
-    code?: string;
-    /**
      * Description of the exam
      */
     description?: string;
     /**
-     * Optional start date
+     * Status of the exam
+     */
+    status?: UpdateExamRequest.status;
+    /**
+     * Unique code for the exam
+     */
+    code?: string;
+    /**
+     * Start date of the exam
      */
     startDate?: string;
     /**
-     * Optional end date
+     * End date of the exam
      */
     endDate?: string;
 };
+export namespace UpdateExamRequest {
+    /**
+     * Status of the exam
+     */
+    export enum status {
+        ACTIVE = 'ACTIVE',
+        INACTIVE = 'INACTIVE',
+    }
+}
 

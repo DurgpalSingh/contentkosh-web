@@ -80,3 +80,4 @@ export type BatchUser = {
         updatedAt?: string;
     };
 };
+

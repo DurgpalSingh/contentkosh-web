@@ -12,20 +12,25 @@ export type CreateCourseRequest = {
      */
     description?: string;
     /**
-     * Optional start date
+     * Duration of the course (e.g., 6 months, 1 year)
      */
-    startDate?: string;
+    duration?: string;
     /**
-     * Optional end date
+     * Status of the course
      */
-    endDate?: string;
-    /**
-     * Whether the course is active
-     */
-    status?: "ACTIVE" | "INACTIVE";
+    status?: CreateCourseRequest.status;
     /**
      * ID of the exam this course belongs to (required)
      */
     examId: number;
 };
+export namespace CreateCourseRequest {
+    /**
+     * Status of the course
+     */
+    export enum status {
+        ACTIVE = 'ACTIVE',
+        INACTIVE = 'INACTIVE',
+    }
+}
 

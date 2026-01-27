@@ -8,24 +8,37 @@ export type CreateExamRequest = {
      */
     name: string;
     /**
-     * Code for the exam
-     */
-    code?: string;
-    /**
      * Description of the exam
      */
     description?: string;
     /**
-     * Optional start date
+     * Status of the exam
      */
-    startDate?: string;
-    /**
-     * Optional end date
-     */
-    endDate?: string;
+    status?: CreateExamRequest.status;
     /**
      * ID of the business this exam belongs to (required)
      */
-    businessId: number;
+    businessId: any;
+    /**
+     * Unique code for the exam
+     */
+    code?: string;
+    /**
+     * Start date of the exam
+     */
+    startDate?: string;
+    /**
+     * End date of the exam
+     */
+    endDate?: string;
 };
+export namespace CreateExamRequest {
+    /**
+     * Status of the exam
+     */
+    export enum status {
+        ACTIVE = 'ACTIVE',
+        INACTIVE = 'INACTIVE',
+    }
+}
 

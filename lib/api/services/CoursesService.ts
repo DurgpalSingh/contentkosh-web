@@ -4,7 +4,6 @@
 /* eslint-disable */
 import type { ApiResponse } from '../models/ApiResponse';
 import type { Course } from '../models/Course';
-import type { CourseWithSubjects } from '../models/CourseWithSubjects';
 import type { CreateCourseRequest } from '../models/CreateCourseRequest';
 import type { UpdateCourseRequest } from '../models/UpdateCourseRequest';
 import type { CancelablePromise } from '../core/CancelablePromise';
@@ -18,16 +17,10 @@ export class CoursesService {
      * @returns any Course created successfully
      * @throws ApiError
      */
-    public static postApiExamsCourses({
-        examId,
-        requestBody,
-    }: {
-        /**
-         * Exam ID
-         */
+    public static postApiExamsCourses(
         examId: number,
         requestBody: CreateCourseRequest,
-    }): CancelablePromise<(ApiResponse & {
+    ): CancelablePromise<(ApiResponse & {
         data?: Course;
     })> {
         return __request(OpenAPI, {
@@ -49,32 +42,17 @@ export class CoursesService {
      * Get all courses for an exam
      * @param examId Exam ID
      * @param active Filter by active status (true for active only, false for all)
+     * @param fields Comma-separated list of fields to select (e.g. id,name)
+     * @param include Comma-separated list of relations to include (e.g. subjects)
      * @returns any Courses fetched successfully
      * @throws ApiError
      */
-    public static getApiExamsCourses({
-        examId,
-        active,
-        fields,
-        include,
-    }: {
-        /**
-         * Exam ID
-         */
+    public static getApiExamsCourses(
         examId: number,
-        /**
-         * Filter by active status (true for active only, false for all)
-         */
         active?: boolean,
-        /**
-         * Comma-separated list of fields to select (e.g. id,name)
-         */
         fields?: string,
-        /**
-         * Comma-separated list of relations to include (e.g. subjects)
-         */
         include?: string,
-    }): CancelablePromise<(ApiResponse & {
+    ): CancelablePromise<(ApiResponse & {
         data?: Array<Course>;
     })> {
         return __request(OpenAPI, {
@@ -98,32 +76,17 @@ export class CoursesService {
      * Get course by ID under an exam
      * @param examId Exam ID
      * @param courseId Course ID
+     * @param fields Comma-separated list of fields to select (e.g. id,name)
+     * @param include Comma-separated list of relations to include (e.g. subjects)
      * @returns any Course fetched successfully
      * @throws ApiError
      */
-    public static getApiExamsCourses1({
-        examId,
-        courseId,
-        fields,
-        include,
-    }: {
-        /**
-         * Exam ID
-         */
+    public static getApiExamsCourses1(
         examId: number,
-        /**
-         * Course ID
-         */
         courseId: number,
-        /**
-         * Comma-separated list of fields to select (e.g. id,name)
-         */
         fields?: string,
-        /**
-         * Comma-separated list of relations to include (e.g. subjects)
-         */
         include?: string,
-    }): CancelablePromise<(ApiResponse & {
+    ): CancelablePromise<(ApiResponse & {
         data?: Course;
     })> {
         return __request(OpenAPI, {
@@ -152,21 +115,11 @@ export class CoursesService {
      * @returns any Course updated successfully
      * @throws ApiError
      */
-    public static putApiExamsCourses({
-        examId,
-        courseId,
-        requestBody,
-    }: {
-        /**
-         * Exam ID
-         */
+    public static putApiExamsCourses(
         examId: number,
-        /**
-         * Course ID
-         */
         courseId: number,
         requestBody: UpdateCourseRequest,
-    }): CancelablePromise<(ApiResponse & {
+    ): CancelablePromise<(ApiResponse & {
         data?: Course;
     })> {
         return __request(OpenAPI, {
@@ -192,19 +145,10 @@ export class CoursesService {
      * @returns any Course deleted successfully
      * @throws ApiError
      */
-    public static deleteApiExamsCourses({
-        examId,
-        courseId,
-    }: {
-        /**
-         * Exam ID
-         */
+    public static deleteApiExamsCourses(
         examId: number,
-        /**
-         * Course ID
-         */
         courseId: number,
-    }): CancelablePromise<(ApiResponse & {
+    ): CancelablePromise<(ApiResponse & {
         data?: any;
     })> {
         return __request(OpenAPI, {

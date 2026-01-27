@@ -16,9 +16,9 @@ export type Subject = {
      */
     description?: string;
     /**
-     * Whether the subject is active
+     * Status of the subject
      */
-    status?: "ACTIVE" | "INACTIVE";
+    status?: Subject.status;
     /**
      * ID of the course this subject belongs to
      */
@@ -32,4 +32,13 @@ export type Subject = {
      */
     updatedAt?: string;
 };
+export namespace Subject {
+    /**
+     * Status of the subject
+     */
+    export enum status {
+        ACTIVE = 'ACTIVE',
+        INACTIVE = 'INACTIVE',
+    }
+}
 

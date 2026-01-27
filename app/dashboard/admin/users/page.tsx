@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Button } from '@/components/ui/button';
-import { BusinessUsersService } from '@/lib/api';
+import { UsersService } from '@/lib/api';
 import { BusinessUser } from '@/lib/api';
 import { Users, Mail, Calendar, Shield, User } from 'lucide-react';
 
@@ -26,7 +26,8 @@ export default function UsersPage() {
 
       try {
         console.log('Fetching users for business ID:', business.id);
-        const response = await BusinessUsersService.getApiUsersBusinessUsers(business.id);
+        const response = await UsersService.getApiBusinessUsers(business.id);
+        // @ts-ignore
         setUsers(response.data || []);
       } catch (err: any) {
         setError(err.body?.message || 'Failed to fetch users');

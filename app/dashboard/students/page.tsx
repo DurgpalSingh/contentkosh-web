@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { ExamsService, BatchesService, CoursesService } from '@/lib/api';
+import { ExamsService, BatchesService, CoursesService, UsersService } from '@/lib/api';
 import { Exam, Course, Batch, BatchUser, BatchWithUsers } from '@/lib/api';
 import { Users, Filter, Search, GraduationCap } from 'lucide-react';
 import { StudentGridCard } from '@/components/dashboard/students/StudentGridCard';
@@ -48,24 +48,24 @@ export default function StudentsPage() {
     // Initial Data Fetch
     useEffect(() => {
         const fetchData = async () => {
-            if (!business?.id) return;
+            if (!business?.id || typeof business.id !== 'number') return;
 
             try {
                 setLoading(true);
                 console.log('Fetching initial data for students page...');
 
                 // 1. Fetch Exams
-                const examsResponse = await ExamsService.getExams(business.id);
+                const examsResponse = await ExamsService.getApiBusinessExams(business.id);
                 const fetchedExams = examsResponse.data || [];
                 setExams(fetchedExams);
 
                 // 2. Fetch all courses (needed for hierarchical relationships)
                 // We'll iterate through exams to get courses. Parallelized.
                 const coursesPromises = fetchedExams.map(exam =>
-                    exam.id ? ExamsService.getApiExamsWithCourses(exam.id) : Promise.resolve({ data: { courses: [] } })
+                    exam.id ? ExamsService.getApiBusinessExams1(business.id!, exam.id, undefined, 'courses') : Promise.resolve({ data: { courses: [] } })
                 );
 
-                // Note: getApiExamsWithCourses returns ExamWithCourses, which has .courses property
+                // Note: getApiBusinessExam with include='courses' returns Exam which has .courses property
                 const coursesResponses = await Promise.all(coursesPromises);
                 const allFetchedCourses = coursesResponses.flatMap(res => (res.data as any)?.courses || []) as Course[];
                 setCourses(allFetchedCourses);
@@ -90,46 +90,54 @@ export default function StudentsPage() {
                 );
                 setBatches(allFetchedBatches);
 
-                // 4. Fetch Users for ALL batches to aggregate student data
-                // This is the heavy part.
-                const batchUsersPromises = allFetchedBatches.map(batch =>
-                    batch.id ? BatchesService.getApiBatchesWithUsers(batch.id) : Promise.resolve({ data: { users: [] } })
-                );
-                const batchUsersResponses = await Promise.all(batchUsersPromises);
+                // 4. WORKAROUND: Fetch All Users for the business and filter/aggregate manually
+                // Since getApiBatchesWithUsers is missing, we fetch all business users (which includes students)
+                // In a perfect world, we'd have an endpoint to get students with their batch enrollments
+
+                let allBusinessUsers = [];
+                try {
+                    const usersResponse = await UsersService.getApiBusinessUsers(business.id);
+                    // @ts-ignore
+                    allBusinessUsers = usersResponse.data || [];
+                } catch (userErr) {
+                    console.error('Failed to fetch business users:', userErr);
+                }
 
                 // 5. Aggregate Data
                 const studentMap = new Map<number, AggregatedStudent>();
 
-                batchUsersResponses.forEach((res, index) => {
-                    const batchData = res.data as BatchWithUsers;
-                    const batchInfo = allFetchedBatches[index];
+                // Initialize map with all filtered business users
+                allBusinessUsers.forEach((bUser: any) => {
+                    const userData = bUser.user;
+                    if (userData && userData.id) {
+                        // Optional: Filter by role if you only want 'STUDENT'
+                        // if (bUser.role !== 'STUDENT') return;
 
-                    if (batchData && batchData.batchUsers) {
-                        batchData.batchUsers.forEach((batchUser: any) => {
-                            // batchUser is of type BatchUser, which has a nested 'user' object.
-                            const userData = batchUser.user;
-                            const userId = userData?.id;
-
-                            if (userId) {
-                                if (!studentMap.has(userId)) {
-                                    studentMap.set(userId, {
-                                        id: userId,
-                                        name: userData.name || 'Unknown',
-                                        email: userData.email || '',
-                                        createdAt: batchUser.createdAt, // First seen date?
-                                        enrolledBatches: []
-                                    });
-                                }
-
-                                // Add batch to student's list if not already there
-                                const student = studentMap.get(userId)!;
-                                if (!student.enrolledBatches.some(b => b.id === batchInfo.id)) {
-                                    student.enrolledBatches.push(batchInfo);
-                                }
-                            }
-                        });
+                        if (!studentMap.has(userData.id)) {
+                            studentMap.set(userData.id, {
+                                id: userData.id,
+                                name: userData.name || 'Unknown',
+                                email: userData.email || '',
+                                createdAt: bUser.createdAt,
+                                enrolledBatches: []
+                            });
+                        }
                     }
                 });
+
+                // Attempt to link batch information if possible. 
+                // Without getApiBatchesWithUsers, we can't easily know which student is in which batch
+                // UNLESS the 'getApiBusinessUsers' returns that info (it currently doesn't seem to based on my repo check).
+                // So for now, we will display the LIST of students, but the 'enrolledBatches' might be empty
+                // until we implement a proper backend endpoint for 'students with batches'.
+
+                /* 
+                   LIMITATION: The current backend implementation of getUsersByBusiness (which we just fixed) 
+                   returns User details but DOES NOT include batch enrollments.
+                   So the 'Batches' column in the Students table will be empty.
+                   However, at least the students will LIST now.
+                */
+
 
                 setAllStudents(Array.from(studentMap.values()));
 
@@ -213,7 +221,7 @@ export default function StudentsPage() {
     const activeFilterCount = selectedExamIds.length + selectedCourseIds.length + selectedBatchIds.length;
 
     return (
-            <>
+        <>
             <div className="space-y-6">
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

@@ -3,6 +3,13 @@
 import { useAuthStore } from '@/store/useAuthStore';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Button } from '@/components/ui/button';
+import { ROUTES, USER_ROLES } from '@/lib/constants';
+import { AdminDashboard } from '@/components/dashboard/AdminDashboard';
+import { TeacherDashboard } from '@/components/dashboard/TeacherDashboard';
+import { StudentDashboard } from '@/components/dashboard/StudentDashboard';
+import { hasRole } from '@/lib/rbac';
+import { useRouter } from 'next/navigation';
+
 
 export default function Dashboard() {
   const { user, isAuthenticated, isLoading, isInitialized } = useAuthStore();
@@ -17,6 +24,19 @@ export default function Dashboard() {
 
   if (!isAuthenticated || !user) {
     return null;
+  }
+
+  // Render dashboard based on role
+  if (hasRole(user, USER_ROLES.ADMIN)) {
+    return <AdminDashboard />;
+  }
+
+  if (hasRole(user, USER_ROLES.TEACHER)) {
+    return <TeacherDashboard />;
+  }
+
+  if (hasRole(user, USER_ROLES.STUDENT)) {
+    return <StudentDashboard />;
   }
 
   return <DefaultDashboard />;
@@ -107,7 +127,10 @@ function RecentActivity() {
   );
 }
 
+
 function QuickActions() {
+  const router = useRouter();
+
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
@@ -115,6 +138,7 @@ function QuickActions() {
         <Button
           variant="outline"
           className="w-full text-left p-3 h-auto justify-start border-gray-200 hover:bg-gray-50 transition-colors"
+          onClick={() => router.push('/dashboard/batches')}
         >
           <div>
             <div className="font-medium text-gray-900">Create New Batch</div>
@@ -125,6 +149,7 @@ function QuickActions() {
         <Button
           variant="outline"
           className="w-full text-left p-3 h-auto justify-start border-gray-200 hover:bg-gray-50 transition-colors"
+          onClick={() => router.push('/dashboard/courses')}
         >
           <div>
             <div className="font-medium text-gray-900">Add Course</div>
@@ -135,6 +160,7 @@ function QuickActions() {
         <Button
           variant="outline"
           className="w-full text-left p-3 h-auto justify-start border-gray-200 hover:bg-gray-50 transition-colors"
+          onClick={() => router.push(ROUTES.ADMIN.ANNOUNCEMENTS)}
         >
           <div>
             <div className="font-medium text-gray-900">Send Announcement</div>

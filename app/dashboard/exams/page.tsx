@@ -27,18 +27,18 @@ export default function ExamsPage() {
     const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
 
     const fetchExams = useCallback(async () => {
-        if (!business?.id) return;
+        if (!business?.id || typeof business.id !== 'number') {
+            console.warn('Cannot fetch exams: Invalid business ID', business);
+            return;
+        }
 
         try {
             setLoading(true);
-            const response = await ExamsService.getApiBusinessExams({
-                businessId: business.id,
-                include: 'courses',
-            });
+            const response = await ExamsService.getApiBusinessExams(business.id);
             const examsList = response?.data || [];
             const sortedExams = [...examsList].sort(
                 (a, b) =>
-                    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                    new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
             );
             setExams(sortedExams);
             setError(null);
@@ -69,10 +69,7 @@ export default function ExamsPage() {
     const confirmDeleteExam = async () => {
         if (!selectedExam?.id || !business?.id) return;
         try {
-            await ExamsService.deleteApiBusinessExams({
-                businessId: business.id,
-                id: selectedExam.id,
-            });
+            await ExamsService.deleteApiBusinessExams(business.id, selectedExam.id);
             await fetchExams();
             setIsDeleteModalOpen(false);
             setSelectedExam(null);

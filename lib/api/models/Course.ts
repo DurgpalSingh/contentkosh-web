@@ -3,7 +3,6 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { Subject } from './Subject';
-import type { Batch } from './Batch';
 export type Course = {
     /**
      * Course ID
@@ -18,17 +17,13 @@ export type Course = {
      */
     description?: string;
     /**
-     * Optional start date
+     * Duration of the course (e.g., 6 months, 1 year)
      */
-    startDate?: string;
+    duration?: string;
     /**
-     * Optional end date
+     * Status of the course
      */
-    endDate?: string;
-    /**
-     * Whether the course is active
-     */
-    status?: "ACTIVE" | "INACTIVE";
+    status?: Course.status;
     /**
      * ID of the exam this course belongs to
      */
@@ -45,9 +40,14 @@ export type Course = {
      * List of subjects under this course
      */
     subjects?: Array<Subject>;
-    /**
-     * List of batches under this course
-     */
-    batches?: Array<Batch>;
 };
+export namespace Course {
+    /**
+     * Status of the course
+     */
+    export enum status {
+        ACTIVE = 'ACTIVE',
+        INACTIVE = 'INACTIVE',
+    }
+}
 

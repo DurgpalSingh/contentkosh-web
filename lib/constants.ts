@@ -1,4 +1,4 @@
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
 
 export const ROUTES = {
   LOGIN: '/login',
@@ -19,9 +19,9 @@ export const ROUTES = {
 } as const;
 
 export const USER_ROLES = {
-  ADMIN: 'admin',
-  TEACHER: 'teacher',
-  STUDENT: 'student',
+  ADMIN: 'ADMIN',
+  TEACHER: 'TEACHER',
+  STUDENT: 'STUDENT',
 } as const;
 
 
