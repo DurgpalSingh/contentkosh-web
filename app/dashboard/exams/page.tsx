@@ -11,10 +11,12 @@ import { DeleteConfirmModal } from '@/components/modals/DeleteConfirmModal';
 import { ExamsService, Exam } from '@/lib/api';
 import { Plus, BookOpen } from 'lucide-react';
 import { ExamGridCard } from '@/components/dashboard/exams/ExamGridCard';
+import { USER_ROLES } from '@/lib/constants';
 
 export default function ExamsPage() {
     const { user, business, isAuthenticated, isLoading, isInitialized } = useAuthStore();
     const router = useRouter();
+    const isAdmin = user?.role === USER_ROLES.ADMIN;
 
     const [exams, setExams] = useState<Exam[]>([]);
     const [loading, setLoading] = useState(true);
@@ -100,13 +102,15 @@ export default function ExamsPage() {
                         <h1 className="text-3xl font-bold text-gray-900">Exams</h1>
                         <p className="text-gray-600 mt-1">Manage your exams and their details</p>
                     </div>
-                    <Button
-                        onClick={() => setIsAddExamModalOpen(true)}
-                        className="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-                    >
-                        <Plus className="h-5 w-5 mr-2" />
-                        Add Exam
-                    </Button>
+                    {isAdmin && (
+                        <Button
+                            onClick={() => setIsAddExamModalOpen(true)}
+                            className="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                        >
+                            <Plus className="h-5 w-5 mr-2" />
+                            Add Exam
+                        </Button>
+                    )}
                 </div>
 
                 {/* Content */}
@@ -125,13 +129,15 @@ export default function ExamsPage() {
                         </div>
                         <h3 className="text-lg font-medium text-gray-900 mb-2">No exams created</h3>
                         <p className="text-gray-500 mb-6">Get started by creating your first exam.</p>
-                        <Button
-                            onClick={() => setIsAddExamModalOpen(true)}
-                            className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium"
-                        >
-                            <Plus className="h-4 w-4 mr-2" />
-                            Create Exam
-                        </Button>
+                        {isAdmin && (
+                            <Button
+                                onClick={() => setIsAddExamModalOpen(true)}
+                                className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium"
+                            >
+                                <Plus className="h-4 w-4 mr-2" />
+                                Create Exam
+                            </Button>
+                        )}
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

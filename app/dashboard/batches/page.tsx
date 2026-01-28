@@ -12,6 +12,7 @@ import { BatchesFilterModal } from '@/components/dashboard/batches/BatchesFilter
 import { AddBatchModal } from '@/components/modals/AddBatchModal';
 import { EditBatchModal } from '@/components/modals/EditBatchModal';
 import { DeleteConfirmModal } from '@/components/modals/DeleteConfirmModal';
+import { USER_ROLES } from '@/lib/constants';
 
 interface ExtendedBatch extends Batch {
   courseId?: number;
@@ -21,7 +22,8 @@ interface ExtendedBatch extends Batch {
 }
 
 export default function BatchesPage() {
-  const { business, isAuthenticated, isLoading, isInitialized } = useAuthStore();
+  const { user, business, isAuthenticated, isLoading, isInitialized } = useAuthStore();
+  const isAdmin = user?.role === USER_ROLES.ADMIN;
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -184,8 +186,8 @@ export default function BatchesPage() {
     setIsAddBatchModalOpen(true);
   };
 
-  const handleViewStudents = (batch: Batch) => {
-    router.push(`/dashboard/students?batchId=${batch.id}`);
+  const handleViewDetails = (batch: Batch) => {
+    router.push(`/dashboard/batches/details?id=${batch.id}`);
   };
 
   const handleEditBatch = (batch: Batch) => {
@@ -230,10 +232,12 @@ export default function BatchesPage() {
             <h1 className="text-3xl font-bold text-gray-900">Batches</h1>
             <p className="text-gray-600 mt-1">Manage student batches and enrollment</p>
           </div>
-          <Button onClick={handleAddBatchClick} className='bg-blue-600 hover:bg-blue-500'>
-            <Plus className="h-5 w-5 mr-2" />
-            Add Batch
-          </Button>
+          {isAdmin && (
+            <Button onClick={handleAddBatchClick} className='bg-blue-600 hover:bg-blue-500'>
+              <Plus className="h-5 w-5 mr-2" />
+              Add Batch
+            </Button>
+          )}
         </div>
 
         {/* Search & Filter */}
@@ -294,7 +298,7 @@ export default function BatchesPage() {
                 batch={batch}
                 courseName={batch.courseName}
                 memberCount={batch.memberCount}
-                onViewStudents={handleViewStudents}
+                onViewDetails={handleViewDetails}
                 onEdit={handleEditBatch}
                 onDelete={handleDeleteBatch}
               />
