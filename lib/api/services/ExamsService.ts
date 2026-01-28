@@ -45,6 +45,7 @@ export class ExamsService {
      */
     public static getApiBusinessExams(
         businessId: number,
+        include?: string,
     ): CancelablePromise<(ApiResponse & {
         data?: Array<Exam>;
     })> {
@@ -53,6 +54,9 @@ export class ExamsService {
             url: '/api/business/{businessId}/exams',
             path: {
                 'businessId': businessId,
+            },
+            query: {
+                'include': include,
             },
             errors: {
                 400: `Invalid Business ID`,

@@ -34,7 +34,7 @@ export default function ExamsPage() {
 
         try {
             setLoading(true);
-            const response = await ExamsService.getApiBusinessExams(business.id);
+            const response = await ExamsService.getApiBusinessExams(business.id, 'courses');
             const examsList = response?.data || [];
             const sortedExams = [...examsList].sort(
                 (a, b) =>
