@@ -96,23 +96,26 @@ export default function CoursesPage() {
 
       const coursesResponse = await CoursesService.getApiExamsCourses(
         examId,
-        undefined,
-        undefined,
-        'subjects'
+        { include: 'subjects' }
       );
 
       const fetchedCourses = (coursesResponse.data || []) as Course[];
 
+      // Create a map for faster lookup: ID -> Name
+      const examMap = new Map(exams.map(e => [e.id!, e.name!]));
+
       const extendedCourses: ExtendedCourse[] = fetchedCourses.map((course) => ({
         ...course,
         examId,
-        examName: exams.find((e) => e.id === examId)?.name,
+        examName: examMap.get(examId),
       }));
 
       // Sort newest first
-      extendedCourses.sort(
-        (a, b) => new Date(b.createdAt || '').getTime() - new Date(a.createdAt || '').getTime()
-      );
+      extendedCourses.sort((a, b) => {
+        const tA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const tB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return tB - tA;
+      });
 
       setCourses(extendedCourses);
     } catch (err: any) {

@@ -54,7 +54,39 @@ export class CoursesService {
         include?: string,
     ): CancelablePromise<(ApiResponse & {
         data?: Array<Course>;
+    })>;
+    public static getApiExamsCourses(
+        examId: number,
+        options: {
+            active?: boolean;
+            fields?: string;
+            include?: string;
+        }
+    ): CancelablePromise<(ApiResponse & {
+        data?: Array<Course>;
+    })>;
+    public static getApiExamsCourses(
+        examId: number,
+        arg2?: boolean | { active?: boolean; fields?: string; include?: string },
+        arg3?: string,
+        arg4?: string,
+    ): CancelablePromise<(ApiResponse & {
+        data?: Array<Course>;
     })> {
+        let active: boolean | undefined;
+        let fields: string | undefined;
+        let include: string | undefined;
+
+        if (typeof arg2 === 'object' && arg2 !== null) {
+            active = arg2.active;
+            fields = arg2.fields;
+            include = arg2.include;
+        } else {
+            active = arg2 as boolean | undefined;
+            fields = arg3;
+            include = arg4;
+        }
+
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/exams/{examId}/courses',

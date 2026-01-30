@@ -36,10 +36,11 @@ export default function ExamsPage() {
             setLoading(true);
             const response = await ExamsService.getApiBusinessExams(business.id, 'courses');
             const examsList = response?.data || [];
-            const sortedExams = [...examsList].sort(
-                (a, b) =>
-                    new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
-            );
+            const sortedExams = [...examsList].sort((a, b) => {
+                const tA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                const tB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                return tB - tA;
+            });
             setExams(sortedExams);
             setError(null);
         } catch (err: any) {

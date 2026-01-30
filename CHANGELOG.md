@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ---
 
-## Version [1.3.1] - Dynamic Dashboard UI & Role-Based Access
+## Version [1.1.3] - Dynamic Dashboard UI & Role-Based Access
 **P.R Raised by** : aaditya-singh-21
 **Date** : 2026-01-24
 

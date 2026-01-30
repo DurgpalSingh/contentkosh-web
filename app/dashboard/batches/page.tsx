@@ -60,36 +60,28 @@ export default function BatchesPage() {
     setError(null);
 
     try {
-      // 1. Fetch Exams
-      const res = await ExamsService.getApiBusinessExams(business.id);
+      // 1. Fetch Exams WITH courses included
+      // @ts-ignore - Assuming 'courses' is a valid include based on context
+      const res = await ExamsService.getApiBusinessExams(business.id, 'courses');
       const fetchedExams = res.data ?? [];
       setExams(fetchedExams);
 
-      // 2. Fetch Courses for each Exam
-      const coursesPromises = fetchedExams.map(exam =>
-        exam.id
-          ? CoursesService.getApiExamsCourses(exam.id)
-            .then(cRes => ({ examId: exam.id, courses: cRes.data || [] }))
-            .catch(err => {
-              console.error(`Failed to fetch courses for exam ${exam.id}`, err);
-              return { examId: exam.id, courses: [] };
-            })
-          : Promise.resolve({ examId: undefined, courses: [] })
-      );
-
-      const coursesResults = await Promise.all(coursesPromises);
+      // 2. Create optimized lookup map for exams
+      // const examMap = new Map(fetchedExams.map(e => [e.id, e])); // If needed for other lookups
 
       // 3. Flatten and standardize courses
-      const allCourses: Course[] = coursesResults.flatMap(result =>
-        (result.courses as Course[]).map(course => ({
+      const allCourses: Course[] = fetchedExams.flatMap((exam) => {
+        // @ts-ignore - Assuming courses are attached to exam object
+        const examCourses = (exam.courses as Course[]) || [];
+        return examCourses.map((course) => ({
           ...course,
-          examId: result.examId,
-          examName: fetchedExams.find(e => e.id === result.examId)?.name
-        }))
-      ).sort((a, b) => {
-        const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-        const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-        return tb - ta;
+          examId: exam.id,
+          examName: exam.name,
+        }));
+      }).sort((a, b) => {
+        const tA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const tB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return tB - tA;
       });
 
       setCourses(allCourses);
@@ -120,27 +112,28 @@ export default function BatchesPage() {
 
   // Load batches only for currently selected course
   const fetchBatches = useCallback(async (courseId: number) => {
+    const selectedCourse = courses.find((c) => c.id === courseId);
+    if (!selectedCourse) return;
+
     try {
       setLoading(true);
       setError(null);
 
       const res = await BatchesService.getApiBatchesCourse(courseId);
 
-      const extended: ExtendedBatch[] = (res.data ?? []).map((batch: BatchWithUsers) => {
-        const course = courses.find((c) => c.id === courseId);
-        return {
-          ...batch,
-          memberCount: batch?.batchUsers?.length ?? 0,
-          courseId,
-          courseName: course?.name,
-          examId: course?.examId,
-        };
-      });
+      // Optimize: Avoid find inside map if possible, but here we just use the known selectedCourse
+      const extended: ExtendedBatch[] = (res.data ?? []).map((batch: BatchWithUsers) => ({
+        ...batch,
+        memberCount: batch?.batchUsers?.length ?? 0,
+        courseId,
+        courseName: selectedCourse.name,
+        examId: selectedCourse.examId,
+      }));
 
       extended.sort((a, b) => {
-        const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-        const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-        return tb - ta;
+        const tA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const tB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return tB - tA;
       });
 
       setBatches(extended);

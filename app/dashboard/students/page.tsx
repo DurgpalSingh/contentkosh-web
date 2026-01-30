@@ -54,45 +54,28 @@ export default function StudentsPage() {
                 setLoading(true);
                 console.log('Fetching initial data for students page...');
 
-                // 1. Fetch Exams
-                const examsResponse = await ExamsService.getApiBusinessExams(business.id);
+                // 1. Fetch Exams with Courses and Batches included
+                const examsResponse = await ExamsService.getApiBusinessExams(business.id, 'courses.batches');
                 const fetchedExams = examsResponse.data || [];
                 setExams(fetchedExams);
 
-                // 2. Fetch all courses (needed for hierarchical relationships)
-                // We'll iterate through exams to get courses. Parallelized.
-                const coursesPromises = fetchedExams.map(exam =>
-                    exam.id ? ExamsService.getApiBusinessExams1(business.id!, exam.id, undefined, 'courses') : Promise.resolve({ data: { courses: [] } })
+                // 2. Extract all courses
+                const allFetchedCourses = fetchedExams.flatMap(exam =>
+                    (exam.courses as Course[]) || []
                 );
-
-                // Note: getApiBusinessExam with include='courses' returns Exam which has .courses property
-                const coursesResponses = await Promise.all(coursesPromises);
-                const allFetchedCourses = coursesResponses.flatMap(res => (res.data as any)?.courses || []) as Course[];
                 setCourses(allFetchedCourses);
 
-                // 3. Fetch all batches for these courses
-                const batchesPromises = allFetchedCourses.map(course =>
-                    course.id ? BatchesService.getApiBatchesCourse(course.id).then(res => ({
-                        courseId: course.id,
-                        examId: course.examId,
-                        data: res.data || []
-                    })) : Promise.resolve({ courseId: undefined, examId: undefined, data: [] })
-                );
-                const batchesResponses = await Promise.all(batchesPromises);
-
-                // Flatten and enrich batches with courseId and examId
-                const allFetchedBatches: ExtendedBatch[] = batchesResponses.flatMap(res =>
-                    res.data.map((batch: Batch) => ({
+                // 3. Extract all batches from courses
+                const allFetchedBatches: ExtendedBatch[] = allFetchedCourses.flatMap(course => {
+                    // @ts-ignore - Assuming 'batches' is included in course object due to 'courses.batches' include
+                    const courseBatches = (course.batches as Batch[]) || [];
+                    return courseBatches.map(batch => ({
                         ...batch,
-                        courseId: res.courseId,
-                        examId: res.examId
-                    }))
-                );
+                        courseId: course.id,
+                        examId: course.examId
+                    }));
+                });
                 setBatches(allFetchedBatches);
-
-                // 4. WORKAROUND: Fetch All Users for the business and filter/aggregate manually
-                // Since getApiBatchesWithUsers is missing, we fetch all business users (which includes students)
-                // In a perfect world, we'd have an endpoint to get students with their batch enrollments
 
                 let allBusinessUsers = [];
                 try {
@@ -110,8 +93,6 @@ export default function StudentsPage() {
                 allBusinessUsers.forEach((bUser: any) => {
                     const userData = bUser.user;
                     if (userData && userData.id) {
-                        // Optional: Filter by role if you only want 'STUDENT'
-                        // if (bUser.role !== 'STUDENT') return;
 
                         if (!studentMap.has(userData.id)) {
                             studentMap.set(userData.id, {
@@ -132,7 +113,7 @@ export default function StudentsPage() {
                 // until we implement a proper backend endpoint for 'students with batches'.
 
                 /* 
-                   LIMITATION: The current backend implementation of getUsersByBusiness (which we just fixed) 
+                   LIMITATION: The current backend implementation of getUsersByBusiness
                    returns User details but DOES NOT include batch enrollments.
                    So the 'Batches' column in the Students table will be empty.
                    However, at least the students will LIST now.

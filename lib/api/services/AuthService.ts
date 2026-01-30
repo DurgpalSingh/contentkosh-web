@@ -5,6 +5,7 @@
 import type { ApiResponse } from '../models/ApiResponse';
 import type { LoginRequest } from '../models/LoginRequest';
 import type { RegisterRequest } from '../models/RegisterRequest';
+import type { User } from '../models/User';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
@@ -21,7 +22,7 @@ export class AuthService {
         data?: {
             accessToken?: string;
             refreshToken?: string;
-            user?: Record<string, any>;
+            user?: User;
         };
     })> {
         return __request(OpenAPI, {
@@ -46,7 +47,7 @@ export class AuthService {
         data?: {
             accessToken?: string;
             refreshToken?: string;
-            user?: Record<string, any>;
+            user?: User;
         };
     })> {
         return __request(OpenAPI, {
@@ -77,7 +78,7 @@ export class AuthService {
         data?: {
             accessToken?: string;
             refreshToken?: string;
-            user?: Record<string, any>;
+            user?: User;
         };
     })> {
         return __request(OpenAPI, {

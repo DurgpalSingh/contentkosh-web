@@ -44,10 +44,11 @@ export default function CourseSubjectsPage() {
 
       const data = response.data as Course | undefined;
       setCourse(data || null);
-      const sortedSubjects = [...(data?.subjects || [])].sort(
-        (a, b) =>
-          new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
-      );
+      const sortedSubjects = [...(data?.subjects || [])].sort((a, b) => {
+        const tA = new Date(a.createdAt || 0).getTime();
+        const tB = new Date(b.createdAt || 0).getTime();
+        return tB - tA;
+      });
       setSubjects(sortedSubjects);
       setError(null);
     } catch (err) {
