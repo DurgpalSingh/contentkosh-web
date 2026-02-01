@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## Version [1.1.4] - Batch Details Optimization & Refactoring
+**P.R Raised by** : aaditya-singh-21
+**Date** : 2026-02-01
+
+### Changed
+- **Batch Details Page**:
+  - Implemented `Promise.allSettled` to handle multiple API requests (Exams -> Courses -> Batches) robustly, preventing global page failure if a single request fails.
+  - Optimized data fetching logic to ensure validity of intermediate data before proceeding.
+- **Batch Specific Page**:
+  - Refactored `[batchId]/page.tsx` to implement **lazy loading** for "Students" and "Teachers" tabs, significantly reducing initial load time and network calls.
+  - Removed nested `try-catch` blocks for clearer error handling and better code maintainability.
+  - Added caching mechanism for tabs to prevent redundant API calls when switching between Students and Teachers.
+
 ## Version [1.1.3] - Dynamic Dashboard UI & Role-Based Access
 **P.R Raised by** : aaditya-singh-21
 **Date** : 2026-01-24
