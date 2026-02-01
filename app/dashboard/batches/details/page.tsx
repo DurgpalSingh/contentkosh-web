@@ -175,19 +175,44 @@ export default function BatchDetailsPage() {
                 const examsRes = await ExamsService.getApiBusinessExams(business.id!);
                 const exams = examsRes.data || [];
 
-                // 2. Fetch Courses
-                const coursesPromises = exams.map(exam =>
-                    exam.id ? CoursesService.getApiExamsCourses(exam.id) : Promise.resolve({ data: [] })
-                );
-                const coursesRes = await Promise.all(coursesPromises);
-                const courses = coursesRes.flatMap(r => r.data || []) as Course[];
+                if (!exams.length) {
+                    setAllBatches([]);
+                    return;
+                }
 
-                // 3. Fetch Batches
-                const batchesPromises = courses.map(course =>
-                    course.id ? BatchesService.getApiBatchesCourse(course.id) : Promise.resolve({ data: [] })
+                // 2. Fetch Courses for all Exams (Parallel)
+                // We use allSettled to ensure one failure doesn't break the entire flow
+                const coursesResults = await Promise.allSettled(
+                    exams.map(exam =>
+                        exam.id ? CoursesService.getApiExamsCourses(exam.id) : Promise.reject('No ID')
+                    )
                 );
-                const batchesRes = await Promise.all(batchesPromises);
-                const batches = batchesRes.flatMap(r => r.data || []) as Batch[];
+
+                const courses = coursesResults
+                    .flatMap(result =>
+                        result.status === 'fulfilled' && result.value.data
+                            ? result.value.data
+                            : []
+                    ) as Course[];
+
+                if (!courses.length) {
+                    setAllBatches([]);
+                    return;
+                }
+
+                // 3. Fetch Batches for all Courses (Parallel)
+                const batchesResults = await Promise.allSettled(
+                    courses.map(course =>
+                        course.id ? BatchesService.getApiBatchesCourse(course.id) : Promise.reject('No ID')
+                    )
+                );
+
+                const batches = batchesResults
+                    .flatMap(result =>
+                        result.status === 'fulfilled' && result.value.data
+                            ? result.value.data
+                            : []
+                    ) as Batch[];
 
                 // Sort by name
                 batches.sort((a, b) => (a.displayName || '').localeCompare(b.displayName || ''));

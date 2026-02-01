@@ -77,6 +77,13 @@ export default function BatchDetailsPage() {
 
     const isAdmin = currentUser?.role === USER_ROLES.ADMIN;
 
+    // State for lazy loading
+    const [studentsLoaded, setStudentsLoaded] = useState(false);
+    const [teachersLoaded, setTeachersLoaded] = useState(false);
+
+    const isTeacher = currentUser?.role === USER_ROLES.TEACHER;
+
+    // 1. Fetch Batch Details (Always needed)
     useEffect(() => {
         if (!isAuthenticated) return;
         if (!batchId || isNaN(batchId)) {
@@ -85,27 +92,11 @@ export default function BatchDetailsPage() {
             return;
         }
 
-        const fetchData = async () => {
+        const fetchBatchDetails = async () => {
             try {
                 setLoading(true);
-                // 1. Fetch Batch Details
                 const batchRes = await BatchesService.getApiBatches(batchId);
                 setBatch(batchRes.data || batchRes);
-
-                // 2. Fetch Students
-                const studentsRes = await BatchUsersService.getApiBatchesUsers(batchId, 'STUDENT');
-                setStudents(Array.isArray(studentsRes) ? studentsRes : (studentsRes as any).data || []);
-
-                // 3. Fetch Teachers
-                if (currentUser?.role !== USER_ROLES.TEACHER) {
-                    try {
-                        const teachersRes = await BatchUsersService.getApiBatchesUsers(batchId, 'TEACHER');
-                        setTeachers(Array.isArray(teachersRes) ? teachersRes : (teachersRes as any).data || []);
-                    } catch (e) {
-                        console.warn("Could not fetch teachers", e);
-                    }
-                }
-
             } catch (err: any) {
                 console.error('Failed to load batch data:', err);
                 setError('Failed to load batch details');
@@ -114,8 +105,43 @@ export default function BatchDetailsPage() {
             }
         };
 
-        fetchData();
-    }, [batchId, isAuthenticated, currentUser?.role]);
+        fetchBatchDetails();
+    }, [batchId, isAuthenticated]);
+
+    // 2. Fetch Students (Only if tab is students and not loaded)
+    useEffect(() => {
+        if (!isAuthenticated || !batchId || activeTab !== 'students' || studentsLoaded) return;
+
+        const fetchStudents = async () => {
+            try {
+                const studentsRes = await BatchUsersService.getApiBatchesUsers(batchId, 'STUDENT');
+                setStudents(Array.isArray(studentsRes) ? studentsRes : (studentsRes as any).data || []);
+                setStudentsLoaded(true);
+            } catch (e) {
+                console.error('Failed to fetch students', e);
+            }
+        };
+
+        fetchStudents();
+    }, [batchId, activeTab, studentsLoaded, isAuthenticated]);
+
+    // 3. Fetch Teachers (Only if tab is teachers and not loaded)
+    useEffect(() => {
+        if (!isAuthenticated || !batchId || isTeacher || activeTab !== 'teachers' || teachersLoaded) return;
+
+        const fetchTeachers = async () => {
+            try {
+                // See note above about loading state.
+                const teachersRes = await BatchUsersService.getApiBatchesUsers(batchId, 'TEACHER');
+                setTeachers(Array.isArray(teachersRes) ? teachersRes : (teachersRes as any).data || []);
+                setTeachersLoaded(true);
+            } catch (e) {
+                console.warn("Could not fetch teachers", e);
+            }
+        };
+
+        fetchTeachers();
+    }, [batchId, activeTab, teachersLoaded, isTeacher, isAuthenticated]);
 
     if (authLoading || loading) {
         return <div className="min-h-screen flex items-center justify-center"><LoadingSpinner size="lg" /></div>;
@@ -131,8 +157,6 @@ export default function BatchDetailsPage() {
             </div>
         );
     }
-
-    const isTeacher = currentUser?.role === USER_ROLES.TEACHER;
 
     const tabs = [
         { id: 'students', label: 'Students', icon: Users },
