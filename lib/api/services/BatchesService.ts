@@ -110,6 +110,7 @@ export class BatchesService {
     public static getApiBatchesCourse(
         courseId: number,
         active?: boolean,
+        include?: string,
     ): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'GET',
@@ -119,6 +120,7 @@ export class BatchesService {
             },
             query: {
                 'active': active,
+                'include': include,
             },
             errors: {
                 400: `Invalid course ID`,

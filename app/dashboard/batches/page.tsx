@@ -119,7 +119,7 @@ export default function BatchesPage() {
       setLoading(true);
       setError(null);
 
-      const res = await BatchesService.getApiBatchesCourse(courseId);
+      const res = await BatchesService.getApiBatchesCourse(courseId, undefined, 'batchUsers');
 
       // Optimize: Avoid find inside map if possible, but here we just use the known selectedCourse
       const extended: ExtendedBatch[] = (res.data ?? []).map((batch: BatchWithUsers) => ({
