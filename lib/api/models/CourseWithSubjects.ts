@@ -17,17 +17,13 @@ export type CourseWithSubjects = {
      */
     description?: string;
     /**
-     * Optional start date
+     * Duration of the course
      */
-    startDate?: string;
+    duration?: string;
     /**
-     * Optional end date
+     * Status of the course
      */
-    endDate?: string;
-    /**
-     * Whether the course is active
-     */
-    status?: "ACTIVE" | "INACTIVE";
+    status?: CourseWithSubjects.status;
     /**
      * ID of the exam this course belongs to
      */
@@ -45,4 +41,13 @@ export type CourseWithSubjects = {
      */
     subjects?: Array<Subject>;
 };
+export namespace CourseWithSubjects {
+    /**
+     * Status of the course
+     */
+    export enum status {
+        ACTIVE = 'ACTIVE',
+        INACTIVE = 'INACTIVE',
+    }
+}
 

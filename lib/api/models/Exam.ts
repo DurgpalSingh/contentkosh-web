@@ -13,23 +13,23 @@ export type Exam = {
      */
     name?: string;
     /**
-     * Code for the exam (e.g., UPSC2024)
-     */
-    code?: string;
-    /**
      * Description of the exam
      */
     description?: string;
     /**
      * Status of the exam
      */
-    status?: 'ACTIVE' | 'INACTIVE';
+    status?: Exam.status;
     /**
-     * Optional start date
+     * Unique code for the exam
+     */
+    code?: string;
+    /**
+     * Start date of the exam
      */
     startDate?: string;
     /**
-     * Optional end date
+     * End date of the exam
      */
     endDate?: string;
     /**
@@ -49,4 +49,13 @@ export type Exam = {
      */
     courses?: Array<Course>;
 };
+export namespace Exam {
+    /**
+     * Status of the exam
+     */
+    export enum status {
+        ACTIVE = 'ACTIVE',
+        INACTIVE = 'INACTIVE',
+    }
+}
 

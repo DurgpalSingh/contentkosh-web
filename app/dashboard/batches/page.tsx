@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Button } from '@/components/ui/button';
-import { BatchesService, ExamsService, Batch, Course, Exam } from '@/lib/api';
+import { BatchesService, ExamsService, CoursesService, Batch, BatchWithUsers, Course, Exam } from '@/lib/api';
 import { Plus, Calendar, Search, Filter } from 'lucide-react';
 import { BatchGridCard } from '@/components/dashboard/batches/BatchGridCard';
 import { BatchesFilterModal } from '@/components/dashboard/batches/BatchesFilterModal';
@@ -46,40 +46,44 @@ export default function BatchesPage() {
   const [selectedBatch, setSelectedBatch] = useState<Batch | null>(null);
   const [isDeleteBatchModalOpen, setIsDeleteBatchModalOpen] = useState(false);
 
-  function extractCoursesFromExams(exams: Exam[]): Course[] {
-    return exams
-      .flatMap((exam) =>
-        (exam.courses ?? []).map((course) => ({
-          ...course,
-          examId: exam.id,
-          examName: exam.name,
-        }))
-      )
-      .sort((a, b) => {
-        const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-        const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-        return tb - ta;
-      });
-  }
+
 
 
   // Load exams + all courses once
   const fetchExamsAndCourses = useCallback(async () => {
-    if (!business?.id) return;
+    if (!business?.id || typeof business.id !== 'number') {
+      console.warn('Cannot fetch exams/courses: Invalid business ID');
+      return;
+    }
 
     setLoading(true);
     setError(null);
 
     try {
-      const res = await ExamsService.getApiBusinessExams({
-        businessId: business.id,
-        include: 'courses',
-      });
-
+      // 1. Fetch Exams WITH courses included
+      // @ts-ignore - Assuming 'courses' is a valid include based on context
+      const res = await ExamsService.getApiBusinessExams(business.id, 'courses');
       const fetchedExams = res.data ?? [];
       setExams(fetchedExams);
 
-      const allCourses = extractCoursesFromExams(fetchedExams);
+      // 2. Create optimized lookup map for exams
+      // const examMap = new Map(fetchedExams.map(e => [e.id, e])); // If needed for other lookups
+
+      // 3. Flatten and standardize courses
+      const allCourses: Course[] = fetchedExams.flatMap((exam) => {
+        // @ts-ignore - Assuming courses are attached to exam object
+        const examCourses = (exam.courses as Course[]) || [];
+        return examCourses.map((course) => ({
+          ...course,
+          examId: exam.id,
+          examName: exam.name,
+        }));
+      }).sort((a, b) => {
+        const tA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const tB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return tB - tA;
+      });
+
       setCourses(allCourses);
 
       // Set initial selected course
@@ -108,27 +112,28 @@ export default function BatchesPage() {
 
   // Load batches only for currently selected course
   const fetchBatches = useCallback(async (courseId: number) => {
+    const selectedCourse = courses.find((c) => c.id === courseId);
+    if (!selectedCourse) return;
+
     try {
       setLoading(true);
       setError(null);
 
-      const res = await BatchesService.getApiBatchesCourse({ courseId, include: 'batchUsers' });
+      const res = await BatchesService.getApiBatchesCourse(courseId, undefined, 'batchUsers');
 
-      let extended = (res.data ?? []).map((batch) => {
-        const course = courses.find((c) => c.id === courseId);
-        return {
-          ...batch,
-          memberCount: batch?.batchUsers?.length ?? 0,
-          courseId,
-          courseName: course?.name,
-          examId: course?.examId,
-        };
-      });
+      // Optimize: Avoid find inside map if possible, but here we just use the known selectedCourse
+      const extended: ExtendedBatch[] = (res.data ?? []).map((batch: BatchWithUsers) => ({
+        ...batch,
+        memberCount: batch?.batchUsers?.length ?? 0,
+        courseId,
+        courseName: selectedCourse.name,
+        examId: selectedCourse.examId,
+      }));
 
       extended.sort((a, b) => {
-        const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-        const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-        return tb - ta;
+        const tA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const tB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return tB - tA;
       });
 
       setBatches(extended);
@@ -196,7 +201,7 @@ export default function BatchesPage() {
   const confirmDeleteBatch = async () => {
     if (!selectedBatch?.id) return;
     try {
-      await BatchesService.deleteApiBatches({ id: selectedBatch.id });
+      await BatchesService.deleteApiBatches(selectedBatch.id);
       if (selectedCourseId) fetchBatches(selectedCourseId);
     } catch (err) {
       console.error('Delete failed:', err);
@@ -250,7 +255,7 @@ export default function BatchesPage() {
             Filters
             {selectedCourseId && (
               <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 rounded-full">
-                { selectedExamIds.length + (selectedCourseId !== undefined ? 1 : 0)}
+                {selectedExamIds.length + (selectedCourseId !== undefined ? 1 : 0)}
               </span>
             )}
           </Button>

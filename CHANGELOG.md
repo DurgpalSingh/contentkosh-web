@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## Version [1.1.3] - Dynamic Dashboard UI & Role-Based Access
+**P.R Raised by** : aaditya-singh-21
+**Date** : 2026-01-24
+
+### Added
+- **Dynamic Dashboard Layout**: Refactored the core `DashboardLayout` to dynamically generate sidebar navigation items based on the logged-in user's **Role** (Admin, Teacher, Student) and **Permissions**.
+- **Role-Based Access Control (RBAC)**: Integration of `rbac.ts` utility to centrally manage and enforce UI visibility rules.
+- **Modular Dashboard Views**: Split the main dashboard into role-specific components for cleaner separation of concerns.
+
+### Fixed
+- **Auth Stability**: Removed "Fallback User" mechanism to prevent broken UI states; app now properly handles profile fetch failures by forcing re-authentication.
+- **API Integration**: Corrected method signatures in `StudentsPage` to align with the generated API client, resolving runtime crashes.
+
 ## Version [1.3.0] - Students Management & UI Refactoring
 **P.R Raised by** : aaditya-singh-21
 **Date** : 2025-12-19

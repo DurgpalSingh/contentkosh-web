@@ -2,17 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { Business } from './Business';
-
-export type User = {
-    /**
-     * User ID
-     */
-    id?: number;
-    /**
-     * User email address
-     */
-    email?: string;
+export type UpdateUserRequest = {
     /**
      * User full name
      */
@@ -24,29 +14,13 @@ export type User = {
     /**
      * User role
      */
-    role?: User.role;
+    role?: UpdateUserRequest.role;
     /**
      * User status
      */
-    status?: User.status;
-    /**
-     * Business ID
-     */
-    businessId?: number;
-    /**
-     * Business details
-     */
-    business?: Business;
-    /**
-     * User creation timestamp
-     */
-    createdAt?: string;
-    /**
-     * User last update timestamp
-     */
-    updatedAt?: string;
+    status?: UpdateUserRequest.status;
 };
-export namespace User {
+export namespace UpdateUserRequest {
     /**
      * User role
      */

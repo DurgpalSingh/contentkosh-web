@@ -12,8 +12,17 @@ export type UpdateSubjectRequest = {
      */
     description?: string;
     /**
-     * Whether the subject is active
+     * Status of the subject
      */
-    status?: "ACTIVE" | "INACTIVE";
+    status?: UpdateSubjectRequest.status;
 };
+export namespace UpdateSubjectRequest {
+    /**
+     * Status of the subject
+     */
+    export enum status {
+        ACTIVE = 'ACTIVE',
+        INACTIVE = 'INACTIVE',
+    }
+}
 

@@ -13,19 +13,23 @@ export type ExamWithCourses = {
      */
     name?: string;
     /**
-     * Code for the exam
-     */
-    code?: string;
-    /**
      * Description of the exam
      */
     description?: string;
     /**
-     * Optional start date
+     * Status of the exam
+     */
+    status?: ExamWithCourses.status;
+    /**
+     * Unique code for the exam
+     */
+    code?: string;
+    /**
+     * Start date of the exam
      */
     startDate?: string;
     /**
-     * Optional end date
+     * End date of the exam
      */
     endDate?: string;
     /**
@@ -45,4 +49,13 @@ export type ExamWithCourses = {
      */
     courses?: Array<Course>;
 };
+export namespace ExamWithCourses {
+    /**
+     * Status of the exam
+     */
+    export enum status {
+        ACTIVE = 'ACTIVE',
+        INACTIVE = 'INACTIVE',
+    }
+}
 

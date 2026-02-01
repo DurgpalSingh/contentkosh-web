@@ -12,12 +12,21 @@ export type CreateSubjectRequest = {
      */
     description?: string;
     /**
-     * Whether the subject is active
+     * Status of the subject
      */
-    status?: "ACTIVE" | "INACTIVE";
+    status?: CreateSubjectRequest.status;
     /**
      * ID of the course this subject belongs to (required)
      */
     courseId: number;
 };
+export namespace CreateSubjectRequest {
+    /**
+     * Status of the subject
+     */
+    export enum status {
+        ACTIVE = 'ACTIVE',
+        INACTIVE = 'INACTIVE',
+    }
+}
 

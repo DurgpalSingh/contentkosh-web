@@ -43,15 +43,15 @@ export default function CoursesPage() {
 
   // Fetch list of exams (once on mount)
   const fetchExams = useCallback(async () => {
-    if (!business?.id) return;
+    if (!business?.id || typeof business.id !== 'number') {
+      return;
+    }
 
     try {
       setLoading(true);
       setError(null);
 
-      const examsResponse = await ExamsService.getApiBusinessExams({
-        businessId: business.id,
-      });
+      const examsResponse = await ExamsService.getApiBusinessExams(business.id);
 
       const fetchedExams = examsResponse.data || [];
       setExams(fetchedExams);
@@ -69,7 +69,7 @@ export default function CoursesPage() {
 
       // Default to first exam if no valid param
       if (initialExamId === undefined && fetchedExams.length > 0) {
-        initialExamId = fetchedExams[0].id!;
+        initialExamId = fetchedExams[0].id as number;
       }
 
       setSelectedExamId(initialExamId);
@@ -86,26 +86,36 @@ export default function CoursesPage() {
     if (!examId) return;
 
     try {
+      if (typeof examId !== 'number') {
+        console.warn('Invalid examId passed to fetchCourses:', examId);
+        return;
+      }
+
       setLoading(true);
       setError(null);
 
-      const coursesResponse = await CoursesService.getApiExamsCourses({
+      const coursesResponse = await CoursesService.getApiExamsCourses(
         examId,
-        include: 'subjects', 
-      });
+        { include: 'subjects' }
+      );
 
       const fetchedCourses = (coursesResponse.data || []) as Course[];
+
+      // Create a map for faster lookup: ID -> Name
+      const examMap = new Map(exams.map(e => [e.id!, e.name!]));
 
       const extendedCourses: ExtendedCourse[] = fetchedCourses.map((course) => ({
         ...course,
         examId,
-        examName: exams.find((e) => e.id === examId)?.name,
+        examName: examMap.get(examId),
       }));
 
       // Sort newest first
-      extendedCourses.sort(
-        (a, b) => new Date(b.createdAt || '').getTime() - new Date(a.createdAt || '').getTime()
-      );
+      extendedCourses.sort((a, b) => {
+        const tA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const tB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return tB - tA;
+      });
 
       setCourses(extendedCourses);
     } catch (err: any) {
@@ -175,10 +185,10 @@ export default function CoursesPage() {
     if (!selectedCourse?.id || !selectedCourse.examId) return;
 
     try {
-      await CoursesService.deleteApiExamsCourses({
-        examId: selectedCourse.examId,
-        courseId: selectedCourse.id,
-      });
+      await CoursesService.deleteApiExamsCourses(
+        selectedCourse.examId,
+        selectedCourse.id,
+      );
       // Refresh current exam's courses
       if (selectedExamId) fetchCourses(selectedExamId);
     } catch (err) {

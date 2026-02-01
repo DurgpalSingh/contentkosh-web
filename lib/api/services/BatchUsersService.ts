@@ -3,8 +3,6 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { AddUserToBatchRequest } from '../models/AddUserToBatchRequest';
-import type { ApiResponse } from '../models/ApiResponse';
-import type { Batch } from '../models/Batch';
 import type { BatchUser } from '../models/BatchUser';
 import type { RemoveUserFromBatchRequest } from '../models/RemoveUserFromBatchRequest';
 import type { UpdateBatchUserRequest } from '../models/UpdateBatchUserRequest';
@@ -18,13 +16,9 @@ export class BatchUsersService {
      * @returns any User added to batch successfully
      * @throws ApiError
      */
-    public static postApiBatchesAddUser({
-        requestBody,
-    }: {
+    public static postApiBatchesAddUser(
         requestBody: AddUserToBatchRequest,
-    }): CancelablePromise<(ApiResponse & {
-        data?: BatchUser;
-    })> {
+    ): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/batches/add-user',
@@ -46,9 +40,7 @@ export class BatchUsersService {
      */
     public static postApiBatchesRemoveUser(
         requestBody: RemoveUserFromBatchRequest,
-    ): CancelablePromise<(ApiResponse & {
-        data?: any;
-    })> {
+    ): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/batches/remove-user',
@@ -64,33 +56,12 @@ export class BatchUsersService {
     /**
      * Get all batches for a user
      * @param userId User ID
-     * @returns any User batches fetched successfully
+     * @returns BatchUser User batches fetched successfully
      * @throws ApiError
      */
-    public static getApiBatchesUser({
-        userId,
-    }: {
-        /**
-         * User ID
-         */
+    public static getApiBatchesUser(
         userId: number,
-    }): CancelablePromise<(ApiResponse & {
-        data?: Array<{
-            /**
-             * Batch User ID
-             */
-            id?: number;
-            /**
-             * Whether the batch user is active
-             */
-            isActive?: boolean;
-            /**
-             * Batch user creation timestamp
-             */
-            createdAt?: string;
-            batch?: Batch;
-        }>;
-    })> {
+    ): CancelablePromise<Array<BatchUser>> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/batches/user/{userId}',
@@ -106,51 +77,22 @@ export class BatchUsersService {
     /**
      * Get all users for a batch
      * @param batchId Batch ID
-     * @returns any Batch users fetched successfully
+     * @param role Filter users by role
+     * @returns BatchUser Batch users fetched successfully
      * @throws ApiError
      */
-    public static getApiBatchesUsers({
-        batchId,
-    }: {
-        /**
-         * Batch ID
-         */
+    public static getApiBatchesUsers(
         batchId: number,
-    }): CancelablePromise<(ApiResponse & {
-        data?: Array<{
-            /**
-             * Batch User ID
-             */
-            id?: number;
-            /**
-             * Whether the batch user is active
-             */
-            isActive?: boolean;
-            /**
-             * Batch user creation timestamp
-             */
-            createdAt?: string;
-            user?: {
-                /**
-                 * User ID
-                 */
-                id?: number;
-                /**
-                 * User email
-                 */
-                email?: string;
-                /**
-                 * User name
-                 */
-                name?: string;
-            };
-        }>;
-    })> {
+        role?: 'STUDENT' | 'TEACHER' | 'ADMIN' | 'USER',
+    ): CancelablePromise<Array<BatchUser>> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/batches/{batchId}/users',
             path: {
                 'batchId': batchId,
+            },
+            query: {
+                'role': role,
             },
             errors: {
                 400: `Invalid batch ID`,
@@ -166,23 +108,11 @@ export class BatchUsersService {
      * @returns any Batch user updated successfully
      * @throws ApiError
      */
-    public static putApiBatchesUsers({
-        batchId,
-        userId,
-        requestBody,
-    }: {
-        /**
-         * Batch ID
-         */
+    public static putApiBatchesUsers(
         batchId: number,
-        /**
-         * User ID
-         */
         userId: number,
         requestBody: UpdateBatchUserRequest,
-    }): CancelablePromise<(ApiResponse & {
-        data?: BatchUser;
-    })> {
+    ): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'PUT',
             url: '/api/batches/{batchId}/users/{userId}',

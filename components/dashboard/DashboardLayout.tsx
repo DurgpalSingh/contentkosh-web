@@ -5,19 +5,13 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { ROUTES } from '@/lib/constants';
+import { getNavigationItems } from '@/lib/rbac';
 import {
-  Home,
-  Users,
-  BookOpen,
-  Calendar,
-  Bell,
-  Settings,
-  LogOut,
   Menu,
   X,
   User,
-  ClipboardList,
-  GraduationCap,
+  LogOut,
+  Bell,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -27,20 +21,12 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { user, business, logout } = useAuthStore();
+  const { user, business, logout, permissions } = useAuthStore();
   const router = useRouter();
   const pathname = usePathname();
 
-  const navigation = [
-    { name: 'Dashboard', href: ROUTES.DASHBOARD, icon: Home },
-    { name: 'Admins', href: ROUTES.ADMIN.USERS, icon: Users },
-    { name: 'Exams', href: '/dashboard/exams', icon: ClipboardList },
-    { name: 'Courses', href: '/dashboard/courses', icon: BookOpen },
-    { name: 'Batches', href: '/dashboard/batches', icon: Calendar },
-    { name: 'Students', href: '/dashboard/students', icon: GraduationCap },
-    { name: 'Announcements', href: ROUTES.ADMIN.ANNOUNCEMENTS, icon: Bell },
-    { name: 'Settings', href: '/dashboard/settings', icon: Settings },
-  ];
+  const navigation = getNavigationItems(user, permissions);
+
 
   const handleLogout = async () => {
     await logout();
