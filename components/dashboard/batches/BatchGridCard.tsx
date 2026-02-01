@@ -9,7 +9,7 @@ interface BatchGridCardProps {
     batch: Batch;
     courseName?: string;
     memberCount?: number;
-    onViewStudents: (batch: Batch) => void;
+    onViewDetails: (batch: Batch) => void;
     onEdit?: (batch: Batch) => void;
     onDelete?: (batch: Batch) => void;
 }
@@ -18,7 +18,7 @@ export function BatchGridCard({
     batch,
     courseName,
     memberCount = 0,
-    onViewStudents,
+    onViewDetails,
     onEdit,
     onDelete,
 }: BatchGridCardProps) {
@@ -87,10 +87,10 @@ export function BatchGridCard({
                 <Button
                     variant="outline"
                     className="w-full border-blue-600 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
-                    onClick={() => onViewStudents(batch)}
+                    onClick={() => onViewDetails(batch)}
                 >
                     <Users className="h-4 w-4 mr-2" />
-                    View Students
+                    View Details
                 </Button>
             }
         >

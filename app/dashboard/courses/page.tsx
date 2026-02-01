@@ -13,6 +13,7 @@ import { ExamsService, CoursesService, Exam, Course, Subject } from '@/lib/api';
 import { Plus, BookOpen, Search } from 'lucide-react';
 import { CourseGridCard } from '@/components/dashboard/courses/CourseGridCard';
 import { CourseFilter } from '@/components/dashboard/courses/CourseFilter';
+import { USER_ROLES } from '@/lib/constants';
 
 interface ExtendedCourse extends Course {
   examName?: string;
@@ -23,6 +24,7 @@ interface ExtendedCourse extends Course {
 export default function CoursesPage() {
   const { user, business, isAuthenticated, isLoading, isInitialized } = useAuthStore();
   const router = useRouter();
+  const isAdmin = user?.role === USER_ROLES.ADMIN;
   const searchParams = useSearchParams();
 
   const [exams, setExams] = useState<Exam[]>([]);
@@ -218,13 +220,15 @@ export default function CoursesPage() {
               Manage your courses, view subjects and batches
             </p>
           </div>
-          <Button
-            onClick={handleAddCourseClick}
-            className="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-          >
-            <Plus className="h-5 w-5 mr-2" />
-            Add Course
-          </Button>
+          {isAdmin && (
+            <Button
+              onClick={handleAddCourseClick}
+              className="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+            >
+              <Plus className="h-5 w-5 mr-2" />
+              Add Course
+            </Button>
+          )}
         </div>
 
         {/* Filters & Search */}
@@ -277,7 +281,7 @@ export default function CoursesPage() {
                 ? 'No courses match your search query.'
                 : 'This exam has no courses yet.'}
             </p>
-            {!searchQuery && (
+            {!searchQuery && isAdmin && (
               <Button
                 onClick={handleAddCourseClick}
                 variant="outline"
