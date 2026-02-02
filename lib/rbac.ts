@@ -10,6 +10,7 @@ import {
     ClipboardList,
     GraduationCap,
     LucideIcon,
+    FileText,
 } from 'lucide-react';
 
 export type UserRole = (typeof USER_ROLES)[keyof typeof USER_ROLES];
@@ -97,6 +98,12 @@ export const NAVIGATION_CONFIG: NavigationItem[] = [
         href: '/dashboard/batches/details',
         icon: GraduationCap,
         roles: [USER_ROLES.ADMIN, USER_ROLES.TEACHER],
+    },
+    {
+        name: 'Content',
+        href: '/dashboard/contents',
+        icon: FileText,
+        roles: [USER_ROLES.ADMIN, USER_ROLES.TEACHER, USER_ROLES.STUDENT],
     },
     {
         name: 'Settings',

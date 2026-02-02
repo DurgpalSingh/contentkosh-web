@@ -13,9 +13,9 @@ export interface FilterSection {
     title: string;
     items: FilterItem[];
     selectionType: 'single' | 'multiple';
-    selectedIds: number[];
-    selectedId: number | null;
-    onToggle: (id: number) => void;
+    selectedIds?: number[];
+    selectedId?: number | null;
+    onToggle?: (id: number) => void;
     onSelect?: (id: number) => void;
 
     emptyMessage: string;
@@ -98,7 +98,7 @@ export function HierarchicalFilterModal({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
-            <div className="relative bg-white rounded-xl shadow-2xl w-full max-h-[90vh] overflow-hidden">
+            <div className="relative bg-white rounded-xl shadow-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b">
                     <div className="flex items-center gap-2">
@@ -111,14 +111,14 @@ export function HierarchicalFilterModal({
                 </div>
 
                 {/* Content */}
-                <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 overflow-y-auto">
+                <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 overflow-y-auto flex-1 min-h-0">
                     {sections.map(section => (
                         <div key={section.id}>
                             <h3 className="text-xs font-semibold uppercase mb-2">
                                 {section.title}
                             </h3>
 
-                            <div className="bg-slate-50 border rounded-lg p-2 space-y-1 max-h-[50vh] overflow-y-auto">
+                            <div className="bg-slate-50 border rounded-lg p-2 space-y-1">
                                 {section.items.map(item => {
                                     const isSelected =
                                         section.selectionType === 'multiple'
