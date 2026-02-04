@@ -80,7 +80,7 @@ export function AddExamModal({
                 businessId,
             };
 
-            await ExamsService.postApiBusinessExams({ businessId, requestBody: request });
+            await ExamsService.postApiBusinessExams(businessId, request);
 
             resetForm();
             onExamCreated();
