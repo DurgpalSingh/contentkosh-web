@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## Version [1.1.6] - Auth Type Fix & Token Refresh Handling
+**P.R Raised by** : aaditya-singh-21
+**Date** : 2026-02-04
+
+### Fixed
+- **Authentication**:
+  - Fixed TypeScript error in `lib/auth.ts`: Removed `refreshToken` from `AuthResponse` type usage as it was not part of the API definition.
+  - Improved token management: Explicitly handling token updates via `setRefreshToken` side effects instead of relying on return values.
+
+---
+
+## Version [1.1.5] - INTERNAL SERVER ERROR IN ADD EXAM 
+**P.R Raised by** : shubha404-SE
+**Date** : 2026-02-04
+
+### Changed
+- **Add Exam Page**:
+  - internal server error resolved during adding new exam.
+
 ---
 
 ## Version [1.1.4] - Batch Details Optimization & Refactoring
