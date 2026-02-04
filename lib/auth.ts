@@ -9,9 +9,12 @@ export const authApi = {
   login: async (credentials: LoginRequest): Promise<AuthResponse> => {
     try {
       const response = await AuthService.postApiAuthLogin(credentials);
+      if (response.data?.refreshToken) {
+        authApi.setRefreshToken(response.data.refreshToken);
+      }
       return {
         user: response.data?.user as User,
-        token: response.data?.accessToken
+        token: response.data?.accessToken,
       };
     } catch (error: any) {
       console.error('Login error:', error);
@@ -24,9 +27,12 @@ export const authApi = {
       console.log('Attempting registration with data:', data);
       const response = await AuthService.postApiAuthSignup(data);
       console.log('Registration response received:', response);
+      if (response.data?.refreshToken) {
+        authApi.setRefreshToken(response.data.refreshToken);
+      }
       return {
         user: response.data?.user as User,
-        token: response.data?.accessToken
+        token: response.data?.accessToken,
       };
     } catch (error: any) {
       console.error('Registration error:', error);
@@ -65,10 +71,38 @@ export const authApi = {
     return typeof OpenAPI.TOKEN === 'string' ? OpenAPI.TOKEN : undefined;
   },
 
-  logout: async (): Promise<void> => {
+  setRefreshToken: (token: string) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('refreshToken', token);
+    }
+  },
+
+  getRefreshToken: (): string | undefined => {
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('refreshToken');
+      return token || undefined;
+    }
+    return undefined;
+  },
+
+  clearTokens: () => {
     OpenAPI.TOKEN = undefined;
     if (typeof window !== 'undefined') {
       localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
+    }
+  },
+
+  logout: async (): Promise<void> => {
+    const refreshToken = authApi.getRefreshToken();
+    try {
+      if (refreshToken) {
+        await AuthService.postApiAuthLogout({ refreshToken });
+      }
+    } catch (e) {
+      console.error('Error during logout:', e);
+    } finally {
+      authApi.clearTokens();
     }
   },
 };
