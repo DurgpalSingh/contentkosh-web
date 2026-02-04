@@ -4,12 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ## Version [1.1.7] - Fix invalid start/end date selection
 **P.R Raised by** : shubha404-SE
-**Date** : 2026-02-04
+**Date** : 2026-02-05
 
-### Fixed
-- Enforced paired validation for Start Date and End Date. Prevented selection of past dates for Exam Start Date.
-- Ensured Exam End Date cannot be earlier than Start Date.
-- Updated Edit/add Exam flow to block submission of invalid date combinations with proper error messaging for invalid date ranges.
+## Updated add exam page and date validate
+- Ensured End Date cannot be earlier than Start Date.
+- Restricted Start Date to today or future dates when adding an exam.
+
+## Fixed
+- Fixed missing validation for invalid exam date ranges.
+- fixed paired selection for Start Date and End Date. Either select both or don't select any.
 
 ---
 

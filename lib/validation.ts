@@ -45,29 +45,14 @@ export function validateDateRange(
     startDate: string,
     endDate: string
 ): string | null {
-    if (!startDate && !endDate) return null; // Neither selected → valid
+    if (!startDate && !endDate) return null;
 
-    // One selected → invalid
     if (!startDate || !endDate) {
         return 'Start Date and End Date must be selected together';
     }
 
-    const normalize = (date: string) => {
-        const d = new Date(date);
-        d.setHours(0, 0, 0, 0);
-        return d;
-    };
-
-    const today = normalize(new Date().toISOString());
-    const start = normalize(startDate);
-    const end = normalize(endDate);
-
-    if (start < today) {
-        return 'Start Date cannot be in the past';
-    }
-
-    if (end < start) {
-        return 'Start Date must be before End Date';
+    if (new Date(startDate) > new Date(endDate)) {
+        return 'Start Date  must be before End Date';
     }
     return null;
 }
