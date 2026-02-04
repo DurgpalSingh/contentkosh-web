@@ -57,6 +57,18 @@ export function AddExamModal({
             setError(validationError);
             return;
         }
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (startDate) {
+            const start = new Date(startDate);
+            start.setHours(0, 0, 0, 0);
+
+            if (start < today) {
+                setError('Start Date cannot be in the past');
+                return;
+            }
+        }
 
         const dateError = validateDateRange(
             toISODateTime(startDate) || '',
