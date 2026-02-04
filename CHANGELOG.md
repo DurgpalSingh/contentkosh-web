@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## Version [1.1.7] - Fix invalid start/end date selection
+**P.R Raised by** : shubha404-SE
+**Date** : 2026-02-04
+
+### Fixed
+- Enforced paired validation for Start Date and End Date. Prevented selection of past dates for Exam Start Date.
+- Ensured Exam End Date cannot be earlier than Start Date.
+- Updated Edit/add Exam flow to block submission of invalid date combinations with proper error messaging for invalid date ranges.
+
+---
+
 ## Version [1.1.6] - Auth Type Fix & Token Refresh Handling
 **P.R Raised by** : aaditya-singh-21
 **Date** : 2026-02-04
@@ -12,6 +23,7 @@ All notable changes to this project will be documented in this file.
   - Improved token management: Explicitly handling token updates via `setRefreshToken` side effects instead of relying on return values.
 
 ---
+
 
 ## Version [1.1.5] - INTERNAL SERVER ERROR IN ADD EXAM 
 **P.R Raised by** : shubha404-SE
