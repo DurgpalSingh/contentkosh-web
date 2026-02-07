@@ -43,14 +43,16 @@ export function validateRequired(value: any, label: string): string | null {
  */
 export function validateDateRange(
     startDate: string,
-    endDate: string,
-    startLabel: string = 'Start date',
-    endLabel: string = 'End date'
+    endDate: string
 ): string | null {
-    if (!startDate || !endDate) return null; // Let required validation handle missing dates
+    if (!startDate && !endDate) return null;
+
+    if (!startDate || !endDate) {
+        return 'Start Date and End Date must be selected together';
+    }
 
     if (new Date(startDate) > new Date(endDate)) {
-        return `${startLabel} must be before ${endLabel}`;
+        return 'Start Date  must be before End Date';
     }
     return null;
 }

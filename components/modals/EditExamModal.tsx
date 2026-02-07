@@ -87,11 +87,7 @@ export function EditExamModal({
                 endDate: toISODateTime(endDate),
             };
 
-            await ExamsService.putApiBusinessExams({
-                businessId: exam.businessId!,
-                id: exam.id!,
-                requestBody: request,
-            });
+            await ExamsService.putApiBusinessExams( exam.businessId!,exam.id!, request);
 
             onExamUpdated();
             onClose();
