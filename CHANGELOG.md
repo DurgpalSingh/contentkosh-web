@@ -1,6 +1,12 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.1.8] - Fix invalid Examid error in course
+**P.R Raised by** : shubha404-SE
+**Date** : 2026-02-07
+
+## Updated API calls in AddCourseModal & EditCourseModal
+- Fixed parameters while calling API.
 
 ## Version [1.1.7] - Fix invalid start/end date selection
 **P.R Raised by** : shubha404-SE
