@@ -89,11 +89,11 @@ export function EditCourseModal({
                 status: isActive ? 'ACTIVE' : 'INACTIVE',
             };
 
-            await CoursesService.putApiExamsCourses({
+            await CoursesService.putApiExamsCourses(
                 examId,
-                courseId: course.id!,
-                requestBody: request,
-            });
+                course.id!,
+                request,
+            );
 
             onCourseUpdated();
             onClose();

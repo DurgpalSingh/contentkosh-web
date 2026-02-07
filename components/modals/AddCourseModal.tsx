@@ -80,7 +80,7 @@ export function AddCourseModal({
                 examId,
             };
 
-            await CoursesService.postApiExamsCourses({ examId, requestBody: request });
+            await CoursesService.postApiExamsCourses(examId, request );
 
             resetForm();
             onCourseCreated();
