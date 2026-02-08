@@ -8,6 +8,10 @@ export type CreateBusinessRequest = {
      */
     instituteName: string;
     /**
+     * Unique identifier for the business URL (required)
+     */
+    slug: string;
+    /**
      * URL or file path to the institute logo
      */
     logo?: string;

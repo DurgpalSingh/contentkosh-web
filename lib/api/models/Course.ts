@@ -21,6 +21,14 @@ export type Course = {
      */
     duration?: string;
     /**
+     * Start date of the course
+     */
+    startDate?: string;
+    /**
+     * End date of the course
+     */
+    endDate?: string;
+    /**
      * Status of the course
      */
     status?: Course.status;

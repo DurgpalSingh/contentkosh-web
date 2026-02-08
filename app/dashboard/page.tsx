@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Button } from '@/components/ui/button';
@@ -12,7 +13,22 @@ import { useRouter } from 'next/navigation';
 
 
 export default function Dashboard() {
-  const { user, isAuthenticated, isLoading, isInitialized } = useAuthStore();
+  const { user, business, isAuthenticated, isLoading, isInitialized } = useAuthStore();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (isInitialized) {
+      if (!isAuthenticated || !user) {
+        router.push(ROUTES.LOGIN);
+      } else if (business?.slug) {
+        router.replace(`/${business.slug}/dashboard`);
+      } else {
+        // Fallback for users without business
+        // Maybe we should allow them to stay here or show a setup screen? 
+        // For now, let's just stay here but functionality might be limited
+      }
+    }
+  }, [isInitialized, isAuthenticated, user, business, router]);
 
   if (!isInitialized || isLoading) {
     return (
@@ -22,23 +38,19 @@ export default function Dashboard() {
     );
   }
 
-  if (!isAuthenticated || !user) {
-    return null;
+  // If we are here, it means either:
+  // 1. Redirecting...
+  // 2. User has no business (so no slug to redirect to)
+
+  if (business?.slug) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
   }
 
-  // Render dashboard based on role
-  if (hasRole(user, USER_ROLES.ADMIN)) {
-    return <AdminDashboard />;
-  }
-
-  if (hasRole(user, USER_ROLES.TEACHER)) {
-    return <TeacherDashboard />;
-  }
-
-  if (hasRole(user, USER_ROLES.STUDENT)) {
-    return <StudentDashboard />;
-  }
-
+  // Fallback for no business
   return <DefaultDashboard />;
 }
 
@@ -53,6 +65,18 @@ function DefaultDashboard() {
           Welcome to {business?.instituteName || 'Contentkosh'}
         </div>
       </div>
+
+      {business?.slug && (
+        <div className="text-sm text-gray-500 px-1">
+          Institute URL: <span className="font-mono text-indigo-600">app.contentkosh.com/{business.slug}</span>
+        </div>
+      )}
+
+      {business?.logo && (
+        <div className="mb-6 px-1">
+          <img src={business.logo} alt="Institute Logo" className="h-16 w-auto object-contain" />
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <DashboardCard
@@ -85,7 +109,7 @@ function DefaultDashboard() {
         <RecentActivity />
         <QuickActions />
       </div>
-    </div>
+    </div >
   );
 }
 

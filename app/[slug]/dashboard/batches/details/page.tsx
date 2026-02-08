@@ -271,8 +271,8 @@ export default function BatchDetailsPage() {
 
     // Handle Batch Switch
     const handleBatchSwitch = (newBatchId: string) => {
-        if (!newBatchId) return;
-        router.push(`/dashboard/batches/details?id=${newBatchId}`);
+        if (!newBatchId || !business?.slug) return;
+        router.push(`/${business.slug}/dashboard/batches/details?id=${newBatchId}`);
     };
 
     // Handle View Detailed Info
@@ -293,7 +293,7 @@ export default function BatchDetailsPage() {
                 </div>
                 <h2 className="text-2xl font-bold text-slate-800">No Batch Selected</h2>
                 <p className="text-slate-500 max-w-md"> Please go to the <b>Batches</b> tab and click "View Details" on a batch to see its students and teachers.</p>
-                <Button onClick={() => router.push('/dashboard/batches')} className="mt-4">
+                <Button onClick={() => router.push(`/${business?.slug}/dashboard/batches`)} className="mt-4">
                     Go to Batches
                 </Button>
             </div>
@@ -308,7 +308,7 @@ export default function BatchDetailsPage() {
         return (
             <div className="p-8 text-center text-red-600 mb-4 bg-red-50 rounded-lg">
                 <p>{error}</p>
-                <Button variant="outline" onClick={() => router.push('/dashboard/batches')} className="mt-4">
+                <Button variant="outline" onClick={() => router.push(`/${business?.slug}/dashboard/batches`)} className="mt-4">
                     <ArrowLeft className="mr-2 h-4 w-4" /> Back to Batches
                 </Button>
             </div>
@@ -360,7 +360,7 @@ export default function BatchDetailsPage() {
                             </span>
                         </div>
                     </div>
-                    <Button variant="ghost" onClick={() => router.push('/dashboard/batches')} className="text-slate-500 hover:text-slate-900">
+                    <Button variant="ghost" onClick={() => router.push(`/${business?.slug}/dashboard/batches`)} className="text-slate-500 hover:text-slate-900">
                         <ArrowLeft className="h-4 w-4 mr-2" /> Back to List
                     </Button>
                 </div>
