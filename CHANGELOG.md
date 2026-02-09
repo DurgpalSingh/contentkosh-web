@@ -8,6 +8,17 @@ All notable changes to this project will be documented in this file.
 ## Updated API calls in AddCourseModal & EditCourseModal
 - Fixed parameters while calling API.
 
+## Version [1.1.8] - Exam Validation Fix
+**P.R Raised by** : aaditya-singh-21
+**Date** : 2026-02-07
+
+### Fixed
+- **Add Exam Modal**:
+  - Implemented custom application-level validation for "Exam Name" to replace browser default behavior.
+  - "Exam Name" is now validated via JavaScript, displaying a red error box for empty submissions instead of a tooltip.
+
+---
+
 ## Version [1.1.7] - Fix invalid start/end date selection
 **P.R Raised by** : shubha404-SE
 **Date** : 2026-02-05
