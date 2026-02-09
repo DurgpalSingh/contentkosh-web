@@ -57,6 +57,7 @@ export function BatchesFilterModal({
             id: 'exams',
             title: 'Exams',
             selectionType: 'multiple',
+            selectedId: null,
             items: exams.map(e => ({
                 id: e.id!,
                 label: e.name || 'Unnamed Exam',
@@ -78,13 +79,18 @@ export function BatchesFilterModal({
             id: 'courses',
             title: 'Course (Required)',
             selectionType: 'single',
-            items: visibleCourses.map(c => ({
-                id: c.id!,
-                label: c.name || 'Unnamed Course',
-                subLabel: c.examName ? `(${c.examName})` : undefined,
-            })),
+            selectedIds: [] as number[],
+            items: visibleCourses.map(c => {
+                const exam = exams.find(e => e.id === c.examId);
+                return {
+                    id: c.id!,
+                    label: c.name || 'Unnamed Course',
+                    subLabel: exam?.name ? `(${exam.name})` : undefined,
+                };
+            }),
             selectedId: localCourseId,
             onSelect: (id) => setLocalCourseId(id),
+            onToggle: () => { },
             emptyMessage:
                 visibleCourses.length === 0
                     ? 'No courses available for selected exams'
