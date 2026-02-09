@@ -48,7 +48,11 @@ export default function LoginPage() {
           setProfile(profile);
         }
 
-        router.push(ROUTES.DASHBOARD);
+        if (profile?.business?.slug) {
+          router.push(`/${profile.business.slug}/dashboard`);
+        } else {
+          router.push(ROUTES.DASHBOARD);
+        }
       } else {
         setError('Invalid response from server');
       }

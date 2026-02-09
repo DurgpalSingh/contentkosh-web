@@ -86,7 +86,7 @@ export function EditCourseModal({
                 description: description.length ? description.trim() : description,
                 startDate: toISODateTime(startDate),
                 endDate: toISODateTime(endDate),
-                status: isActive ? 'ACTIVE' : 'INACTIVE',
+                status: isActive ? UpdateCourseRequest.status.ACTIVE : UpdateCourseRequest.status.INACTIVE,
             };
 
             await CoursesService.putApiExamsCourses(

@@ -1,6 +1,24 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+
+## Version [1.2.0] - Dashboard URL Refactor & Bug Fixes
+**P.R Raised by** : aaditya-singh-21
+**Date** : 2026-02-08
+
+### Added
+- **Dynamic Dashboard Routing**: Implemented slug-based routing (`/[slug]/dashboard`) for multi-tenant business support.
+- **Redirect Logic**: Automatic redirection from `/dashboard/*` to `/[slug]/dashboard/*` ensuring seamless user experience.
+
+### Fixed
+- **Batch Creation**: Fixed API call arguments in `AddBatchModal` and `EditBatchModal` to resolve validation errors.
+- **Course Creation**: Fixed `invalid examId` error in `AddCourseModal` and `EditCourseModal`.
+- **Navigation**: Resolved "No Batch Selected" error by preserving batch ID during redirects and fixing navigation links.
+- **Backend Refactoring**: Removed temporary type casting in `business.service.ts` and improved type safety in `batch.repo.ts`.
+
+### Changed
+- **API Integration**: Updated service calls to match generated API client signatures.
+
 ## Version [1.1.8] - Fix invalid Examid error in course
 **P.R Raised by** : shubha404-SE
 **Date** : 2026-02-07

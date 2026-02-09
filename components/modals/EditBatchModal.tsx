@@ -76,10 +76,10 @@ export function EditBatchModal({
                 isActive,
             };
 
-            await BatchesService.putApiBatches({
-                id: batch.id!,
-                requestBody: request,
-            });
+            await BatchesService.putApiBatches(
+                batch.id!,
+                request,
+            );
 
             onBatchUpdated();
             onClose();

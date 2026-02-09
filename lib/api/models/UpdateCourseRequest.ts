@@ -19,6 +19,14 @@ export type UpdateCourseRequest = {
      * Status of the course
      */
     status?: UpdateCourseRequest.status;
+    /**
+     * Start date of the course
+     */
+    startDate?: string;
+    /**
+     * End date of the course
+     */
+    endDate?: string;
 };
 export namespace UpdateCourseRequest {
     /**
