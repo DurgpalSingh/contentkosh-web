@@ -50,7 +50,7 @@ export function BatchesFilterModal({
         }
     }, [visibleCourses, localCourseId]);
 
-    const examLookup = useMemo(() => {
+    const examMapIdToName = useMemo(() => {
         const lookup: Record<number, string> = {};
         exams.forEach(e => {
             if (e.id) lookup[e.id] = e.name || '';
@@ -89,7 +89,7 @@ export function BatchesFilterModal({
             selectionType: 'single',
             selectedIds: [] as number[],
             items: visibleCourses.map(c => {
-                const examName = c.examId ? examLookup[c.examId] : undefined;
+                const examName = c.examId ? examMapIdToName[c.examId] : undefined;
                 return {
                     id: c.id!,
                     label: c.name || 'Unnamed Course',
