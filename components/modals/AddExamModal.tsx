@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { ExamsService, CreateExamRequest } from '@/lib/api';
 import { validateEntityName, validateDateRange } from '@/lib/validation';
@@ -96,6 +97,7 @@ export function AddExamModal({
 
             resetForm();
             onExamCreated();
+            toast.success('Exam created successfully');
             onClose();
         } catch (err: any) {
             console.error('Error creating exam:', err);

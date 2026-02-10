@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { ExamsService, UpdateExamRequest, Exam } from '@/lib/api';
 import { validateEntityName, validateDateRange } from '@/lib/validation';
@@ -87,8 +88,9 @@ export function EditExamModal({
                 endDate: toISODateTime(endDate),
             };
 
-            await ExamsService.putApiBusinessExams( exam.businessId!,exam.id!, request);
+            await ExamsService.putApiBusinessExams(exam.businessId!, exam.id!, request);
 
+            toast.success('Exam updated successfully');
             onExamUpdated();
             onClose();
         } catch (err: any) {
