@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { ExamsService, UpdateExamRequest, Exam } from '@/lib/api';
 import { validateEntityName, validateDateRange } from '@/lib/validation';
 import { toISODateTime } from '@/lib/utils';
-import { DatePicker } from '../ui/date-picker';
 
 interface EditExamModalProps {
     isOpen: boolean;
@@ -197,34 +196,6 @@ export function EditExamModal({
                         />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label
-                                htmlFor="edit-exam-start-date"
-                                className="block text-sm font-medium text-gray-700 mb-1"
-                            >
-                                Start date
-                            </label>
-                            <DatePicker
-                                date={startDate}
-                                setDate={setStartDate}
-                                disabled={loading}
-                            />
-                        </div>
-                        <div>
-                            <label
-                                htmlFor="edit-exam-end-date"
-                                className="block text-sm font-medium text-gray-700 mb-1"
-                            >
-                                End date
-                            </label>
-                            <DatePicker
-                                date={endDate}
-                                setDate={setEndDate}
-                                disabled={loading}
-                            />
-                        </div>
-                    </div>
 
                     {/* Actions */}
                     <div className="flex justify-end space-x-3 pt-4">

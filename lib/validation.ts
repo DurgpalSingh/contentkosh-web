@@ -15,6 +15,10 @@ export function validateEntityName(name: string, entityLabel: string = 'Name', m
         return `${entityLabel} cannot exceed ${maxLength} characters`;
     }
 
+    if (!/^(?=.*[A-Za-z]).+$/.test(name)) {
+        return `${entityLabel} must contain at least one alphabet character.`;
+    }
+
     return null;
 }
 

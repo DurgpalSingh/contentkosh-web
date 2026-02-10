@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { ExamsService, CreateExamRequest } from '@/lib/api';
 import { validateEntityName, validateDateRange } from '@/lib/validation';
 import { toISODateTime } from '@/lib/utils';
-import { DatePicker } from '../ui/date-picker';
 
 interface AddExamModalProps {
     isOpen: boolean;
@@ -171,7 +170,7 @@ export function AddExamModal({
                             htmlFor="code-name"
                             className="block text-sm font-medium text-gray-700"
                         >
-                            Code Name <span className="text-red-500">*</span>
+                            Code Name
                         </label>
                         <input
                             id="code-name"
@@ -204,28 +203,6 @@ export function AddExamModal({
                         />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1.5">
-                            <label className="block text-sm font-medium text-gray-700">
-                                Start date
-                            </label>
-                            <DatePicker
-                                date={startDate}
-                                setDate={setStartDate}
-                                disabled={loading}
-                            />
-                        </div>
-                        <div className="space-y-1.5">
-                            <label className="block text-sm font-medium text-gray-700">
-                                End date
-                            </label>
-                            <DatePicker
-                                date={endDate}
-                                setDate={setEndDate}
-                                disabled={loading}
-                            />
-                        </div>
-                    </div>
 
                     {/* Actions */}
                     <div className="flex justify-end space-x-3 pt-4">
