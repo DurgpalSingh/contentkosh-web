@@ -50,6 +50,14 @@ export function BatchesFilterModal({
         }
     }, [visibleCourses, localCourseId]);
 
+    const examLookup = useMemo(() => {
+        const lookup: Record<number, string> = {};
+        exams.forEach(e => {
+            if (e.id) lookup[e.id] = e.name || '';
+        });
+        return lookup;
+    }, [exams]);
+
     // Prepare sections for HierarchicalFilterModal
     const sections: FilterSection[] = [
         // Section 1: Exams (multi-select)
@@ -81,11 +89,11 @@ export function BatchesFilterModal({
             selectionType: 'single',
             selectedIds: [] as number[],
             items: visibleCourses.map(c => {
-                const exam = exams.find(e => e.id === c.examId);
+                const examName = c.examId ? examLookup[c.examId] : undefined;
                 return {
                     id: c.id!,
                     label: c.name || 'Unnamed Course',
-                    subLabel: exam?.name ? `(${exam.name})` : undefined,
+                    subLabel: examName ? `(${examName})` : undefined,
                 };
             }),
             selectedId: localCourseId,
