@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## Version [1.2.0] - Dashboard URL Refactor & Bug Fixes
+## Version [1.1.9] - Dashboard URL Refactor & Bug Fixes
 **P.R Raised by** : aaditya-singh-21
 **Date** : 2026-02-08
 
