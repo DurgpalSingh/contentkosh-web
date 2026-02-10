@@ -187,7 +187,8 @@ export default function BatchesPage() {
   };
 
   const handleViewDetails = (batch: Batch) => {
-    router.push(`/dashboard/batches/details?id=${batch.id}`);
+    if (!business?.slug) return;
+    router.push(`/${business.slug}/dashboard/batches/details?id=${batch.id}`);
   };
 
   const handleEditBatch = (batch: Batch) => {

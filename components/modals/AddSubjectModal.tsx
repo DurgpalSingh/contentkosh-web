@@ -61,7 +61,7 @@ export function AddSubjectModal({
             const request: CreateSubjectRequest = {
                 name: name.trim(),
                 description: description.trim() || undefined,
-                status: isActive ? 'ACTIVE' : 'INACTIVE',
+                status: isActive ? CreateSubjectRequest.status.ACTIVE : CreateSubjectRequest.status.INACTIVE,
                 courseId,
             };
 

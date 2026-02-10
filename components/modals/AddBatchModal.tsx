@@ -83,7 +83,7 @@ export function AddBatchModal({
                 courseId,
             };
 
-            await BatchesService.postApiBatches({ requestBody: request });
+            await BatchesService.postApiBatches(request);
 
             resetForm();
             onBatchCreated();

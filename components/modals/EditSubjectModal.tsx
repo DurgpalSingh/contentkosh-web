@@ -69,7 +69,7 @@ export function EditSubjectModal({
             const request: UpdateSubjectRequest = {
                 name: name.trim(),
                 description: description.length ? description.trim() : description,
-                status: isActive ? 'ACTIVE' : 'INACTIVE',
+                status: isActive ? UpdateSubjectRequest.status.ACTIVE : UpdateSubjectRequest.status.INACTIVE,
             };
 
             await SubjectsService.putApiExamsCoursesSubjects(

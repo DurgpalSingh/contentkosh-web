@@ -105,6 +105,8 @@ export function StudentsFilterModal({
             items: exams.map(e => ({ id: e.id!, label: e.name || 'Unknown' })),
             selectedIds: selectedExamIds,
             onToggle: toggleExam,
+            selectionType: 'multiple',
+            selectedId: null,
             emptyMessage: 'No exams found.',
             theme: 'blue'
         },
@@ -114,6 +116,8 @@ export function StudentsFilterModal({
             items: filteredCourses.map(c => ({ id: c.id!, label: c.name || 'Unknown' })),
             selectedIds: selectedCourseIds,
             onToggle: toggleCourse,
+            selectionType: 'multiple',
+            selectedId: null,
             emptyMessage: selectedExamIds.length > 0 ? "No courses for selected exams." : "No courses found.",
             theme: 'purple'
         },
@@ -123,6 +127,8 @@ export function StudentsFilterModal({
             items: filteredBatches.map(b => ({ id: b.id!, label: b.displayName || 'Unknown', subLabel: b.codeName })),
             selectedIds: selectedBatchIds,
             onToggle: toggleBatch,
+            selectionType: 'multiple',
+            selectedId: null,
             emptyMessage: selectedCourseIds.length > 0 ? "No batches for selected courses." : "No batches found.",
             theme: 'green'
         }

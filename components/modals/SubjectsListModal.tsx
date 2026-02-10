@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { X, Plus, Edit, Trash2, FileText } from 'lucide-react';
-import { Button } from '@/components/ui/button';    
+import { Button } from '@/components/ui/button';
 import { Course, Subject } from '@/lib/api';
 
 interface SubjectsListModalProps {
@@ -74,7 +74,7 @@ export function SubjectsListModal({
                     ) : (
                         <div className="space-y-4">
                             <div className="flex justify-end mb-4">
-                               
+
                                 <Button onClick={onAddSubject} size="sm">
                                     <Plus className="mr-1.5 h-4 w-4" />
                                     Add Subject
@@ -102,12 +102,12 @@ export function SubjectsListModal({
                                                 )}
                                                 <div className="flex items-center mt-1 space-x-3 text-xs text-slate-400">
                                                     <span
-                                                        className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${subject.isActive
-                                                                ? 'bg-green-50 text-green-700'
-                                                                : 'bg-slate-100 text-slate-600'
+                                                        className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${subject.status === 'ACTIVE'
+                                                            ? 'bg-green-50 text-green-700'
+                                                            : 'bg-slate-100 text-slate-600'
                                                             }`}
                                                     >
-                                                        {subject.isActive ? 'Active' : 'Inactive'}
+                                                        {subject.status === 'ACTIVE' ? 'Active' : 'Inactive'}
                                                     </span>
                                                     <span>
                                                         Created{' '}

@@ -1,4 +1,4 @@
-import { UsersService, AuthService } from '@/lib/api';
+import { UsersService, AuthService, BusinessService } from '@/lib/api';
 import { LoginRequest, RegisterRequest, AuthResponse, Business, User } from '@/lib/api';
 import { OpenAPI } from '@/lib/api';
 
@@ -52,8 +52,18 @@ export const authApi = {
   },
 
   getBusiness: async (): Promise<Business | null> => {
-    console.warn('getBusiness implementation missing in new API client');
-    return null;
+    try {
+      // Fetch profile to get businessId
+      const user = await authApi.getProfile();
+      if (user?.businessId) {
+        const response = await BusinessService.getApiBusiness1(user.businessId);
+        return response.data || null;
+      }
+      return null;
+    } catch (error) {
+      console.warn('getBusiness error:', error);
+      return null;
+    }
   },
 
   setToken: (token: string) => {

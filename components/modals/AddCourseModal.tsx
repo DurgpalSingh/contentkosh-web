@@ -76,11 +76,11 @@ export function AddCourseModal({
                 description: description.length ? description.trim() : description,
                 startDate: toISODateTime(startDate),
                 endDate: toISODateTime(endDate),
-                status: isActive ? 'ACTIVE' : 'INACTIVE',
+                status: isActive ? CreateCourseRequest.status.ACTIVE : CreateCourseRequest.status.INACTIVE,
                 examId,
             };
 
-            await CoursesService.postApiExamsCourses(examId, request );
+            await CoursesService.postApiExamsCourses(examId, request);
 
             resetForm();
             onCourseCreated();

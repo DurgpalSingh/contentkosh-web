@@ -25,8 +25,18 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
 
-  const navigation = getNavigationItems(user, permissions);
-
+  // Dynamically rewrite navigation URLs if business slug is present
+  const navigation = getNavigationItems(user, permissions).map(item => {
+    if (business?.slug && item.href.startsWith('/dashboard')) {
+      // Replace /dashboard with /:slug/dashboard
+      // Careful: if item.href is exactly /dashboard, replace with /slug/dashboard
+      // if item.href is /dashboard/batches, replace with /slug/dashboard/batches
+      const newItem = { ...item };
+      newItem.href = item.href.replace('/dashboard', `/${business.slug}/dashboard`);
+      return newItem;
+    }
+    return item;
+  });
 
   const handleLogout = async () => {
     await logout();
@@ -38,9 +48,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   };
 
   const isActiveLink = (href: string) => {
-    if (href === ROUTES.DASHBOARD) {
+    // If slug is present, href will be /slug/dashboard...
+    if (href.endsWith('/dashboard') || href === `/${business?.slug}/dashboard`) {
       return pathname === href;
     }
+    // For nested routes
     return pathname?.startsWith(href);
   };
 

@@ -20,6 +20,14 @@ export type CreateCourseRequest = {
      */
     status?: CreateCourseRequest.status;
     /**
+     * Start date of the course
+     */
+    startDate?: string;
+    /**
+     * End date of the course
+     */
+    endDate?: string;
+    /**
      * ID of the exam this course belongs to (required)
      */
     examId: number;

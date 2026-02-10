@@ -50,6 +50,14 @@ export function BatchesFilterModal({
         }
     }, [visibleCourses, localCourseId]);
 
+    const examMapIdToName = useMemo(() => {
+        const lookup: Record<number, string> = {};
+        exams.forEach(e => {
+            if (e.id) lookup[e.id] = e.name || '';
+        });
+        return lookup;
+    }, [exams]);
+
     // Prepare sections for HierarchicalFilterModal
     const sections: FilterSection[] = [
         // Section 1: Exams (multi-select)
@@ -57,6 +65,7 @@ export function BatchesFilterModal({
             id: 'exams',
             title: 'Exams',
             selectionType: 'multiple',
+            selectedId: null,
             items: exams.map(e => ({
                 id: e.id!,
                 label: e.name || 'Unnamed Exam',
@@ -78,13 +87,18 @@ export function BatchesFilterModal({
             id: 'courses',
             title: 'Course (Required)',
             selectionType: 'single',
-            items: visibleCourses.map(c => ({
-                id: c.id!,
-                label: c.name || 'Unnamed Course',
-                subLabel: c.examName ? `(${c.examName})` : undefined,
-            })),
+            selectedIds: [] as number[],
+            items: visibleCourses.map(c => {
+                const examName = c.examId ? examMapIdToName[c.examId] : undefined;
+                return {
+                    id: c.id!,
+                    label: c.name || 'Unnamed Course',
+                    subLabel: examName ? `(${examName})` : undefined,
+                };
+            }),
             selectedId: localCourseId,
             onSelect: (id) => setLocalCourseId(id),
+            onToggle: () => { },
             emptyMessage:
                 visibleCourses.length === 0
                     ? 'No courses available for selected exams'
