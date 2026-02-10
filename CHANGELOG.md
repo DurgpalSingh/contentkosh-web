@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## Version [1.1.9] - Exam Success Notifications
+## Version [1.1.10] - Exam Success Notifications
 **P.R Raised by** : aaditya-singh-21
 **Date** : 2026-02-07
 
