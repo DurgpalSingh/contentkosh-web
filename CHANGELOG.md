@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## Version [1.1.13] - Fix Course Navigation
+**P.R Raised by** : aaditya-singh-21
+**Date** : 2026-02-11
+- **Course Navigation**: Fixed navigation issues in course module.
+- **Jira Ticket Number** : CK-44
+
+---
+
 ## Version [1.1.12] - Fix Validation Error Order
 **P.R Raised by** : aaditya-singh-21
 **Date** : 2026-02-11
