@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CoursesService, CreateCourseRequest } from '@/lib/api';
-import { validateEntityName, validateDateRange, validateCourseName } from '@/lib/validation';
+import { validateEntityName, validateDateRange } from '@/lib/validation';
 import { toISODateTime } from '@/lib/utils';
 import { DatePicker } from '../ui/date-picker';
 
@@ -52,7 +52,7 @@ export function AddCourseModal({
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        const validationError = validateCourseName(name);
+        const validationError = validateEntityName(name, 'Course name', 100);
         if (validationError) {
             setError(validationError);
             return;
