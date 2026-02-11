@@ -14,7 +14,7 @@ export function validateEntityName(name: string, entityLabel: string = 'Name', m
     if (name.trim().length > maxLength) {
         return `${entityLabel} cannot exceed ${maxLength} characters`;
     }
-
+    // TODO : need to Improve this.
     if (!/^(?=.*[A-Za-z]).+$/.test(name)) {
         return `${entityLabel} must contain at least one alphabet character.`;
     }
