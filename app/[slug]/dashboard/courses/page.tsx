@@ -57,31 +57,13 @@ export default function CoursesPage() {
 
       const fetchedExams = examsResponse.data || [];
       setExams(fetchedExams);
-
-      // Determine initial selected exam
-      let initialExamId: number | undefined;
-
-      const examIdParam = searchParams.get('examId');
-      if (examIdParam) {
-        const parsed = parseInt(examIdParam, 10);
-        if (!isNaN(parsed) && fetchedExams.some((e) => e.id === parsed)) {
-          initialExamId = parsed;
-        }
-      }
-
-      // Default to first exam if no valid param
-      if (initialExamId === undefined && fetchedExams.length > 0) {
-        initialExamId = fetchedExams[0].id as number;
-      }
-
-      setSelectedExamId(initialExamId);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error fetching exams:', err);
       setError('Failed to load exams. Please try again.');
     } finally {
       setLoading(false);
     }
-  }, [business?.id, searchParams]);
+  }, [business?.id]);
 
   // Fetch courses for selected exam
   const fetchCourses = useCallback(async (examId: number) => {
@@ -120,7 +102,7 @@ export default function CoursesPage() {
       });
 
       setCourses(extendedCourses);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error fetching courses:', err);
       setError('Failed to load courses. Please try again.');
     } finally {
@@ -135,14 +117,45 @@ export default function CoursesPage() {
     }
   }, [isAuthenticated, business?.id, fetchExams]);
 
-  // Load courses when selected exam changes
+  // Initial selection from URL or default
+  useEffect(() => {
+    if (exams.length > 0 && selectedExamId === undefined) {
+      let initialExamId: number | undefined;
+      const examIdParam = searchParams.get('examId');
+
+      if (examIdParam) {
+        const parsed = parseInt(examIdParam, 10);
+        if (!isNaN(parsed) && exams.some((e) => e.id === parsed)) {
+          initialExamId = parsed;
+        }
+      }
+
+      // Default to first exam if no valid param
+      if (initialExamId === undefined) {
+        initialExamId = exams[0].id as number;
+      }
+
+      setSelectedExamId(initialExamId);
+    }
+  }, [exams, searchParams, selectedExamId]);
+
+  // Load courses when selected exam changes and update URL
   useEffect(() => {
     if (selectedExamId !== undefined) {
       fetchCourses(selectedExamId);
-      // Optional: Update URL to keep selected exam in query params
-      // router.replace(`?examId=${selectedExamId}`, { scroll: false });
+
+      // Update URL to keep selected exam in query params
+      const current = new URLSearchParams(Array.from(searchParams.entries()));
+      const value = selectedExamId.toString();
+
+      if (current.get('examId') !== value) {
+        current.set('examId', value);
+        const search = current.toString();
+        const query = search ? `?${search}` : '';
+        router.push(`${window.location.pathname}${query}`);
+      }
     }
-  }, [selectedExamId, fetchCourses]);
+  }, [selectedExamId, fetchCourses, router, searchParams]);
 
   const filteredCourses = useMemo(() => {
     if (!searchQuery.trim()) return courses;
