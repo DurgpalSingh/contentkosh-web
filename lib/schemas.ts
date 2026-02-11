@@ -27,9 +27,9 @@ export const dateRangeSchema = dateRangeFields.refine(dateRangeRefinement, dateR
  * Schema for Batch creation/editing.
  * Extends dateRangeFields and adds batch-specific fields, then applies refinement.
  */
-export const batchSchema = dateRangeFields.extend({
+export const batchSchema = z.object({
     codeName: z.string().trim().min(1, 'Batch code name is required'),
     displayName: z.string().trim().min(1, 'Display name is required'),
-}).refine(dateRangeRefinement, dateRangeRefinementMessage);
+}).merge(dateRangeFields).refine(dateRangeRefinement, dateRangeRefinementMessage);
 
 export type BatchFormData = z.infer<typeof batchSchema>;

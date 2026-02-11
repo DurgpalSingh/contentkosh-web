@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## Version [1.1.12] - Fix Validation Error Order
+**P.R Raised by** : aaditya-singh-21
+**Date** : 2026-02-11
+- **Batch Form**: Fixed validation error order in "Add New Batch" form to display field errors (Code Name, Display Name) before date errors.
+- **Jira Ticket Number** : CK-52
+
+---
+
 ## Version [1.1.11] - Fix Validation & UI Updates
 **P.R Raised by** : shubha404-SE
 **Date** : 2026-02-11
