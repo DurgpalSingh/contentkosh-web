@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## Version [1.1.11] - Fix Validation & UI Updates
+**P.R Raised by** : shubha404-SE
+**Date** : 2026-02-11
+- Added name validation to ensure at least one alphabet character is present.
+- Removed the `required` constraint from the exam code field.
+- Removed start date and end date fields from the exam add/edit UI.
+
+---
+
 ## Version [1.1.10] - Exam Success Notifications
 **P.R Raised by** : aaditya-singh-21
 **Date** : 2026-02-07
