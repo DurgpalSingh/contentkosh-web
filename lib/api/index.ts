@@ -28,7 +28,7 @@ export { CreateSubjectRequest } from './models/CreateSubjectRequest';
 export { CreateUserRequest } from './models/CreateUserRequest';
 export type { CreateContentRequest } from './models/CreateContentRequest';
 export type { UpdateContentRequest } from './models/UpdateContentRequest';
-export type { Content } from './models/Content';
+export { Content } from './models/Content';
 export type { ErrorResponse } from './models/ErrorResponse';
 export { Exam } from './models/Exam';
 export { ExamWithCourses } from './models/ExamWithCourses';

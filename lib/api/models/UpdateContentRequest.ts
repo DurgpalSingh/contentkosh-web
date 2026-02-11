@@ -6,5 +6,14 @@ export type UpdateContentRequest = {
     /** Updated title */
     title?: string;
     /** Updated status */
-    status?: "ACTIVE" | "INACTIVE";
+    status?: UpdateContentRequest.status;
 };
+export namespace UpdateContentRequest {
+    /**
+     * Status of the content
+     */
+    export enum status {
+        ACTIVE = 'ACTIVE',
+        INACTIVE = 'INACTIVE',
+    }
+}

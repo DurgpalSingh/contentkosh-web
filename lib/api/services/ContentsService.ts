@@ -62,9 +62,9 @@ export class ContentsService {
         /** Batch ID */
         batchId: number,
         /** Filter by content type */
-        type?: 'PDF' | 'IMAGE',
+        type?: Content.type,
         /** Filter by content status */
-        status?: 'ACTIVE' | 'INACTIVE',
+        status?: Content.status,
         /** Search string */
         search?: string,
     }): CancelablePromise<(ApiResponse & {

@@ -8,5 +8,14 @@ export type CreateContentRequest = {
     /** Title of the content (required) */
     title: string;
     /** Status of the content */
-    status?: "ACTIVE" | "INACTIVE";
+    status?: CreateContentRequest.status;
 };
+export namespace CreateContentRequest {
+    /**
+     * Status of the content
+     */
+    export enum status {
+        ACTIVE = 'ACTIVE',
+        INACTIVE = 'INACTIVE',
+    }
+}

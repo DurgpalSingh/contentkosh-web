@@ -78,7 +78,7 @@ export default function ContentsPage() {
     setContentsLoading(true);
     setError(null);
     try {
-      const res = await ContentsService.getApiBatchesContents({ batchId });
+      const res = await ContentsService.getApiBatchesContents({ batchId, status: Content.status.ACTIVE });
       const fetched = (res.data ?? []) as Content[];
       fetched.sort((a, b) =>
         (b.createdAt ? new Date(b.createdAt).getTime() : 0) - (a.createdAt ? new Date(a.createdAt).getTime() : 0)
@@ -164,7 +164,14 @@ export default function ContentsPage() {
     try {
       const blob = await ContentsService.getApiContentsFile({ contentId: c.id! }).then(r => r as Blob);
       const url = URL.createObjectURL(blob);
-      window.open(url, '_blank');
+      const newTab = window.open(url, '_blank');
+      // Revoke later so the new tab has time to load the blob URL.
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+      if (!newTab) {
+        // Optional fallback if popup blocked
+        window.location.href = url;
+      }
     } catch (err) {
       console.error('Failed to open file:', err);
     }
