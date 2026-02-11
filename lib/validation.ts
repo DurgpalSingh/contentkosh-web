@@ -6,42 +6,79 @@
  * @param maxLength The maximum allowed length (default: 50).
  * @returns An error message string if invalid, or null if valid.
  */
-export function validateEntityName(name: string, entityLabel: string = 'Name', maxLength: number = 50): string | null {
-    if (!name || !name.trim()) {
-        return `${entityLabel} is required`;
-    }
+export type Validator = (value: string) => string | null;
 
-    const trimmedName = name.trim();
-
-    if (trimmedName.length > maxLength) {
-        return `${entityLabel} cannot exceed ${maxLength} characters`;
+export const isRequired = (label: string): Validator => (value) => {
+    if (!value || !value.trim()) {
+        return `${label} is required`;
     }
-    // TODO : need to Improve this.
-    if (!/^(?=.*[A-Za-z]).+$/.test(name)) {
-        return `${entityLabel} must contain at least one alphabet character.`;
-    }
+    return null;
+};
 
-    // Must contain at least one alphabet
-    if (!/[a-zA-Z]/.test(trimmedName)) {
-        return `${entityLabel} must contain at least one alphabet`;
+export const hasMaxLength = (max: number, label: string): Validator => (value) => {
+    if (value.trim().length > max) {
+        return `${label} cannot exceed ${max} characters`;
     }
+    return null;
+};
 
-    // Allowed characters: alphabets, numbers, spaces, hyphens, underscores
-    if (!/^[a-zA-Z0-9\s\-_]+$/.test(trimmedName)) {
-        return `${entityLabel} contains invalid characters`;
+export const containsAlphabet = (label: string): Validator => (value) => {
+    if (!/[a-zA-Z]/.test(value)) {
+        return `${label} must contain at least one alphabet`;
     }
+    return null;
+};
 
-    // Start/End check for hyphens and underscores
-    if (/^[\-_]|[\-_]$/.test(trimmedName)) {
+export const hasValidCharacters = (label: string): Validator => (value) => {
+    if (!/^[a-zA-Z0-9\s\-_]+$/.test(value)) {
+        return `${label} contains invalid characters`;
+    }
+    return null;
+};
+
+export const noStartEndSpecialChars = (): Validator => (value) => {
+    if (/^[\-_]|[\-_]$/.test(value)) {
         return 'Hyphens and underscores cannot be at the start or end of the name';
     }
+    return null;
+};
 
-    // Consecutive hyphens and underscores check
-    if (/[\-_]{2,}/.test(trimmedName)) {
+export const noConsecutiveSpecialChars = (): Validator => (value) => {
+    if (/[\-_]{2,}/.test(value)) {
         return 'Hyphens and underscores cannot be consecutive';
     }
-
     return null;
+};
+
+export function validate(value: string, validators: Validator[]): string | null {
+    for (const validator of validators) {
+        const error = validator(value);
+        if (error) {
+            return error;
+        }
+    }
+    return null;
+}
+
+/**
+ * Validates an entity name (e.g., Exam name, Course name).
+ * 
+ * @param name The name to validate.
+ * @param entityLabel The label of the entity for the error message (default: 'Name').
+ * @param maxLength The maximum allowed length (default: 50).
+ * @returns An error message string if invalid, or null if valid.
+ */
+export function validateEntityName(name: string, entityLabel: string = 'Name', maxLength: number = 50): string | null {
+    const trimmedName = name ? name.trim() : '';
+
+    return validate(trimmedName, [
+        isRequired(entityLabel),
+        hasMaxLength(maxLength, entityLabel),
+        containsAlphabet(entityLabel),
+        hasValidCharacters(entityLabel),
+        noStartEndSpecialChars(),
+        noConsecutiveSpecialChars(),
+    ]);
 }
 
 /**
