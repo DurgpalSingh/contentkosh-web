@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { CoursesService, UpdateCourseRequest, Course } from '@/lib/api';
-import { validateDateRange, validateEntityName } from '@/lib/validation';
+import { validateDateRange, validateEntityName, validateCourseName } from '@/lib/validation';
 import { DatePicker } from '@/components/ui/date-picker';
 import { toISODateTime } from '@/lib/utils';
 
@@ -57,7 +57,7 @@ export function EditCourseModal({
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        const nameError = validateEntityName(name, 'Course name', 100);
+        const nameError = validateCourseName(name);
         if (nameError) {
             setError(nameError);
             return;
