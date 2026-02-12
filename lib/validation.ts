@@ -30,22 +30,8 @@ export const containsAlphabet = (label: string): Validator => (value) => {
 };
 
 export const hasValidCharacters = (label: string): Validator => (value) => {
-    if (!/^[a-zA-Z0-9\s\-_]+$/.test(value)) {
-        return `${label} contains invalid characters`;
-    }
-    return null;
-};
-
-export const noStartEndSpecialChars = (): Validator => (value) => {
-    if (/^[\-_]|[\-_]$/.test(value)) {
-        return 'Hyphens and underscores cannot be at the start or end of the name';
-    }
-    return null;
-};
-
-export const noConsecutiveSpecialChars = (): Validator => (value) => {
-    if (/[\-_]{2,}/.test(value)) {
-        return 'Hyphens and underscores cannot be consecutive';
+    if (!/^[a-zA-Z0-9\s]+$/.test(value)) {
+        return `${label} can only contain letters, numbers, and spaces`;
     }
     return null;
 };
@@ -76,8 +62,6 @@ export function validateEntityName(name: string, entityLabel: string = 'Name', m
         hasMaxLength(maxLength, entityLabel),
         containsAlphabet(entityLabel),
         hasValidCharacters(entityLabel),
-        noStartEndSpecialChars(),
-        noConsecutiveSpecialChars(),
     ]);
 }
 
