@@ -34,7 +34,7 @@ export const NAVIGATION_CONFIG: NavigationItem[] = [
     },
     // Admin specific
     {
-        name: 'Admins',
+        name: 'Users',
         href: ROUTES.ADMIN.USERS,
         icon: Users,
         roles: [USER_ROLES.ADMIN],
