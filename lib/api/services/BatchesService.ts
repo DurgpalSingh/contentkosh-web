@@ -128,4 +128,25 @@ export class BatchesService {
             },
         });
     }
+
+    /**
+     * Get all active batches (role-aware)
+     * @returns any Active batches fetched successfully
+     * @throws ApiError
+     */
+    public static getApiBatchesAll(
+        include?: string,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/batches/all',
+            query: {
+                'include': include,
+            },
+            errors: {
+                403: `Forbidden`,
+                500: `Internal server error`,
+            },
+        });
+    }
 }

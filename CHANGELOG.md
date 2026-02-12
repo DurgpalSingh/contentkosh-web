@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file.
 
+## Version [1.1.15] - Content Management Frontend Implementation
+**P.R Raised by** : shubha404-SE
+**Date** : 2026-02-11
+
+### Added
+- **Content Management UI**: Complete frontend implementation for content upload, management, and filtering.
+
+- **Modals & Components**:
+  - **AddContentModal**: File upload modal with batch selection and content metadata.
+  - **EditContentModal**: Update content title and active status.
+  - **ContentGridCard**: Display content with metadata (file type, size, upload date, status).
+    - Icons and badges for PDF, Image, and generic file types.
+    - Action menu: View File, Edit, Delete.
+  - **ContentsFilterModal**: Hierarchical filtering by Exam → Course → Batch.
+    - Smart cascading selectors with dependent field updates.
+    - Clear all filters functionality.
+
+- **API Integration**:
+  - Integrated generated `ContentsService` from API client.
+  - Support for file upload with metadata.
+
+### Improved
+- **Backend Service** (`getAllActiveBatches`):
+- To fetch all batches for a user according to their role.
+- For teacher and student, get all batches if they are in that batch.
+
+---
+
 ## Version [1.1.14] - Refactor Validation Logic
 **P.R Raised by** : aaditya-singh-21
 **Date** : 2026-02-11
@@ -32,8 +60,6 @@ All notable changes to this project will be documented in this file.
 - Added name validation to ensure at least one alphabet character is present.
 - Removed the `required` constraint from the exam code field.
 - Removed start date and end date fields from the exam add/edit UI.
-
----
 
 ## Version [1.1.10] - Exam Success Notifications
 **P.R Raised by** : aaditya-singh-21
@@ -143,6 +169,21 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 - **Auth Stability**: Removed "Fallback User" mechanism to prevent broken UI states; app now properly handles profile fetch failures by forcing re-authentication.
 - **API Integration**: Corrected method signatures in `StudentsPage` to align with the generated API client, resolving runtime crashes.
+---
+## Version [1.1.2] - Architecture, API & UI Improvements in EXAM, Course and Batch
+**P.R Raised by** : shubha404-SE
+**Date** : 2026-02-07
+
+### Changes
+- Centralized authentication initialization by moving shared `useEffect` logic into a common layout, eliminating duplicated auth logic across components.
+- Added root (`/`) route handling to automatically redirect users to `/dashboard`.
+- Fixed API call issues on the Exam page for fetching and posting exams, and improved overall UI stability and responsiveness.
+- Resolved API integration issues on the Course page and enhanced the course UI.
+- Added a dedicated Subjects page to display all subjects for a selected course, with fully functional add, edit, and delete modals.
+- Implemented add, edit, and delete functionality for Batches; optimized batch fetching by filtering by course ID to prevent repeated API calls in loops.
+- Updated frontend service layers to align with recent backend API changes.
+
+---
 
 ## Version [1.3.0] - Students Management & UI Refactoring
 **P.R Raised by** : aaditya-singh-21

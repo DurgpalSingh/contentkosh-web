@@ -110,6 +110,12 @@ const getUrl = (config: OpenAPIConfig, options: ApiRequestOptions): string => {
 
 export const getFormData = (options: ApiRequestOptions): FormData | undefined => {
     if (options.formData) {
+        // If caller already provided a FormData instance (e.g., browser FormData or node 'form-data'),
+        // return it directly so files and blobs are preserved as-is.
+        if (isFormData(options.formData)) {
+            return options.formData as FormData;
+        }
+
         const formData = new FormData();
 
         const process = (key: string, value: any) => {
@@ -120,7 +126,7 @@ export const getFormData = (options: ApiRequestOptions): FormData | undefined =>
             }
         };
 
-        Object.entries(options.formData)
+        Object.entries(options.formData as Record<string, any>)
             .filter(([_, value]) => isDefined(value))
             .forEach(([key, value]) => {
                 if (Array.isArray(value)) {
