@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## Version [1.1.19] - Admin Management Features
+**P.R Raised by** : aaditya-singh-21
+**Date** : 2026-02-12
+### Added
+- **Admin Management**: Implemented full CRUD for admins.
+  - **Add Admin**: Create new admin users with validation.
+  - **Edit Admin**: Update admin name and mobile number.
+  - **Remove Admin**: Soft-delete admins with confirmation modal.
+- **Components**: Added `AddUserModal`, `EditUserModal`.
+
+---
+
 ## Version [1.1.18] - Fix Exam Description Hover
 **P.R Raised by** : aaditya-singh-21
 **Date** : 2026-02-14
@@ -35,7 +47,7 @@ All notable changes to this project will be documented in this file.
   - Added **Exam Dropdown** in "Add New Course" modal to link new courses to specific exams.
   - Implemented validation to ensure an exam is selected before course creation.
   - improved UX by auto-selecting the first available exam if none is selected.
-  
+
 ---
 
 ## Version [1.1.15] - Content Management Frontend Implementation
@@ -337,5 +349,3 @@ All notable changes to this project will be documented in this file.
 - Updated `components/dashboard/DashboardLayout.tsx` to redirect to login after logout
 
 ---
-
-

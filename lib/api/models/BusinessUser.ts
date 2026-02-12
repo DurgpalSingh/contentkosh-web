@@ -43,7 +43,14 @@ export type BusinessUser = {
         /**
          * User name
          */
+        /**
+         * User name
+         */
         name?: string;
+        /**
+         * User mobile
+         */
+        mobile?: string;
     };
     business?: {
         /**

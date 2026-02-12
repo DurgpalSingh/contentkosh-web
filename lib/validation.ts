@@ -103,3 +103,61 @@ export function validateDateRange(
     }
     return null;
 }
+
+/**
+ * Validates an email address.
+ * 
+ * @param email The email to validate.
+ * @returns An error message string if invalid, or null if valid.
+ */
+export function validateEmail(email: string): string | null {
+    if (!email || !email.trim()) {
+        return 'Email is required';
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        return 'Please enter a valid email address';
+    }
+
+    return null;
+}
+
+/**
+ * Validates a mobile number.
+ * 
+ * @param mobile The mobile number to validate.
+ * @returns An error message string if invalid, or null if valid.
+ */
+export function validateMobile(mobile: string | undefined): string | null {
+    if (!mobile || !mobile.trim()) {
+        return null; // Mobile is optional
+    }
+
+    // Basic validation for 10-digit mobile number
+    const mobileRegex = /^[0-9]{10}$/;
+    if (!mobileRegex.test(mobile.replace(/[- ]/g, ''))) {
+        return 'Please enter a valid 10-digit mobile number';
+    }
+
+    return null;
+}
+
+/**
+ * Validates a password.
+ * 
+ * @param password The password to validate.
+ * @returns An error message string if invalid, or null if valid.
+ */
+export function validatePassword(password: string): string | null {
+    if (!password) {
+        return 'Password is required';
+    }
+
+    if (password.length < 6) {
+        return 'Password must be at least 6 characters long';
+    }
+
+    return null;
+}
+
