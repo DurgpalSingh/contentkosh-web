@@ -2,6 +2,33 @@
 
 All notable changes to this project will be documented in this file.
 
+## Version [1.1.19] - Batch Details Page Refactor & Member Management
+**P.R Raised by** : shubh404-SE
+**Date** : 2026-02-12
+
+### Added
+- **Batch Member Management**:
+  - Added role-aware `AddBatchMemberModal` for both Students and Teachers.
+  - Added member search in modal (API call triggered on 3+ characters) with filtered result list.
+  - Added member removal flow from batch details cards.
+  - Integrated `DeleteConfirmModal` for delete confirmation before removing a member.
+
+### Changed
+- **Batch Details Routing**:
+  - Standardized details navigation to `/${slug}/dashboard/batches/[batchId]`.
+  - Added compatibility redirect from legacy `/dashboard/batches/details?id=...` route.
+- **Batch Details UI Refactor**:
+  - Split repeated page logic into reusable components:
+    - `BatchMembersTabs`
+    - `BatchMembersPanel`
+    - `BatchMemberCard`
+    - `BatchMemberDetailsModal`
+  - Added batch selector in details page header to switch between batches.
+  - Added in-page member search (name/email/userId) below tabs.
+  - Added tab-aware action button (`Add Student` / `Add Teacher`).
+
+---
+
 ## Version [1.1.19] - Admin Management Features
 **P.R Raised by** : aaditya-singh-21
 **Date** : 2026-02-12

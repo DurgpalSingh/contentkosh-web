@@ -72,8 +72,7 @@ export default function BatchesPage() {
 
       // 3. Flatten and standardize courses
       const allCourses: Course[] = fetchedExams.flatMap((exam) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const examCourses = ((exam as any).courses as Course[]) || [];
+        const examCourses = (exam.courses as Course[]) || [];
         return examCourses.map((course) => ({
           ...course,
           examId: exam.id,
@@ -183,7 +182,7 @@ export default function BatchesPage() {
 
   const handleViewDetails = (batch: Batch) => {
     if (!business?.slug) return;
-    router.push(`/${business.slug}/dashboard/batches/details?id=${batch.id}`);
+    router.push(`/${business.slug}/dashboard/batches/${batch.id}`);
   };
 
   const handleEditBatch = (batch: Batch) => {
