@@ -6,20 +6,63 @@
  * @param maxLength The maximum allowed length (default: 50).
  * @returns An error message string if invalid, or null if valid.
  */
-export function validateEntityName(name: string, entityLabel: string = 'Name', maxLength: number = 50): string | null {
-    if (!name || !name.trim()) {
-        return `${entityLabel} is required`;
-    }
+export type Validator = (value: string) => string | null;
 
-    if (name.trim().length > maxLength) {
-        return `${entityLabel} cannot exceed ${maxLength} characters`;
+export const isRequired = (label: string): Validator => (value) => {
+    if (!value || !value.trim()) {
+        return `${label} is required`;
     }
-    // TODO : need to Improve this.
-    if (!/^(?=.*[A-Za-z]).+$/.test(name)) {
-        return `${entityLabel} must contain at least one alphabet character.`;
-    }
-
     return null;
+};
+
+export const hasMaxLength = (max: number, label: string): Validator => (value) => {
+    if (value.trim().length > max) {
+        return `${label} cannot exceed ${max} characters`;
+    }
+    return null;
+};
+
+export const containsAlphabet = (label: string): Validator => (value) => {
+    if (!/[a-zA-Z]/.test(value)) {
+        return `${label} must contain at least one alphabet`;
+    }
+    return null;
+};
+
+export const hasValidCharacters = (label: string): Validator => (value) => {
+    if (!/^[a-zA-Z0-9\s]+$/.test(value)) {
+        return `${label} can only contain letters, numbers, and spaces`;
+    }
+    return null;
+};
+
+export function validate(value: string, validators: Validator[]): string | null {
+    for (const validator of validators) {
+        const error = validator(value);
+        if (error) {
+            return error;
+        }
+    }
+    return null;
+}
+
+/**
+ * Validates an entity name (e.g., Exam name, Course name).
+ * 
+ * @param name The name to validate.
+ * @param entityLabel The label of the entity for the error message (default: 'Name').
+ * @param maxLength The maximum allowed length (default: 50).
+ * @returns An error message string if invalid, or null if valid.
+ */
+export function validateEntityName(name: string, entityLabel: string = 'Name', maxLength: number = 50): string | null {
+    const trimmedName = name ? name.trim() : '';
+
+    return validate(trimmedName, [
+        isRequired(entityLabel),
+        hasMaxLength(maxLength, entityLabel),
+        containsAlphabet(entityLabel),
+        hasValidCharacters(entityLabel),
+    ]);
 }
 
 /**
@@ -56,7 +99,7 @@ export function validateDateRange(
     }
 
     if (new Date(startDate) > new Date(endDate)) {
-        return 'Start Date  must be before End Date';
+        return 'Start Date must be before End Date';
     }
     return null;
 }

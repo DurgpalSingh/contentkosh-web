@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## Version [1.1.14] - Refactor Validation Logic
+**P.R Raised by** : aaditya-singh-21
+**Date** : 2026-02-11
+- **Validation**: Refactored `validateEntityName` to use composable validator functions.
+- **Jira Ticket Number** : CK-46
+
+---
+
 ## Version [1.1.13] - Fix Course Navigation
 **P.R Raised by** : aaditya-singh-21
 **Date** : 2026-02-11
