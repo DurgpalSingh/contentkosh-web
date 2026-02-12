@@ -5,35 +5,23 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Button } from '@/components/ui/button';
-import { Plus, Search, Filter, Layers3, FolderOpen } from 'lucide-react';
+import { Plus, Search, Layers3 } from 'lucide-react';
 import { AddContentModal } from '@/components/modals/AddContentModal';
 import { EditContentModal } from '@/components/modals/EditContentModal';
 import { DeleteConfirmModal } from '@/components/modals/DeleteConfirmModal';
-import { ContentsService, ExamsService, BatchesService, Content, Exam, Course, Batch } from '@/lib/api';
+import { ContentsService, BatchesService, Content, Batch } from '@/lib/api';
 import { ContentGridCard } from '@/components/dashboard/contents/ContentGridCard';
 import { ContentsFilterModal } from '@/components/dashboard/contents/ContentsFilterModal';
-
-interface ExtendedBatch extends Batch {
-  courseId?: number;
-  courseName?: string;
-  examId?: number;
-}
 
 export default function ContentsPage() {
   const { user, business, isAuthenticated, isLoading, isInitialized } = useAuthStore();
 
-  const [exams, setExams] = useState<Exam[]>([]);
-  const [courses, setCourses] = useState<Course[]>([]);
   const [rawBatches, setRawBatches] = useState<Batch[]>([]);
 
-  const [selectedExamIds, setSelectedExamIds] = useState<number[]>([]);
-  const [selectedCourseIds, setSelectedCourseIds] = useState<number[]>([]);
   const [selectedBatchId, setSelectedBatchId] = useState<number | undefined>(undefined);
-  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
 
   const [contents, setContents] = useState<Content[]>([]);
-  const [pageLoading, setPageLoading] = useState(true);
-  const [contentsLoading, setContentsLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -44,23 +32,6 @@ export default function ContentsPage() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
   const isStudent = user?.role === 'STUDENT';
-  const isRestricted = user?.role === 'TEACHER' || user?.role === 'STUDENT';
-
-  const courseById = useMemo(() => {
-    return new Map(courses.filter(c => c.id).map(c => [c.id!, c]));
-  }, [courses]);
-
-  const allBatches = useMemo<ExtendedBatch[]>(() => {
-    return rawBatches.map((b) => {
-      const course = b.courseId ? courseById.get(b.courseId) : undefined;
-      return {
-        ...b,
-        courseId: b.courseId,
-        courseName: course?.name,
-        examId: course?.examId,
-      };
-    });
-  }, [rawBatches, courseById]);
 
   const filteredContents = useMemo(() => {
     if (!searchQuery.trim()) return contents;
@@ -68,14 +39,16 @@ export default function ContentsPage() {
     return contents.filter(c => c.title?.toLowerCase().includes(q));
   }, [contents, searchQuery]);
 
-  const extractCoursesFromExams = useCallback((examList: Exam[]) => {
-    return examList
-      .flatMap((exam) => (exam.courses ?? []).map((course) => ({ ...course, examId: exam.id, examName: exam.name })))
-      .sort((a, b) => (b.createdAt ? new Date(b.createdAt).getTime() : 0) - (a.createdAt ? new Date(a.createdAt).getTime() : 0));
+  const getCreatedAtTime = useCallback((date?: string) => {
+    return date ? new Date(date).getTime() : 0;
   }, []);
 
+  const sortByCreatedAtDesc = useCallback(<T extends { createdAt?: string }>(items: T[]) => {
+    return [...items].sort((a, b) => getCreatedAtTime(b.createdAt) - getCreatedAtTime(a.createdAt));
+  }, [getCreatedAtTime]);
+
   const fetchContents = useCallback(async (batchId: number) => {
-    setContentsLoading(true);
+    setLoading(true);
     setError(null);
     try {
       const res = await ContentsService.getApiBatchesContents({ batchId, status: Content.status.ACTIVE });
@@ -89,53 +62,24 @@ export default function ContentsPage() {
       setError('Failed to load contents');
       setContents([]);
     } finally {
-      setContentsLoading(false);
+      setLoading(false);
     }
   }, []);
 
   const loadPageData = useCallback(async () => {
     if (!business?.id) return;
-    setPageLoading(true);
+    setLoading(true);
     setError(null);
     try {
-      const [examsRes, batchesRes] = await Promise.all([
-        ExamsService.getApiBusinessExams(business.id, 'courses'),
-        BatchesService.getApiBatchesAll(),
-      ]);
-
-      const fetchedExams = (examsRes.data ?? []) as Exam[];
-      const allCourses = extractCoursesFromExams(fetchedExams);
-      const fetchedBatches = ((batchesRes.data ?? []) as Batch[]).sort((a, b) =>
-        (b.createdAt ? new Date(b.createdAt).getTime() : 0) - (a.createdAt ? new Date(a.createdAt).getTime() : 0)
-      );
-
-      if (isRestricted) {
-        const courseIdSet = new Set<number>();
-        fetchedBatches.forEach(b => {
-          if (typeof b.courseId === 'number') courseIdSet.add(b.courseId);
-        });
-
-        const filteredCourses = allCourses.filter(c => c.id && courseIdSet.has(c.id));
-        const examIdSet = new Set<number>();
-        filteredCourses.forEach(c => {
-          if (typeof c.examId === 'number') examIdSet.add(c.examId);
-        });
-        const filteredExams = fetchedExams.filter(e => e.id && examIdSet.has(e.id));
-
-        setExams(filteredExams);
-        setCourses(filteredCourses);
-      } else {
-        setExams(fetchedExams);
-        setCourses(allCourses);
-      }
-      setRawBatches(fetchedBatches);
+      const batchesRes = await BatchesService.getApiBatchesAll();
+      setRawBatches(sortByCreatedAtDesc((batchesRes.data ?? []) as Batch[]));
     } catch (err) {
       console.error('Failed to load data:', err);
       setError('Failed to load contents data');
     } finally {
-      setPageLoading(false);
+      setLoading(false);
     }
-  }, [business?.id, extractCoursesFromExams, isRestricted]);
+  }, [business?.id, sortByCreatedAtDesc]);
 
   useEffect(() => {
     if (!isAuthenticated || !business?.id) return;
@@ -143,8 +87,8 @@ export default function ContentsPage() {
   }, [isAuthenticated, business?.id, loadPageData]);
 
   useEffect(() => {
-    if (!selectedBatchId && allBatches.length > 0) {
-      const first = allBatches[0];
+    if (!selectedBatchId && rawBatches.length > 0) {
+      const first = rawBatches[0];
       setSelectedBatchId(first.id);
       return;
     }
@@ -154,7 +98,7 @@ export default function ContentsPage() {
     } else {
       setContents([]);
     }
-  }, [selectedBatchId, allBatches, fetchContents]);
+  }, [selectedBatchId, rawBatches, fetchContents]);
 
   const handleAdd = useCallback(() => {
     setIsAddOpen(true);
@@ -203,7 +147,7 @@ export default function ContentsPage() {
     }
   }, [selectedContent, selectedBatchId, fetchContents]);
 
-  if (isLoading || !isInitialized || pageLoading) {
+  if (isLoading || !isInitialized || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner size="lg" />
@@ -251,29 +195,22 @@ export default function ContentsPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => setIsFilterModalOpen(true)}
-              className="flex items-center px-4 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 text-sm font-medium text-gray-700"
-            >
-              <Filter className="h-4 w-4 mr-2" />
-              Filters
-              {(selectedExamIds.length > 0 || selectedCourseIds.length > 0 || selectedBatchId) && (
-                <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 rounded-full">
-                  {selectedExamIds.length + selectedCourseIds.length + (selectedBatchId ? 1 : 0)}
-                </span>
-              )}
-            </button>
+            <ContentsFilterModal
+              batches={rawBatches}
+              selectedBatchId={selectedBatchId}
+              onBatchChange={setSelectedBatchId}
+            />
           </div>
         </div>
 
-        {contentsLoading ? (
-          <div className="flex justify-center py-12"><LoadingSpinner size="lg" /></div>
-        ) : error ? (
+        {error ? (
           <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-red-700 text-center">{error}</div>
         ) : filteredContents.length === 0 ? (
           <div className="text-center py-12">
             <h3 className="text-lg font-medium text-gray-900">No contents found</h3>
-            <p className="text-gray-600 mt-2">Add content to this batch to get started</p>
+            <p className="text-gray-600 mt-2">
+              {selectedBatchId ? 'Add content to this batch to get started' : 'Select a batch to view contents'}
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -296,34 +233,17 @@ export default function ContentsPage() {
           onClose={() => setIsAddOpen(false)}
           selectedBatchId={selectedBatchId}
           onBatchChange={setSelectedBatchId}
-          batches={allBatches}
+          batches={rawBatches}
           onCreated={() => selectedBatchId && fetchContents(selectedBatchId)}
         />
       )}
 
-      {isFilterModalOpen && (
-        <ContentsFilterModal
-          isOpen={isFilterModalOpen}
-          onClose={() => setIsFilterModalOpen(false)}
-          exams={exams}
-          courses={courses}
-          batches={allBatches}
-          selectedExamIds={selectedExamIds}
-          selectedCourseIds={selectedCourseIds}
-          selectedBatchId={selectedBatchId}
-          onApply={(examIds, courseIds, batchId) => {
-            setSelectedExamIds(examIds);
-            if (batchId) setSelectedBatchId(batchId);
-            setSelectedCourseIds(courseIds);
-          }}
-        />
-      )}
       {!isStudent && isEditOpen && selectedContent && (
         <EditContentModal
           isOpen={isEditOpen}
           onClose={() => { setIsEditOpen(false); setSelectedContent(null); }}
           content={selectedContent}
-          batches={allBatches}
+          batches={rawBatches}
           onUpdated={() => selectedBatchId && fetchContents(selectedBatchId)}
         />
       )}
