@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## Version [1.1.16] - Link Course to Exam
+**P.R Raised by** : aaditya-singh-21
+**Date** : 2026-02-13
+
+### Added
+- **Course Management**:
+  - Added **Exam Dropdown** in "Add New Course" modal to link new courses to specific exams.
+  - Implemented validation to ensure an exam is selected before course creation.
+  - improved UX by auto-selecting the first available exam if none is selected.
+
+---
+
 ## Version [1.1.15] - Content Management Frontend Implementation
 **P.R Raised by** : shubha404-SE
 **Date** : 2026-02-11

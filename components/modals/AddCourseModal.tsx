@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { CoursesService, CreateCourseRequest } from '@/lib/api';
+import { CoursesService, CreateCourseRequest, Exam } from '@/lib/api';
 import { validateEntityName, validateDateRange } from '@/lib/validation';
 import { toISODateTime } from '@/lib/utils';
 import { DatePicker } from '../ui/date-picker';
@@ -11,14 +11,16 @@ import { DatePicker } from '../ui/date-picker';
 interface AddCourseModalProps {
     isOpen: boolean;
     onClose: () => void;
-    examId: number;
+    exams: Exam[];
+    defaultExamId?: number;
     onCourseCreated: () => void;
 }
 
 export function AddCourseModal({
     isOpen,
     onClose,
-    examId,
+    exams,
+    defaultExamId,
     onCourseCreated,
 }: AddCourseModalProps) {
     const [name, setName] = useState('');
@@ -26,19 +28,33 @@ export function AddCourseModal({
     const [startDate, setStartDate] = useState<Date | undefined>(undefined);
     const [endDate, setEndDate] = useState<Date | undefined>(undefined);
     const [isActive, setIsActive] = useState(true);
+    const [selectedExamId, setSelectedExamId] = useState<number | undefined>(defaultExamId);
+
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    // Initialize selected exam when modal opens or props change
+    useEffect(() => {
+        if (isOpen) {
+            if (defaultExamId) {
+                setSelectedExamId(defaultExamId);
+            } else if (exams.length > 0 && !selectedExamId) {
+                // Auto-select first exam if none selected
+                setSelectedExamId(exams[0].id);
+            }
+        }
+    }, [isOpen, defaultExamId, exams]);
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape' && isOpen) {
-                onClose();
+                handleClose();
             }
         };
 
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [isOpen, onClose]);
+    }, [isOpen]);
 
     const resetForm = () => {
         setName('');
@@ -46,11 +62,24 @@ export function AddCourseModal({
         setStartDate(undefined);
         setEndDate(undefined);
         setIsActive(true);
+        // Reset to default or first available, effectively handled by the useEffect on open
+        if (defaultExamId) {
+            setSelectedExamId(defaultExamId);
+        } else if (exams.length > 0) {
+            setSelectedExamId(exams[0].id);
+        } else {
+            setSelectedExamId(undefined);
+        }
         setError(null);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (!selectedExamId) {
+            setError('Please select an exam.');
+            return;
+        }
 
         const validationError = validateEntityName(name, 'Course name', 100);
         if (validationError) {
@@ -77,14 +106,13 @@ export function AddCourseModal({
                 startDate: toISODateTime(startDate),
                 endDate: toISODateTime(endDate),
                 status: isActive ? CreateCourseRequest.status.ACTIVE : CreateCourseRequest.status.INACTIVE,
-                examId,
+                examId: selectedExamId,
             };
 
-            await CoursesService.postApiExamsCourses(examId, request);
+            await CoursesService.postApiExamsCourses(selectedExamId, request);
 
-            resetForm();
+            handleClose();
             onCourseCreated();
-            onClose();
         } catch (err: any) {
             console.error('Error creating course:', err);
             setError(err.body?.message || 'Failed to create course');
@@ -99,6 +127,8 @@ export function AddCourseModal({
     };
 
     if (!isOpen) return null;
+
+    const noExamsAvailable = exams.length === 0;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -132,6 +162,35 @@ export function AddCourseModal({
                         </div>
                     )}
 
+                    {noExamsAvailable && (
+                        <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg text-sm">
+                            No exams available. Please create an exam first.
+                        </div>
+                    )}
+
+                    <div className="space-y-1.5">
+                        <label
+                            htmlFor="exam-select"
+                            className="block text-sm font-medium text-gray-700"
+                        >
+                            Exam <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                            id="exam-select"
+                            value={selectedExamId || ''}
+                            onChange={(e) => setSelectedExamId(Number(e.target.value))}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors focus-visible:ring-green-500 focus-visible:ring-offset-1 bg-white"
+                            disabled={loading || noExamsAvailable}
+                        >
+                            <option value="" disabled>Select an exam</option>
+                            {exams.map((exam) => (
+                                <option key={exam.id} value={exam.id}>
+                                    {exam.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
                     <div className="space-y-1.5">
                         <label
                             htmlFor="course-name"
@@ -147,7 +206,7 @@ export function AddCourseModal({
                             placeholder="e.g., Civil Services Foundation Course"
                             maxLength={100}
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors focus-visible:ring-green-500 focus-visible:ring-offset-1"
-                            disabled={loading}
+                            disabled={loading || noExamsAvailable}
                         />
                         <p className="mt-1 text-xs text-gray-500">{name.length}/100 characters</p>
                     </div>
@@ -166,7 +225,7 @@ export function AddCourseModal({
                             placeholder="Brief description of the course..."
                             rows={3}
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors resize-none focus-visible:ring-green-500 focus-visible:ring-offset-1"
-                            disabled={loading}
+                            disabled={loading || noExamsAvailable}
                         />
                     </div>
 
@@ -178,7 +237,7 @@ export function AddCourseModal({
                             <DatePicker
                                 date={startDate}
                                 setDate={setStartDate}
-                                disabled={loading}
+                                disabled={loading || noExamsAvailable}
                             />
                         </div>
                         <div className="space-y-1.5">
@@ -188,7 +247,7 @@ export function AddCourseModal({
                             <DatePicker
                                 date={endDate}
                                 setDate={setEndDate}
-                                disabled={loading}
+                                disabled={loading || noExamsAvailable}
                             />
                         </div>
                     </div>
@@ -200,7 +259,7 @@ export function AddCourseModal({
                             checked={isActive}
                             onChange={(e) => setIsActive(e.target.checked)}
                             className="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
-                            disabled={loading}
+                            disabled={loading || noExamsAvailable}
                         />
                         <label htmlFor="course-active" className="text-sm text-gray-700">
                             Active (visible to students)
@@ -221,7 +280,7 @@ export function AddCourseModal({
                         <Button
                             type="submit"
                             className="bg-green-600 hover:bg-green-700 text-white"
-                            disabled={loading}
+                            disabled={loading || noExamsAvailable}
                         >
                             {loading ? (
                                 <>

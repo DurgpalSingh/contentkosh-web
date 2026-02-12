@@ -169,11 +169,8 @@ export default function CoursesPage() {
   }, [courses, searchQuery]);
 
   const handleAddCourseClick = () => {
-    if (exams.length === 0) {
-      console.log('Please create an exam first.');
-      return;
-    }
-    setSelectedExamForAdd(selectedExamId ?? exams[0].id!);
+    // We allow opening even with 0 exams so the modal can show the "No exams" message
+    setSelectedExamForAdd(selectedExamId ?? (exams.length > 0 ? exams[0].id! : null));
     setIsAddCourseModalOpen(true);
   };
 
@@ -282,6 +279,17 @@ export default function CoursesPage() {
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">No exams found</h3>
             <p className="text-gray-500 mb-6">Create your first exam to start adding courses.</p>
+            {/* Show Add Course button even if no exams, to show the modal warning */}
+            {isAdmin && (
+              <Button
+                onClick={handleAddCourseClick}
+                variant="outline"
+                className="mt-4"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Course
+              </Button>
+            )}
           </div>
         ) : filteredCourses.length === 0 ? (
           <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl p-12 text-center">
@@ -323,14 +331,15 @@ export default function CoursesPage() {
       </div>
 
       {/* Modals */}
-      {isAddCourseModalOpen && selectedExamForAdd && (
+      {isAddCourseModalOpen && (
         <AddCourseModal
           isOpen={isAddCourseModalOpen}
           onClose={() => {
             setIsAddCourseModalOpen(false);
             setSelectedExamForAdd(null);
           }}
-          examId={selectedExamForAdd}
+          exams={exams}
+          defaultExamId={selectedExamForAdd ?? undefined}
           onCourseCreated={() => selectedExamId && fetchCourses(selectedExamId)}
         />
       )}
