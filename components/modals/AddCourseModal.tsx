@@ -28,22 +28,11 @@ export function AddCourseModal({
     const [startDate, setStartDate] = useState<Date | undefined>(undefined);
     const [endDate, setEndDate] = useState<Date | undefined>(undefined);
     const [isActive, setIsActive] = useState(true);
-    const [selectedExamId, setSelectedExamId] = useState<number | undefined>(defaultExamId);
+    const [selectedExamId, setSelectedExamId] = useState<number | undefined>(defaultExamId ?? exams[0]?.id);
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Initialize selected exam when modal opens or props change
-    useEffect(() => {
-        if (isOpen) {
-            if (defaultExamId) {
-                setSelectedExamId(defaultExamId);
-            } else if (exams.length > 0 && !selectedExamId) {
-                // Auto-select first exam if none selected
-                setSelectedExamId(exams[0].id);
-            }
-        }
-    }, [isOpen, defaultExamId, exams]);
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
