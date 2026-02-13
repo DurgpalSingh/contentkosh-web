@@ -42,7 +42,10 @@ export function BatchMembersPanel({ role, members, onViewDetails, onDeleteMember
               role={role}
               onViewDetails={onViewDetails}
               onDelete={onDeleteMember}
-              isDeleting={Boolean(deletingUserId && (member.userId ?? member.user?.id) === deletingUserId)}
+              isDeleting={
+                deletingUserId !== null &&
+                (member.userId ?? member.user?.id) === deletingUserId
+              }
             />
           ))}
         </div>

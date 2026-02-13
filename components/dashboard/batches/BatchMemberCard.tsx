@@ -15,15 +15,20 @@ interface BatchMemberCardProps {
 }
 
 export function BatchMemberCard({ member, role, onViewDetails, onDelete, isDeleting = false }: BatchMemberCardProps) {
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'Not set';
+    return new Date(dateString).toLocaleDateString();
+  };
+
   return (
     <div className="bg-white border border-slate-200 rounded-xl p-6 hover:shadow-md transition-all flex flex-col md:flex-row md:items-center justify-between gap-4">
       <div className="flex items-start md:items-center gap-4 flex-1">
         <div
-          className={`h-14 w-14 flex-shrink-0 rounded-full flex items-center justify-center border-2 ${
-            role === 'TEACHER'
+          className={`h-14 w-14 flex-shrink-0 rounded-full flex items-center justify-center border-2 ${role === 'TEACHER'
               ? 'bg-purple-50 text-purple-600 border-purple-100'
               : 'bg-blue-50 text-blue-600 border-blue-100'
-          }`}
+            }`}
         >
           {role === 'TEACHER' ? <UserCog className="h-7 w-7" /> : <Users className="h-7 w-7" />}
         </div>
@@ -34,9 +39,8 @@ export function BatchMemberCard({ member, role, onViewDetails, onDelete, isDelet
               {member.user?.name || 'Unknown'}
             </h3>
             <span
-              className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium uppercase tracking-wide mt-1 ${
-                role === 'TEACHER' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
-              }`}
+              className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium uppercase tracking-wide mt-1 ${role === 'TEACHER' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
+                }`}
             >
               {role}
             </span>
@@ -53,7 +57,7 @@ export function BatchMemberCard({ member, role, onViewDetails, onDelete, isDelet
             <div className="flex items-center text-sm text-slate-600">
               <Clock className="h-3.5 w-3.5 mr-2 text-slate-400" />
               <span>
-                Joined {member.createdAt ? new Date(member.createdAt).toLocaleDateString() : 'N/A'}
+                Joined {member.createdAt ? formatDate(member.createdAt) : 'N/A'}
               </span>
             </div>
           </div>
