@@ -36,8 +36,11 @@ export function AddBatchModal({
     useEffect(() => {
         if (!isOpen) return;
 
-        const fallbackCourseId = courses[0]?.id;
-        const nextCourseId = initialCourseId ?? fallbackCourseId;
+        const nextCourseId = initialCourseId ?? courses[0]?.id;
+
+        if (nextCourseId != null) {
+            setSelectedCourseId(nextCourseId);
+        }
 
         if (nextCourseId) {
             setSelectedCourseId(nextCourseId);
