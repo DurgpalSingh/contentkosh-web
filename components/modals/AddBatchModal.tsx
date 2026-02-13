@@ -5,33 +5,44 @@ import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { BatchesService, CreateBatchRequest, Subject } from '@/lib/api';
-import { validateRequired } from '@/lib/validation';
+import { BatchesService, Course, CreateBatchRequest } from '@/lib/api';
 import { DatePicker } from '@/components/ui/date-picker';
 import { batchSchema } from '@/lib/schemas';
 
 interface AddBatchModalProps {
     isOpen: boolean;
     onClose: () => void;
-    courseId: number;
-    subjects?: Subject[];
+    courses: Course[];
+    initialCourseId?: number;
     onBatchCreated: () => void;
 }
 
 export function AddBatchModal({
     isOpen,
     onClose,
-    courseId,
-    subjects = [],
+    courses,
+    initialCourseId,
     onBatchCreated,
 }: AddBatchModalProps) {
     const [codeName, setCodeName] = useState('');
     const [displayName, setDisplayName] = useState('');
     const [startDate, setStartDate] = useState<Date | undefined>(undefined);
     const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+    const [selectedCourseId, setSelectedCourseId] = useState<number>(0);
     const [isActive, setIsActive] = useState(true);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!isOpen) return;
+
+        const fallbackCourseId = courses[0]?.id;
+        const nextCourseId = initialCourseId ?? fallbackCourseId;
+
+        if (nextCourseId) {
+            setSelectedCourseId(nextCourseId);
+        }
+    }, [isOpen, initialCourseId, courses]);
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -69,6 +80,10 @@ export function AddBatchModal({
         }
 
         const data = result.data;
+        if (!selectedCourseId) {
+            setError('Please select a course');
+            return;
+        }
 
         setLoading(true);
         setError(null);
@@ -80,7 +95,7 @@ export function AddBatchModal({
                 startDate: data.startDate.toISOString(),
                 endDate: data.endDate.toISOString(),
                 isActive,
-                courseId,
+                courseId: selectedCourseId,
             };
 
             await BatchesService.postApiBatches(request);
@@ -134,6 +149,26 @@ export function AddBatchModal({
                             {error}
                         </div>
                     )}
+
+                    <div className="space-y-1.5">
+                        <Label htmlFor="batch-course">
+                            Course <span className="text-red-500">*</span>
+                        </Label>
+                        <select
+                            id="batch-course"
+                            value={selectedCourseId || ''}
+                            onChange={(e) => setSelectedCourseId(Number(e.target.value))}
+                            disabled={loading || courses.length === 0}
+                            className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            {courses.length === 0 && <option value="">No courses available</option>}
+                            {courses.map((course) => (
+                                <option key={course.id} value={course.id}>
+                                    {course.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
 
                     <div className="space-y-1.5">
                         <Label htmlFor="batch-code-name">

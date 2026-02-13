@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## Version [1.1.17] -  Course dropdown for Batch creation
+**P.R Raised by** : shubha404-SE
+**Date** : 2026-02-13
+
+### Added
+- **Add Batch Modal**:
+  - Added a required **Course** dropdown in `AddBatchModal` to select which course the new batch should belong to.
+  - Modal now initializes the dropdown with the currently selected course from the Batches page.
+
+
+---
 ## Version [1.1.16] - Link Course to Exam
 **P.R Raised by** : aaditya-singh-21
 **Date** : 2026-02-13
