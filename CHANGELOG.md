@@ -10,7 +10,10 @@ All notable changes to this project will be documented in this file.
 - **Add Batch Modal**:
   - Added a required **Course** dropdown in `AddBatchModal` to select which course the new batch should belong to.
   - Modal now initializes the dropdown with the currently selected course from the Batches page.
-
+### Changed
+- **Batch Validation**:
+  - Updated `batchSchema` to reuse existing `validateEntityName` rules through Zod `superRefine` for `codeName` and `displayName`.
+  - Batch code and display name now follow the same centralized frontend validation behavior used for exam name checks.
 
 ---
 ## Version [1.1.16] - Link Course to Exam
@@ -22,7 +25,7 @@ All notable changes to this project will be documented in this file.
   - Added **Exam Dropdown** in "Add New Course" modal to link new courses to specific exams.
   - Implemented validation to ensure an exam is selected before course creation.
   - improved UX by auto-selecting the first available exam if none is selected.
-
+  
 ---
 
 ## Version [1.1.15] - Content Management Frontend Implementation
