@@ -7,6 +7,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Button } from '@/components/ui/button';
 import { UsersService } from '@/lib/api';
 import { BusinessUser } from '@/lib/api';
+import { ApiError } from '@/lib/api/core/ApiError';
 import { Users, Mail, Calendar, Shield, User } from 'lucide-react';
 
 import { DeleteConfirmModal } from '@/components/modals/DeleteConfirmModal';
@@ -38,17 +39,22 @@ export default function UsersPage() {
       const response = await UsersService.getApiBusinessUsers(business.id);
 
       if (response && Array.isArray(response.data)) {
-        setUsers(response.data as BusinessUser[]);
-      } else if (Array.isArray(response)) {
-        setUsers(response as BusinessUser[]);
+        const validated = response.data.filter(
+          (item): item is BusinessUser =>
+            typeof item === 'object' && item !== null && 'id' in item,
+        );
+        setUsers(validated);
       } else {
         setUsers([]);
         console.error("Unexpected response format", response);
         setError("Received invalid data from server");
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (err: any) {
-      setError(err.body?.message || 'Failed to fetch users');
+    } catch (err: unknown) {
+      const message =
+        err instanceof ApiError
+          ? (err.body?.message ?? 'Failed to fetch users')
+          : 'Failed to fetch users';
+      setError(message);
       setUsers([]);
     } finally {
       setLoading(false);
