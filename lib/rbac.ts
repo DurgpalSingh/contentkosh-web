@@ -1,4 +1,4 @@
-import { User, BusinessUser } from '@/lib/api';
+import { User } from '@/lib/api';
 import { ROUTES, USER_ROLES } from '@/lib/constants';
 import {
     Home,
@@ -120,6 +120,7 @@ export const NAVIGATION_CONFIG: NavigationItem[] = [
 export function hasRole(user: User | null, role: UserRole): boolean {
     if (!user) return false;
     // Cast user to any to access role property safely as it might be missing in type
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const userRole = (user as any).role;
     if (!userRole) return false;
     return userRole.toString().toUpperCase() === role.toUpperCase();

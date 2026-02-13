@@ -16,6 +16,7 @@ export const authApi = {
         user: response.data?.user as User,
         token: response.data?.accessToken,
       };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error('Login error:', error);
       throw new Error(error.body?.message || 'Login failed');
@@ -34,6 +35,7 @@ export const authApi = {
         user: response.data?.user as User,
         token: response.data?.accessToken,
       };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error('Registration error:', error);
       throw new Error(error.body?.message || 'Registration failed');
@@ -43,8 +45,9 @@ export const authApi = {
   getProfile: async (): Promise<User | undefined> => {
     try {
       const response = await UsersService.getApiUsersProfile();
-      // @ts-ignore - response type definition mismatch in generated code
+      // @ts-expect-error - response type definition mismatch in generated code
       return response.data as User;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error('getProfile error:', error);
       throw error;

@@ -3,18 +3,19 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
-import { BatchesService, BatchUsersService, ExamsService, CoursesService, Batch, BatchUser, Exam, Course } from '@/lib/api';
+import { BatchesService, BatchUsersService, ExamsService, CoursesService, Batch, BatchUser, Course } from '@/lib/api';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Button } from '@/components/ui/button';
 import {
-    ArrowLeft, Users, UserCog, Calendar, GraduationCap,
-    Plus, Mail, Clock, Info, ExternalLink, ChevronDown, Filter
+    ArrowLeft, Users, UserCog, Calendar,
+    Plus, Mail, Clock, Info, ChevronDown, Filter
 } from 'lucide-react';
 import { USER_ROLES } from '@/lib/constants';
 
 // --- Components ---
 
 // Simple Tab Component
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function Tabs({ tabs, activeTab, onChange }: { tabs: { id: string; label: string; icon?: any }[]; activeTab: string; onChange: (id: string) => void }) {
     return (
         <div className="flex space-x-1 rounded-xl bg-slate-100 p-1 mb-6 w-full sm:w-auto overflow-x-auto">
@@ -246,18 +247,21 @@ export default function BatchDetailsPage() {
 
                 // 2. Fetch Students
                 const studentsRes = await BatchUsersService.getApiBatchesUsers(batchId, 'STUDENT');
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 setStudents(Array.isArray(studentsRes) ? studentsRes : (studentsRes as any).data || []);
 
                 // 3. Fetch Teachers
                 if (currentUser?.role !== USER_ROLES.TEACHER) {
                     try {
                         const teachersRes = await BatchUsersService.getApiBatchesUsers(batchId, 'TEACHER');
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         setTeachers(Array.isArray(teachersRes) ? teachersRes : (teachersRes as any).data || []);
                     } catch (e) {
                         console.warn("Could not fetch teachers", e);
                     }
                 }
 
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } catch (err: any) {
                 console.error('Failed to load batch data:', err);
                 setError('Failed to load batch details. Please try again.');
@@ -292,7 +296,7 @@ export default function BatchDetailsPage() {
                     <Calendar className="h-12 w-12 text-slate-400" />
                 </div>
                 <h2 className="text-2xl font-bold text-slate-800">No Batch Selected</h2>
-                <p className="text-slate-500 max-w-md"> Please go to the <b>Batches</b> tab and click "View Details" on a batch to see its students and teachers.</p>
+                <p className="text-slate-500 max-w-md"> Please go to the <b>Batches</b> tab and click &quot;View Details&quot; on a batch to see its students and teachers.</p>
                 <Button onClick={() => router.push(`/${business?.slug}/dashboard/batches`)} className="mt-4">
                     Go to Batches
                 </Button>

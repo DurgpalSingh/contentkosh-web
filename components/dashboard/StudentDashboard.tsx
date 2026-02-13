@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { BookOpen, Calendar, Clock, TrendingUp, Download, Play } from 'lucide-react';
+import { BookOpen, Calendar, Clock, TrendingUp, Download, Play, LucideIcon } from 'lucide-react';
 
 export function StudentDashboard() {
   const [stats, setStats] = useState({
@@ -86,19 +86,19 @@ export function StudentDashboard() {
   );
 }
 
-function StatCard({ 
-  title, 
-  value, 
-  change, 
-  changeType, 
-  icon: Icon, 
-  description 
+function StatCard({
+  title,
+  value,
+  change,
+  changeType,
+  icon: Icon,
+  description
 }: {
   title: string;
   value: number;
   change: string;
   changeType: 'positive' | 'negative' | 'neutral' | 'warning';
-  icon: any;
+  icon: LucideIcon;
   description: string;
 }) {
   return (
@@ -110,18 +110,16 @@ function StatCard({
           <p className="text-sm text-gray-500">{description}</p>
         </div>
         <div className="flex flex-col items-end">
-          <Icon className={`h-8 w-8 mb-2 ${
-            changeType === 'positive' ? 'text-green-600' :
+          <Icon className={`h-8 w-8 mb-2 ${changeType === 'positive' ? 'text-green-600' :
             changeType === 'negative' ? 'text-red-600' :
-            changeType === 'warning' ? 'text-yellow-600' :
-            'text-blue-600'
-          }`} />
-          <span className={`text-sm font-medium ${
-            changeType === 'positive' ? 'text-green-600' :
+              changeType === 'warning' ? 'text-yellow-600' :
+                'text-blue-600'
+            }`} />
+          <span className={`text-sm font-medium ${changeType === 'positive' ? 'text-green-600' :
             changeType === 'negative' ? 'text-red-600' :
-            changeType === 'warning' ? 'text-yellow-600' :
-            'text-gray-600'
-          }`}>
+              changeType === 'warning' ? 'text-yellow-600' :
+                'text-gray-600'
+            }`}>
             {change}
           </span>
         </div>
@@ -132,24 +130,24 @@ function StatCard({
 
 function MyCourses() {
   const courses = [
-    { 
-      name: 'Mathematics', 
-      progress: 75, 
-      nextLesson: 'Algebra Basics', 
+    {
+      name: 'Mathematics',
+      progress: 75,
+      nextLesson: 'Algebra Basics',
       instructor: 'Dr. Smith',
       lastAccessed: '2 hours ago'
     },
-    { 
-      name: 'Physics', 
-      progress: 60, 
-      nextLesson: 'Mechanics', 
+    {
+      name: 'Physics',
+      progress: 60,
+      nextLesson: 'Mechanics',
       instructor: 'Prof. Johnson',
       lastAccessed: '1 day ago'
     },
-    { 
-      name: 'Chemistry', 
-      progress: 45, 
-      nextLesson: 'Organic Chemistry', 
+    {
+      name: 'Chemistry',
+      progress: 45,
+      nextLesson: 'Organic Chemistry',
       instructor: 'Dr. Brown',
       lastAccessed: '3 days ago'
     },
@@ -166,8 +164,8 @@ function MyCourses() {
               <span className="text-sm text-gray-500">{course.progress}%</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
-              <div 
-                className="bg-blue-600 h-2 rounded-full" 
+              <div
+                className="bg-blue-600 h-2 rounded-full"
                 style={{ width: `${course.progress}%` }}
               ></div>
             </div>
@@ -201,7 +199,7 @@ function TodaySchedule() {
 
   return (
     <div className="bg-white rounded-lg shadow p-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Today's Schedule</h3>
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">Today&apos;s Schedule</h3>
       <div className="space-y-4">
         {schedule.map((item, index) => (
           <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
@@ -215,11 +213,10 @@ function TodaySchedule() {
               </div>
             </div>
             <div className="text-right">
-              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                item.type === 'Live Class' ? 'bg-blue-100 text-blue-800' :
+              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${item.type === 'Live Class' ? 'bg-blue-100 text-blue-800' :
                 item.type === 'Assignment Due' ? 'bg-yellow-100 text-yellow-800' :
-                'bg-green-100 text-green-800'
-              }`}>
+                  'bg-green-100 text-green-800'
+                }`}>
                 {item.type}
               </span>
               <button className="block mt-1 text-blue-600 hover:text-blue-800 text-sm font-medium">
@@ -312,8 +309,8 @@ function ProgressOverview() {
               </div>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
-              <div 
-                className="bg-green-600 h-2 rounded-full" 
+              <div
+                className="bg-green-600 h-2 rounded-full"
                 style={{ width: `${subject.progress}%` }}
               ></div>
             </div>

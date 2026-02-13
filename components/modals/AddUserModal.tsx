@@ -104,6 +104,7 @@ export function AddUserModal({
             resetForm();
             onUserCreated();
             onClose();
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             console.error('Error creating user:', err);
             setError(err.body?.message || 'Failed to create user');

@@ -73,7 +73,7 @@ export function validateEntityName(name: string, entityLabel: string = 'Name', m
  * @param label The label for the error message.
  * @returns An error message string if invalid, or null if valid.
  */
-export function validateRequired(value: any, label: string): string | null {
+export function validateRequired(value: unknown, label: string): string | null {
     if (value === null || value === undefined || (typeof value === 'string' && !value.trim())) {
         return `${label} is required`;
     }

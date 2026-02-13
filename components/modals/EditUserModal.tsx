@@ -74,6 +74,7 @@ export function EditUserModal({
             } else {
                 setError("User ID missing");
             }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             console.error('Error updating user:', err);
             setError(err.body?.message || 'Failed to update user');

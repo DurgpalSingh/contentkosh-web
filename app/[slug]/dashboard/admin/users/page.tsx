@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState, useCallback } from 'react';
+// import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,6 @@ import { CreateUserRequest } from '@/lib/api';
 
 export default function UsersPage() {
   const { user, business, isAuthenticated, isLoading, isInitialized } = useAuthStore();
-  const router = useRouter();
   const [users, setUsers] = useState<BusinessUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +25,7 @@ export default function UsersPage() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<BusinessUser | null>(null);
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     if (!business?.id) {
       setError('Business information not available');
       setLoading(false);
@@ -34,21 +33,33 @@ export default function UsersPage() {
     }
 
     try {
+      setLoading(true);
+      setError(null);
       const response = await UsersService.getApiBusinessUsers(business.id);
-      // @ts-ignore
-      setUsers(response.data || []);
+
+      if (response && Array.isArray(response.data)) {
+        setUsers(response.data as BusinessUser[]);
+      } else if (Array.isArray(response)) {
+        setUsers(response as BusinessUser[]);
+      } else {
+        setUsers([]);
+        console.error("Unexpected response format", response);
+        setError("Received invalid data from server");
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setError(err.body?.message || 'Failed to fetch users');
+      setUsers([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [business]);
 
   useEffect(() => {
     if (isAuthenticated && business?.id) {
       fetchUsers();
     }
-  }, [isAuthenticated, business?.id]);
+  }, [isAuthenticated, business?.id, fetchUsers]);
 
   const handleUserAction = () => {
     fetchUsers();

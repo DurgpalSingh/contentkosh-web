@@ -26,7 +26,6 @@ export function EditExamModal({
     const [description, setDescription] = useState('');
     const [startDate, setStartDate] = useState<Date | undefined>(undefined);
     const [endDate, setEndDate] = useState<Date | undefined>(undefined);
-    const [isActive, setIsActive] = useState(true);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -35,7 +34,9 @@ export function EditExamModal({
             setName(exam.name || '');
             setCode(exam.code || '');
             setDescription(exam.description || '');
-            setIsActive(exam.status ? exam.status === 'ACTIVE' : true);
+            setName(exam.name || '');
+            setCode(exam.code || '');
+            setDescription(exam.description || '');
             setStartDate(exam.startDate ? new Date(exam.startDate) : undefined);
             setEndDate(exam.endDate ? new Date(exam.endDate) : undefined);
         }
@@ -92,6 +93,7 @@ export function EditExamModal({
             toast.success('Exam updated successfully');
             onExamUpdated();
             onClose();
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             console.error('Error updating exam:', err);
             setError(err.body?.message || 'Failed to update exam');

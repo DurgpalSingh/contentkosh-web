@@ -98,6 +98,7 @@ export function AddExamModal({
             onExamCreated();
             toast.success('Exam created successfully');
             onClose();
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             console.error('Error creating exam:', err);
             setError(err.body?.message || 'Failed to create exam');
