@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Button } from '@/components/ui/button';
-import { BatchesService, ExamsService, CoursesService, Batch, BatchWithUsers, Course, Exam } from '@/lib/api';
+import { BatchesService, ExamsService, Batch, BatchWithUsers, Course, Exam } from '@/lib/api';
 import { Plus, Calendar, Search, Filter } from 'lucide-react';
 import { BatchGridCard } from '@/components/dashboard/batches/BatchGridCard';
 import { BatchesFilterModal } from '@/components/dashboard/batches/BatchesFilterModal';
@@ -178,11 +178,7 @@ export default function BatchesPage() {
   /* ---------- HANDLERS ---------- */
 
   const handleAddBatchClick = () => {
-    if (courses.length === 0) {
-      console.log('Please create a course first.');
-      return;
-    }
-    setSelectedCourseForAdd(selectedCourseId ?? courses[0].id!);
+    setSelectedCourseForAdd(selectedCourseId ?? (courses.length > 0 ? courses[0].id! : null));
     setIsAddBatchModalOpen(true);
   };
 
@@ -328,7 +324,8 @@ export default function BatchesPage() {
       {selectedCourseForAdd && isAddBatchModalOpen && (
         <AddBatchModal
           isOpen={isAddBatchModalOpen}
-          courseId={selectedCourseForAdd}
+          courses={courses}
+          initialCourseId={selectedCourseForAdd ?? undefined}
           onClose={() => {
             setIsAddBatchModalOpen(false);
             setSelectedCourseForAdd(null);

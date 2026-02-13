@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { validateEntityName } from './validation';
 
 /**
  * Base schema fields for date range.
@@ -23,13 +24,37 @@ export const dateRangeRefinementMessage = {
  */
 export const dateRangeSchema = dateRangeFields.refine(dateRangeRefinement, dateRangeRefinementMessage);
 
+const createEntityNameFieldSchema = ({
+    label,
+    maxLength = 50,
+}: {
+    label: string;
+    maxLength?: number;
+}) =>
+    z.string().superRefine((value, ctx) => {
+        const validationError = validateEntityName(value, label, maxLength);
+
+        if (validationError) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: validationError,
+            });
+        }
+    });
+
 /**
  * Schema for Batch creation/editing.
  * Extends dateRangeFields and adds batch-specific fields, then applies refinement.
  */
 export const batchSchema = z.object({
-    codeName: z.string().trim().min(1, 'Batch code name is required'),
-    displayName: z.string().trim().min(1, 'Display name is required'),
+    codeName: createEntityNameFieldSchema({
+        label: 'Batch code name',
+        maxLength: 100,
+    }),
+    displayName: createEntityNameFieldSchema({
+        label: 'Display name',
+        maxLength: 100,
+    }),
 }).merge(dateRangeFields).refine(dateRangeRefinement, dateRangeRefinementMessage);
 
 export type BatchFormData = z.infer<typeof batchSchema>;
