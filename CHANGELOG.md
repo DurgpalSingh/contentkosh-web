@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## Version [1.1.18] - Fix Exam Description Hover
+**P.R Raised by** : aaditya-singh-21
+**Date** : 2026-02-14
+
+### Fixed
+- **Exam Card**:
+  - Added `title` attribute to exam description to show full text on hover when truncated.
+
+---
+
 ## Version [1.1.17] -  Course dropdown for Batch creation
 **P.R Raised by** : shubha404-SE
 **Date** : 2026-02-13
