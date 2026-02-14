@@ -16,16 +16,20 @@ import { BatchMemberRole } from '@/components/dashboard/batches/BatchMemberCard'
 import { Input } from '@/components/ui/input';
 import { AddBatchMemberModal } from '@/components/modals/AddBatchMemberModal';
 
-function getResponseData<T>(response: unknown): T | null {
-  if (response && typeof response === 'object' && 'data' in (response as Record<string, unknown>)) {
-    const data = (response as { data?: unknown }).data;
-    return (data as T) ?? null;
-  }
-  return (response as T) ?? null;
+type ApiResponse<T> = {
+  data?: T;
+};
+
+function hasDataProperty<T>(response: unknown): response is ApiResponse<T> {
+  return typeof response === 'object' && response !== null && 'data' in response;
 }
 
-function toBatch(response: unknown): Batch | null {
-  return getResponseData<Batch>(response);
+function getResponseData<T>(response: unknown): T | null {
+  if (!response) return null;
+  if (hasDataProperty<T>(response)) {
+    return response.data ?? null;
+  }
+  return response as T;
 }
 
 function toBatchUsers(response: unknown): BatchUser[] {
@@ -50,13 +54,11 @@ export default function BatchDetailsPage() {
   const batchId = Number(params?.batchId);
   const hasValidBatchId = Number.isInteger(batchId) && batchId > 0;
   const slug = params?.slug;
-  const isTeacher = currentUser?.role === USER_ROLES.TEACHER;
   const isAdmin = currentUser?.role === USER_ROLES.ADMIN;
 
   const [allBatches, setAllBatches] = useState<Batch[]>([]);
   const [batch, setBatch] = useState<Batch | null>(null);
-  const [students, setStudents] = useState<BatchUser[]>([]);
-  const [teachers, setTeachers] = useState<BatchUser[]>([]);
+  const [members, setMembers] = useState<BatchUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'students' | 'teachers'>('students');
@@ -72,18 +74,10 @@ export default function BatchDetailsPage() {
     role: BatchMemberRole;
   } | null>(null);
 
-  const loadBatchMembers = useCallback(
-    async (targetBatchId: number) => {
-      const [studentsRes, teachersRes] = await Promise.all([
-        BatchUsersService.getApiBatchesUsers(targetBatchId, 'STUDENT'),
-        isTeacher ? Promise.resolve([] as BatchUser[]) : BatchUsersService.getApiBatchesUsers(targetBatchId, 'TEACHER'),
-      ]);
-
-      setStudents(toBatchUsers(studentsRes));
-      setTeachers(isTeacher ? [] : toBatchUsers(teachersRes));
-    },
-    [isTeacher]
-  );
+  const loadBatchMembers = useCallback(async (targetBatchId: number, role: 'STUDENT' | 'TEACHER') => {
+    const membersRes = await BatchUsersService.getApiBatchesUsers(targetBatchId, role);
+    setMembers(toBatchUsers(membersRes));
+  }, []);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -100,13 +94,17 @@ export default function BatchDetailsPage() {
         setLoading(true);
         setError(null);
 
-        const [batchRes, allBatchesRes] = await Promise.all([
-          BatchesService.getApiBatches(batchId),
-          BatchesService.getApiBatchesAll('batchUsers'),
-        ]);
+        const existingBatch = allBatches.find((item) => item.id === batchId) ?? null;
+        if (existingBatch) {
+          setBatch(existingBatch);
+          return;
+        }
+
+        const allBatchesRes = await BatchesService.getApiBatchesAll('batchUsers');
         if (!isMounted) return;
 
-        const parsedBatch = toBatch(batchRes);
+        const fetchedBatches = toBatches(allBatchesRes);
+        const parsedBatch = fetchedBatches.find((item) => item.id === batchId) ?? null;
         if (!parsedBatch) {
           setError('Batch not found');
           setBatch(null);
@@ -114,7 +112,6 @@ export default function BatchDetailsPage() {
         }
 
         setBatch(parsedBatch);
-        const fetchedBatches = toBatches(allBatchesRes);
         const uniqueById = new Map<number, Batch>();
         fetchedBatches.forEach((item) => {
           if (item.id) uniqueById.set(item.id, item);
@@ -126,8 +123,6 @@ export default function BatchDetailsPage() {
           (a.displayName || a.codeName || '').localeCompare(b.displayName || b.codeName || '')
         );
         setAllBatches(sortedBatches);
-
-        await loadBatchMembers(batchId);
       } catch (requestError) {
         console.error('Failed to load batch details:', requestError);
         if (!isMounted) return;
@@ -142,35 +137,52 @@ export default function BatchDetailsPage() {
     return () => {
       isMounted = false;
     };
-  }, [batchId, hasValidBatchId, isAuthenticated, loadBatchMembers]);
+  }, [allBatches, batchId, hasValidBatchId, isAuthenticated]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !hasValidBatchId) return;
+
+    let isMounted = true;
+
+    const fetchMembersByTab = async () => {
+      try {
+        const role = activeTab === 'students' ? 'STUDENT' : 'TEACHER';
+        await loadBatchMembers(batchId, role);
+      } catch (requestError) {
+        console.error('Failed to load batch members:', requestError);
+        if (!isMounted) return;
+        setError('Failed to load batch members. Please try again.');
+      }
+    };
+
+    fetchMembersByTab();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [activeTab, batchId, hasValidBatchId, isAuthenticated, loadBatchMembers]);
 
   const tabs = useMemo(
     () => [
       { id: 'students', label: 'Students', icon: Users },
-      ...(!isTeacher ? [{ id: 'teachers', label: 'Teachers', icon: UserCog }] : []),
+      { id: 'teachers', label: 'Teachers', icon: UserCog },
     ],
-    [isTeacher]
+    []
   );
 
-  const filteredStudents = useMemo(() => {
-    const query = memberSearch.trim().toLowerCase();
-    if (!query) return students;
-    return students.filter((member) => {
-      const name = member.user?.name?.toLowerCase() || '';
-      const email = member.user?.email?.toLowerCase() || '';
-      return name.includes(query) || email.includes(query) || String(member.userId || '').includes(query);
-    });
-  }, [memberSearch, students]);
+  function filterBatchMembers(members: BatchUser[], search: string): BatchUser[] {
+    const query = search.trim().toLowerCase();
+    if (!query) return members;
 
-  const filteredTeachers = useMemo(() => {
-    const query = memberSearch.trim().toLowerCase();
-    if (!query) return teachers;
-    return teachers.filter((member) => {
+    return members.filter((member) => {
       const name = member.user?.name?.toLowerCase() || '';
       const email = member.user?.email?.toLowerCase() || '';
       return name.includes(query) || email.includes(query) || String(member.userId || '').includes(query);
     });
-  }, [memberSearch, teachers]);
+  }
+
+
+  const filteredMembers = useMemo(() => filterBatchMembers(members, memberSearch), [memberSearch, members]);
 
   const goToBatchesList = () => {
     if (slug) {
@@ -188,7 +200,8 @@ export default function BatchDetailsPage() {
 
   const handleMemberAdded = async (targetBatchId: number) => {
     if (targetBatchId === batchId) {
-      await loadBatchMembers(targetBatchId);
+      const role = activeTab === 'students' ? 'STUDENT' : 'TEACHER';
+      await loadBatchMembers(targetBatchId, role);
       return;
     }
   };
@@ -214,7 +227,8 @@ export default function BatchDetailsPage() {
         userId,
         batchId: batch.id,
       });
-      await loadBatchMembers(batch.id);
+      const role = activeTab === 'students' ? 'STUDENT' : 'TEACHER';
+      await loadBatchMembers(batch.id, role);
 
       if (selectedMember?.member && getMemberUserId(selectedMember.member) === userId) {
         setSelectedMember(null);
@@ -319,17 +333,17 @@ export default function BatchDetailsPage() {
           {activeTab === 'students' && (
             <BatchMembersPanel
               role="STUDENT"
-              members={filteredStudents}
+              members={filteredMembers}
               onViewDetails={(member, role) => setSelectedMember({ member, role })}
               onDeleteMember={isAdmin ? handleDeleteMember : undefined}
               deletingUserId={deletingUserId}
             />
           )}
 
-          {activeTab === 'teachers' && !isTeacher && (
+          {activeTab === 'teachers' && (
             <BatchMembersPanel
               role="TEACHER"
-              members={filteredTeachers}
+              members={filteredMembers}
               onViewDetails={(member, role) => setSelectedMember({ member, role })}
               onDeleteMember={isAdmin ? handleDeleteMember : undefined}
               deletingUserId={deletingUserId}
