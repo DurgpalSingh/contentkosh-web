@@ -186,7 +186,7 @@ export default function BatchDetailsPage() {
 
   const goToBatchesList = () => {
     if (slug) {
-      router.push(`/${slug}/dashboard/batches`);
+      router.push(`/${slug}/dashboard/batches?${batch?.courseId ? `courseId=${batch?.courseId}` : ''}`);
       return;
     }
     router.back();
