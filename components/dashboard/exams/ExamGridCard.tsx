@@ -33,8 +33,8 @@ export function ExamGridCard({
                         </h3>
                         <span
                             className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mt-2 ${exam.status === 'ACTIVE'
-                                    ? 'bg-green-100 text-green-800'
-                                    : 'bg-slate-100 text-slate-800'
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-slate-100 text-slate-800'
                                 }`}
                         >
                             {exam.status === 'ACTIVE' ? 'Active' : 'Inactive'}
@@ -91,7 +91,10 @@ export function ExamGridCard({
                     </div>
                 </div>
 
-                <p className="text-sm text-slate-600 mb-6 line-clamp-2 min-h-[40px]">
+                <p
+                    className="text-sm text-slate-600 mb-6 line-clamp-2 min-h-[40px]"
+                    title={exam.description}
+                >
                     {exam.description || 'No description available'}
                 </p>
 
