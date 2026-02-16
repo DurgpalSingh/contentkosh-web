@@ -42,6 +42,12 @@ function toBatches(response: unknown): Batch[] {
   return Array.isArray(data) ? (data as Batch[]) : [];
 }
 
+function getSortedBatches(batches: Batch[]): Batch[] {
+  return [...batches].sort((a, b) =>
+    (a.displayName || a.codeName || '').localeCompare(b.displayName || b.codeName || '')
+  );
+}
+
 function getMemberUserId(member: BatchUser): number | null {
   return member.userId ?? member.user?.id ?? null;
 }
@@ -74,6 +80,43 @@ export default function BatchDetailsPage() {
     role: BatchMemberRole;
   } | null>(null);
 
+  const fetchBatchDetails = useCallback(async () => {
+    if (!hasValidBatchId) {
+      setError('Invalid batch ID');
+      setBatch(null);
+      setLoading(false);
+      return;
+    }
+
+    // Reuse cached batches to avoid refetching on batch switch.
+    if (allBatches.length > 0) {
+      const cachedBatch = allBatches.find((item) => item.id === batchId) ?? null;
+      setBatch(cachedBatch);
+      setError(cachedBatch ? null : 'Batch not found');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      const allBatchesRes = await BatchesService.getApiBatchesAll('batchUsers');
+      const fetchedBatches = getSortedBatches(toBatches(allBatchesRes));
+      const targetBatch = fetchedBatches.find((item) => item.id === batchId) ?? null;
+
+      setAllBatches(fetchedBatches);
+      setBatch(targetBatch);
+      if (!targetBatch) setError('Batch not found');
+    } catch (requestError) {
+      console.error('Failed to load batch details:', requestError);
+      setError('Failed to load batch details. Please try again.');
+      setBatch(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [allBatches, batchId, hasValidBatchId]);
+
   const loadBatchMembers = useCallback(async (targetBatchId: number, role: 'STUDENT' | 'TEACHER') => {
     const membersRes = await BatchUsersService.getApiBatchesUsers(targetBatchId, role);
     setMembers(toBatchUsers(membersRes));
@@ -81,63 +124,8 @@ export default function BatchDetailsPage() {
 
   useEffect(() => {
     if (!isAuthenticated) return;
-    if (!hasValidBatchId) {
-      setError('Invalid batch ID');
-      setLoading(false);
-      return;
-    }
-
-    let isMounted = true;
-
-    const fetchBatchDetails = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const existingBatch = allBatches.find((item) => item.id === batchId) ?? null;
-        if (existingBatch) {
-          setBatch(existingBatch);
-          return;
-        }
-
-        const allBatchesRes = await BatchesService.getApiBatchesAll('batchUsers');
-        if (!isMounted) return;
-
-        const fetchedBatches = toBatches(allBatchesRes);
-        const parsedBatch = fetchedBatches.find((item) => item.id === batchId) ?? null;
-        if (!parsedBatch) {
-          setError('Batch not found');
-          setBatch(null);
-          return;
-        }
-
-        setBatch(parsedBatch);
-        const uniqueById = new Map<number, Batch>();
-        fetchedBatches.forEach((item) => {
-          if (item.id) uniqueById.set(item.id, item);
-        });
-        if (parsedBatch.id) {
-          uniqueById.set(parsedBatch.id, parsedBatch);
-        }
-        const sortedBatches = Array.from(uniqueById.values()).sort((a, b) =>
-          (a.displayName || a.codeName || '').localeCompare(b.displayName || b.codeName || '')
-        );
-        setAllBatches(sortedBatches);
-      } catch (requestError) {
-        console.error('Failed to load batch details:', requestError);
-        if (!isMounted) return;
-        setError('Failed to load batch details. Please try again.');
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-
     fetchBatchDetails();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [allBatches, batchId, hasValidBatchId, isAuthenticated]);
+  }, [fetchBatchDetails, isAuthenticated]);
 
   useEffect(() => {
     if (!isAuthenticated || !hasValidBatchId) return;

@@ -43,6 +43,25 @@ function getBatchLabel(batch: Batch) {
   return batch.displayName || batch.codeName || 'Unnamed Batch';
 }
 
+function filterBusinessUsers(users: BusinessUserRow[] | undefined, query: string): User[] {
+  const lowerQuery = query.trim().toLowerCase();
+  if (!users?.length || !lowerQuery) return [];
+
+  const filtered: User[] = [];
+  for (const row of users) {
+    const user = row?.user;
+    const name = user?.name?.toLowerCase() || '';
+    const email = user?.email?.toLowerCase() || '';
+    const matches = name.includes(lowerQuery) || email.includes(lowerQuery);
+
+    if (user?.id && matches) {
+      filtered.push(user as User);
+    }
+  }
+
+  return filtered;
+}
+
 export function AddBatchMemberModal({
   isOpen,
   role,
@@ -100,14 +119,8 @@ export function AddBatchMemberModal({
           setError(null);
 
           const response = await UsersService.getApiBusinessUsers(businessId, role);
-          const users = response?.data as BusinessUserRow[];
-          const lower = query.toLowerCase();
-          const filtered = users?.map(item => item.user).filter((user) => {
-            if (!user.id) return false;
-            const name = user.name?.toLowerCase() || '';
-            const email = user.email?.toLowerCase() || '';
-            return name.includes(lower) || email.includes(lower);
-          });
+          const users = response?.data as BusinessUserRow[] | undefined;
+          const filtered = filterBusinessUsers(users, query);
 
           if (!isMounted) return;
           setAvailableUsers(filtered as User[]);
