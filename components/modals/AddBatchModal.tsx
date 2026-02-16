@@ -106,6 +106,7 @@ export function AddBatchModal({
             resetForm();
             onBatchCreated();
             onClose();
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             console.error('Error creating batch:', err);
             setError(err.body?.message || 'Failed to create batch');

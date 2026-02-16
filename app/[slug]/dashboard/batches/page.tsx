@@ -63,7 +63,6 @@ export default function BatchesPage() {
 
     try {
       // 1. Fetch Exams WITH courses included
-      // @ts-ignore - Assuming 'courses' is a valid include based on context
       const res = await ExamsService.getApiBusinessExams(business.id, 'courses');
       const fetchedExams = res.data ?? [];
       setExams(fetchedExams);
@@ -73,8 +72,8 @@ export default function BatchesPage() {
 
       // 3. Flatten and standardize courses
       const allCourses: Course[] = fetchedExams.flatMap((exam) => {
-        // @ts-ignore - Assuming courses are attached to exam object
-        const examCourses = (exam.courses as Course[]) || [];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const examCourses = ((exam as any).courses as Course[]) || [];
         return examCourses.map((course) => ({
           ...course,
           examId: exam.id,

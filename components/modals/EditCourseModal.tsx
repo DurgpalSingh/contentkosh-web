@@ -97,6 +97,7 @@ export function EditCourseModal({
 
             onCourseUpdated();
             onClose();
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             console.error('Error updating course:', err);
             setError(err.body?.message || 'Failed to update course');

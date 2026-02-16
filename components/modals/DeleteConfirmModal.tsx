@@ -42,6 +42,7 @@ export function DeleteConfirmModal({
         try {
             await onConfirm();
             onClose();
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             console.error('Error during delete:', err);
             setError(err.body?.message || err.message || 'Failed to delete');

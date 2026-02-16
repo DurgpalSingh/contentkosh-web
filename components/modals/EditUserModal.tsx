@@ -2,30 +2,26 @@
 
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
-import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { ExamsService, CreateExamRequest } from '@/lib/api';
-import { validateEntityName, validateDateRange } from '@/lib/validation';
-import { toISODateTime } from '@/lib/utils';
+import { UsersService, UpdateUserRequest, BusinessUser } from '@/lib/api';
+import { validateEntityName, validateMobile } from '@/lib/validation';
 
-interface AddExamModalProps {
+interface EditUserModalProps {
     isOpen: boolean;
     onClose: () => void;
-    businessId: number;
-    onExamCreated: () => void;
+    user: BusinessUser;
+    onUserUpdated: () => void;
 }
 
-export function AddExamModal({
+export function EditUserModal({
     isOpen,
     onClose,
-    businessId,
-    onExamCreated,
-}: AddExamModalProps) {
+    user,
+    onUserUpdated,
+}: EditUserModalProps) {
     const [name, setName] = useState('');
-    const [description, setDescription] = useState('');
-    const [code, setCode] = useState('');
-    const [startDate, setStartDate] = useState<Date | undefined>(undefined);
-    const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+    const [mobile, setMobile] = useState('');
+
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -36,46 +32,29 @@ export function AddExamModal({
             }
         };
 
+        if (isOpen && user.user) {
+            setName(user.user.name || '');
+            setMobile(user.user.mobile || '');
+            setError(null);
+        }
+
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [isOpen, onClose]);
-
-    const resetForm = () => {
-        setName('');
-        setDescription('');
-        setCode('');
-        setStartDate(undefined);
-        setEndDate(undefined);
-        setError(null);
-    };
+    }, [isOpen, onClose, user]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        const validationError = validateEntityName(name, 'Exam name');
-        if (validationError) {
-            setError(validationError);
+        // Validation
+        const nameError = validateEntityName(name, 'Name', 50);
+        if (nameError) {
+            setError(nameError);
             return;
         }
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
 
-        if (startDate) {
-            const start = new Date(startDate);
-            start.setHours(0, 0, 0, 0);
-
-            if (start < today) {
-                setError('Start Date cannot be in the past');
-                return;
-            }
-        }
-
-        const dateError = validateDateRange(
-            toISODateTime(startDate) || '',
-            toISODateTime(endDate) || ''
-        );
-        if (dateError) {
-            setError(dateError);
+        const mobileError = validateMobile(mobile);
+        if (mobileError) {
+            setError(mobileError);
             return;
         }
 
@@ -83,33 +62,25 @@ export function AddExamModal({
         setError(null);
 
         try {
-            const request: CreateExamRequest = {
+            const request: UpdateUserRequest = {
                 name: name.trim(),
-                description: description.trim() || undefined,
-                code: code.trim() || undefined,
-                startDate: toISODateTime(startDate),
-                endDate: toISODateTime(endDate),
-                businessId,
+                mobile: mobile.trim() || undefined,
             };
 
-            await ExamsService.postApiBusinessExams(businessId, request);
-
-            resetForm();
-            onExamCreated();
-            toast.success('Exam created successfully');
-            onClose();
+            if (user.user?.id) {
+                await UsersService.putApiUsers(user.user.id, request);
+                onUserUpdated();
+                onClose();
+            } else {
+                setError("User ID missing");
+            }
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
-            console.error('Error creating exam:', err);
-            setError(err.body?.message || 'Failed to create exam');
+            console.error('Error updating user:', err);
+            setError(err.body?.message || 'Failed to update user');
         } finally {
             setLoading(false);
         }
-    };
-
-    const handleClose = () => {
-        resetForm();
-        onClose();
     };
 
     if (!isOpen) return null;
@@ -119,27 +90,27 @@ export function AddExamModal({
             {/* Backdrop */}
             <div
                 className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-                onClick={handleClose}
+                onClick={onClose}
             />
 
             {/* Modal */}
             <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-                    <h2 className="text-xl font-semibold text-gray-900">Add New Exam</h2>
+                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-700">
+                    <h2 className="text-xl font-semibold text-white">Edit User</h2>
 
                     <Button
                         variant="ghost"
                         size="icon"
-                        onClick={handleClose}
-                        className="text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                        onClick={onClose}
+                        className="text-white/80 hover:text-white hover:bg-white/20"
                     >
                         <X className="h-5 w-5" />
                     </Button>
                 </div>
 
                 {/* Form */}
-                <form onSubmit={handleSubmit} className="p-6 space-y-5">
+                <form onSubmit={handleSubmit} className="p-6 space-y-4">
                     {error && (
                         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
                             {error}
@@ -148,69 +119,59 @@ export function AddExamModal({
 
                     <div className="space-y-1.5">
                         <label
-                            htmlFor="exam-name"
+                            htmlFor="edit-user-name"
                             className="block text-sm font-medium text-gray-700"
                         >
-                            Exam Name <span className="text-red-500">*</span>
+                            Full Name <span className="text-red-500">*</span>
                         </label>
                         <input
-                            id="exam-name"
+                            id="edit-user-name"
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            placeholder="e.g., UPSC Civil Services"
-                            maxLength={50}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors focus-visible:ring-blue-500 focus-visible:ring-offset-1"
+                            placeholder="e.g., John Doe"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                             disabled={loading}
                         />
-                        <p className="mt-1 text-xs text-gray-500">{name.length}/50 characters</p>
                     </div>
 
                     <div className="space-y-1.5">
-                        <label
-                            htmlFor="code-name"
-                            className="block text-sm font-medium text-gray-700"
-                        >
-                            Code Name
+                        <label className="block text-sm font-medium text-gray-700">
+                            Email Address
                         </label>
                         <input
-                            id="code-name"
-                            type="text"
-                            value={code}
-                            onChange={(e) => setCode(e.target.value)}
-                            placeholder="e.g., UPSC"
-                            maxLength={20}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors focus-visible:ring-blue-500 focus-visible:ring-offset-1"
-                            disabled={loading}
+                            type="email"
+                            value={user.user?.email || ''}
+                            disabled={true}
+                            className="w-full px-4 py-2 border border-gray-200 bg-gray-50 rounded-lg text-gray-500 cursor-not-allowed"
                         />
-                        <p className="mt-1 text-xs text-gray-500">{code.length}/20 characters</p>
+                        <p className="text-xs text-gray-400">Email cannot be changed</p>
                     </div>
 
                     <div className="space-y-1.5">
                         <label
-                            htmlFor="exam-description"
+                            htmlFor="edit-user-mobile"
                             className="block text-sm font-medium text-gray-700"
                         >
-                            Description
+                            Mobile Number <span className="text-gray-400 text-xs">(Optional)</span>
                         </label>
-                        <textarea
-                            id="exam-description"
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                            placeholder="Brief description of the exam..."
-                            rows={3}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none focus-visible:ring-blue-500 focus-visible:ring-offset-1"
+                        <input
+                            id="edit-user-mobile"
+                            type="tel"
+                            value={mobile}
+                            onChange={(e) => setMobile(e.target.value)}
+                            placeholder="e.g., 9876543210"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                             disabled={loading}
                         />
                     </div>
-
 
                     {/* Actions */}
                     <div className="flex justify-end space-x-3 pt-4">
                         <Button
                             type="button"
                             variant="outline"
-                            onClick={handleClose}
+                            onClick={onClose}
                             disabled={loading}
                         >
                             Cancel
@@ -242,10 +203,10 @@ export function AddExamModal({
                                             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                                         />
                                     </svg>
-                                    Creating...
+                                    Saving...
                                 </>
                             ) : (
-                                'Create Exam'
+                                'Save Changes'
                             )}
                         </Button>
                     </div>

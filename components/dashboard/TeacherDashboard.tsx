@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { BookOpen, Users, Calendar, Clock, TrendingUp, Plus } from 'lucide-react';
+import { BookOpen, Users, Calendar, Clock, TrendingUp, Plus, LucideIcon } from 'lucide-react';
 
 export function TeacherDashboard() {
   const [stats, setStats] = useState({
@@ -89,19 +89,19 @@ export function TeacherDashboard() {
   );
 }
 
-function StatCard({ 
-  title, 
-  value, 
-  change, 
-  changeType, 
-  icon: Icon, 
-  description 
+function StatCard({
+  title,
+  value,
+  change,
+  changeType,
+  icon: Icon,
+  description
 }: {
   title: string;
   value: number;
   change: string;
   changeType: 'positive' | 'negative' | 'neutral';
-  icon: any;
+  icon: LucideIcon;
   description: string;
 }) {
   return (
@@ -114,11 +114,10 @@ function StatCard({
         </div>
         <div className="flex flex-col items-end">
           <Icon className="h-8 w-8 text-green-600 mb-2" />
-          <span className={`text-sm font-medium ${
-            changeType === 'positive' ? 'text-green-600' :
+          <span className={`text-sm font-medium ${changeType === 'positive' ? 'text-green-600' :
             changeType === 'negative' ? 'text-red-600' :
-            'text-gray-600'
-          }`}>
+              'text-gray-600'
+            }`}>
             {change}
           </span>
         </div>
@@ -265,8 +264,8 @@ function StudentProgress() {
               <p className="text-sm text-gray-500">{student.progress}%</p>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
-              <div 
-                className="bg-green-600 h-2 rounded-full" 
+              <div
+                className="bg-green-600 h-2 rounded-full"
                 style={{ width: `${student.progress}%` }}
               ></div>
             </div>

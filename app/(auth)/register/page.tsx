@@ -91,8 +91,10 @@ export default function RegisterPage() {
             instituteName: data.instituteName,
             slug: data.slug,
             // Add other fields if necessary
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
           } as any; // Cast to any because generated type might be missing slug
 
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const businessParams: any = { ...businessData };
 
           await BusinessService.postApiBusiness(businessParams);
@@ -122,6 +124,7 @@ export default function RegisterPage() {
             router.push(ROUTES.DASHBOARD);
           }
 
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (bizError: any) {
           console.error('Business creation failed', bizError);
           // If business creation fails, user is still registered.

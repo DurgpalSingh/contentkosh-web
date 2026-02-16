@@ -81,6 +81,7 @@ export function EditSubjectModal({
 
             onSubjectUpdated();
             onClose();
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             console.error('Error updating subject:', err);
             setError(err.body?.message || 'Failed to update subject');

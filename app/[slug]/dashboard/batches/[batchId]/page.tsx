@@ -6,11 +6,11 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { BatchesService, BatchUsersService, Batch, BatchUser } from '@/lib/api';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Users, UserCog, Calendar, GraduationCap, Plus } from 'lucide-react';
+import { ArrowLeft, Users, UserCog, Calendar, GraduationCap, Plus, LucideIcon } from 'lucide-react';
 import { USER_ROLES } from '@/lib/constants';
 
 // Simple Tab Component
-function Tabs({ tabs, activeTab, onChange }: { tabs: { id: string; label: string; icon?: any }[]; activeTab: string; onChange: (id: string) => void }) {
+function Tabs({ tabs, activeTab, onChange }: { tabs: { id: string; label: string; icon?: LucideIcon }[]; activeTab: string; onChange: (id: string) => void }) {
     return (
         <div className="flex space-x-1 rounded-xl bg-slate-100 p-1 mb-6 w-fit">
             {tabs.map((tab) => (
@@ -97,6 +97,8 @@ export default function BatchDetailsPage() {
                 setLoading(true);
                 const batchRes = await BatchesService.getApiBatches(batchId);
                 setBatch(batchRes.data || batchRes);
+                setBatch(batchRes.data || batchRes);
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } catch (err: any) {
                 console.error('Failed to load batch data:', err);
                 setError('Failed to load batch details');
@@ -115,6 +117,7 @@ export default function BatchDetailsPage() {
         const fetchStudents = async () => {
             try {
                 const studentsRes = await BatchUsersService.getApiBatchesUsers(batchId, 'STUDENT');
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 setStudents(Array.isArray(studentsRes) ? studentsRes : (studentsRes as any).data || []);
                 setStudentsLoaded(true);
             } catch (e) {
@@ -133,6 +136,7 @@ export default function BatchDetailsPage() {
             try {
                 // See note above about loading state.
                 const teachersRes = await BatchUsersService.getApiBatchesUsers(batchId, 'TEACHER');
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 setTeachers(Array.isArray(teachersRes) ? teachersRes : (teachersRes as any).data || []);
                 setTeachersLoaded(true);
             } catch (e) {

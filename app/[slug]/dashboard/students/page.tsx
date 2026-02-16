@@ -67,8 +67,8 @@ export default function StudentsPage() {
 
                 // 3. Extract all batches from courses
                 const allFetchedBatches: ExtendedBatch[] = allFetchedCourses.flatMap(course => {
-                    // @ts-ignore - Assuming 'batches' is included in course object due to 'courses.batches' include
-                    const courseBatches = (course.batches as Batch[]) || [];
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const courseBatches = ((course as any).batches as Batch[]) || [];
                     return courseBatches.map(batch => ({
                         ...batch,
                         courseId: course.id,
@@ -80,8 +80,8 @@ export default function StudentsPage() {
                 let allBusinessUsers = [];
                 try {
                     const usersResponse = await UsersService.getApiBusinessUsers(business.id);
-                    // @ts-ignore
-                    allBusinessUsers = usersResponse.data || [];
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    allBusinessUsers = (usersResponse.data as any[]) || [];
                 } catch (userErr) {
                     console.error('Failed to fetch business users:', userErr);
                 }
@@ -90,6 +90,7 @@ export default function StudentsPage() {
                 const studentMap = new Map<number, AggregatedStudent>();
 
                 // Initialize map with all filtered business users
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 allBusinessUsers.forEach((bUser: any) => {
                     const userData = bUser.user;
                     if (userData && userData.id) {
@@ -140,6 +141,7 @@ export default function StudentsPage() {
                     }
                 }
 
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } catch (err: any) {
                 console.error('Error fetching student data:', err);
                 setError('Failed to load students data');

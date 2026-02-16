@@ -1,31 +1,33 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
-import { toast } from 'sonner';
+import { X, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ExamsService, CreateExamRequest } from '@/lib/api';
-import { validateEntityName, validateDateRange } from '@/lib/validation';
-import { toISODateTime } from '@/lib/utils';
+import { UsersService, CreateUserRequest } from '@/lib/api';
+import { validateEntityName, validateEmail, validateMobile, validatePassword } from '@/lib/validation';
 
-interface AddExamModalProps {
+interface AddUserModalProps {
     isOpen: boolean;
     onClose: () => void;
     businessId: number;
-    onExamCreated: () => void;
+    onUserCreated: () => void;
+    defaultRole?: CreateUserRequest.role;
 }
 
-export function AddExamModal({
+export function AddUserModal({
     isOpen,
     onClose,
     businessId,
-    onExamCreated,
-}: AddExamModalProps) {
+    onUserCreated,
+    defaultRole = CreateUserRequest.role.ADMIN,
+}: AddUserModalProps) {
     const [name, setName] = useState('');
-    const [description, setDescription] = useState('');
-    const [code, setCode] = useState('');
-    const [startDate, setStartDate] = useState<Date | undefined>(undefined);
-    const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+    const [email, setEmail] = useState('');
+    const [mobile, setMobile] = useState('');
+    const [password, setPassword] = useState('');
+    const [role, setRole] = useState<CreateUserRequest.role>(defaultRole);
+    const [showPassword, setShowPassword] = useState(false);
+
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -40,42 +42,48 @@ export function AddExamModal({
         return () => document.removeEventListener('keydown', handleKeyDown);
     }, [isOpen, onClose]);
 
+    // Reset form when modal opens/closes or default role changes
+    useEffect(() => {
+        if (isOpen) {
+            setRole(defaultRole);
+        }
+    }, [isOpen, defaultRole]);
+
     const resetForm = () => {
         setName('');
-        setDescription('');
-        setCode('');
-        setStartDate(undefined);
-        setEndDate(undefined);
+        setEmail('');
+        setMobile('');
+        setPassword('');
+        setRole(defaultRole);
         setError(null);
+        setShowPassword(false);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        const validationError = validateEntityName(name, 'Exam name');
-        if (validationError) {
-            setError(validationError);
+        // Validation
+        const nameError = validateEntityName(name, 'Name', 50);
+        if (nameError) {
+            setError(nameError);
             return;
         }
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
 
-        if (startDate) {
-            const start = new Date(startDate);
-            start.setHours(0, 0, 0, 0);
-
-            if (start < today) {
-                setError('Start Date cannot be in the past');
-                return;
-            }
+        const emailError = validateEmail(email);
+        if (emailError) {
+            setError(emailError);
+            return;
         }
 
-        const dateError = validateDateRange(
-            toISODateTime(startDate) || '',
-            toISODateTime(endDate) || ''
-        );
-        if (dateError) {
-            setError(dateError);
+        const mobileError = validateMobile(mobile);
+        if (mobileError) {
+            setError(mobileError);
+            return;
+        }
+
+        const passwordError = validatePassword(password);
+        if (passwordError) {
+            setError(passwordError);
             return;
         }
 
@@ -83,25 +91,23 @@ export function AddExamModal({
         setError(null);
 
         try {
-            const request: CreateExamRequest = {
+            const request: CreateUserRequest = {
                 name: name.trim(),
-                description: description.trim() || undefined,
-                code: code.trim() || undefined,
-                startDate: toISODateTime(startDate),
-                endDate: toISODateTime(endDate),
-                businessId,
+                email: email.trim(),
+                password: password,
+                role: role,
+                mobile: mobile.trim() || undefined,
             };
 
-            await ExamsService.postApiBusinessExams(businessId, request);
+            await UsersService.postApiBusinessUsers(businessId, request);
 
             resetForm();
-            onExamCreated();
-            toast.success('Exam created successfully');
+            onUserCreated();
             onClose();
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
-            console.error('Error creating exam:', err);
-            setError(err.body?.message || 'Failed to create exam');
+            console.error('Error creating user:', err);
+            setError(err.body?.message || 'Failed to create user');
         } finally {
             setLoading(false);
         }
@@ -125,21 +131,21 @@ export function AddExamModal({
             {/* Modal */}
             <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-                    <h2 className="text-xl font-semibold text-gray-900">Add New Exam</h2>
+                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-700">
+                    <h2 className="text-xl font-semibold text-white">Add New {role === 'ADMIN' ? 'Admin' : 'User'}</h2>
 
                     <Button
                         variant="ghost"
                         size="icon"
                         onClick={handleClose}
-                        className="text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                        className="text-white/80 hover:text-white hover:bg-white/20"
                     >
                         <X className="h-5 w-5" />
                     </Button>
                 </div>
 
                 {/* Form */}
-                <form onSubmit={handleSubmit} className="p-6 space-y-5">
+                <form onSubmit={handleSubmit} className="p-6 space-y-4">
                     {error && (
                         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
                             {error}
@@ -148,62 +154,88 @@ export function AddExamModal({
 
                     <div className="space-y-1.5">
                         <label
-                            htmlFor="exam-name"
+                            htmlFor="user-name"
                             className="block text-sm font-medium text-gray-700"
                         >
-                            Exam Name <span className="text-red-500">*</span>
+                            Full Name <span className="text-red-500">*</span>
                         </label>
                         <input
-                            id="exam-name"
+                            id="user-name"
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            placeholder="e.g., UPSC Civil Services"
-                            maxLength={50}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors focus-visible:ring-blue-500 focus-visible:ring-offset-1"
+                            placeholder="e.g., John Doe"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                             disabled={loading}
                         />
-                        <p className="mt-1 text-xs text-gray-500">{name.length}/50 characters</p>
                     </div>
 
                     <div className="space-y-1.5">
                         <label
-                            htmlFor="code-name"
+                            htmlFor="user-email"
                             className="block text-sm font-medium text-gray-700"
                         >
-                            Code Name
+                            Email Address <span className="text-red-500">*</span>
                         </label>
                         <input
-                            id="code-name"
-                            type="text"
-                            value={code}
-                            onChange={(e) => setCode(e.target.value)}
-                            placeholder="e.g., UPSC"
-                            maxLength={20}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors focus-visible:ring-blue-500 focus-visible:ring-offset-1"
+                            id="user-email"
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="john@example.com"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                             disabled={loading}
                         />
-                        <p className="mt-1 text-xs text-gray-500">{code.length}/20 characters</p>
                     </div>
 
                     <div className="space-y-1.5">
                         <label
-                            htmlFor="exam-description"
+                            htmlFor="user-mobile"
                             className="block text-sm font-medium text-gray-700"
                         >
-                            Description
+                            Mobile Number <span className="text-gray-400 text-xs">(Optional)</span>
                         </label>
-                        <textarea
-                            id="exam-description"
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                            placeholder="Brief description of the exam..."
-                            rows={3}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none focus-visible:ring-blue-500 focus-visible:ring-offset-1"
+                        <input
+                            id="user-mobile"
+                            type="tel"
+                            value={mobile}
+                            onChange={(e) => setMobile(e.target.value)}
+                            placeholder="e.g., 9876543210"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                             disabled={loading}
                         />
                     </div>
 
+                    <div className="space-y-1.5">
+                        <label
+                            htmlFor="user-password"
+                            className="block text-sm font-medium text-gray-700"
+                        >
+                            Password <span className="text-red-500">*</span>
+                        </label>
+                        <div className="relative">
+                            <input
+                                id="user-password"
+                                type={showPassword ? "text" : "password"}
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                placeholder="Min. 6 characters"
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors pr-10"
+                                disabled={loading}
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                            >
+                                {showPassword ? (
+                                    <EyeOff className="h-4 w-4" />
+                                ) : (
+                                    <Eye className="h-4 w-4" />
+                                )}
+                            </button>
+                        </div>
+                    </div>
 
                     {/* Actions */}
                     <div className="flex justify-end space-x-3 pt-4">
@@ -245,7 +277,7 @@ export function AddExamModal({
                                     Creating...
                                 </>
                             ) : (
-                                'Create Exam'
+                                'Create User'
                             )}
                         </Button>
                     </div>
@@ -254,3 +286,4 @@ export function AddExamModal({
         </div>
     );
 }
+

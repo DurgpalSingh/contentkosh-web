@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Users, BookOpen, Calendar, Bell, TrendingUp, UserPlus } from 'lucide-react';
+import { Users, BookOpen, Calendar, Bell, TrendingUp, UserPlus, LucideIcon } from 'lucide-react';
 
 export function AdminDashboard() {
   const [stats, setStats] = useState({
@@ -90,19 +90,19 @@ export function AdminDashboard() {
   );
 }
 
-function StatCard({ 
-  title, 
-  value, 
-  change, 
-  changeType, 
-  icon: Icon, 
-  description 
+function StatCard({
+  title,
+  value,
+  change,
+  changeType,
+  icon: Icon,
+  description
 }: {
   title: string;
   value: number;
   change: string;
   changeType: 'positive' | 'negative';
-  icon: any;
+  icon: LucideIcon;
   description: string;
 }) {
   return (
@@ -115,9 +115,8 @@ function StatCard({
         </div>
         <div className="flex flex-col items-end">
           <Icon className="h-8 w-8 text-blue-600 mb-2" />
-          <span className={`text-sm font-medium ${
-            changeType === 'positive' ? 'text-green-600' : 'text-red-600'
-          }`}>
+          <span className={`text-sm font-medium ${changeType === 'positive' ? 'text-green-600' : 'text-red-600'
+            }`}>
             {change}
           </span>
         </div>
@@ -258,11 +257,10 @@ function UpcomingEvents() {
               <p className="font-medium text-gray-900">{event.title}</p>
               <p className="text-sm text-gray-500">{event.date}</p>
             </div>
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-              event.type === 'batch' ? 'bg-blue-100 text-blue-800' :
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${event.type === 'batch' ? 'bg-blue-100 text-blue-800' :
               event.type === 'exam' ? 'bg-yellow-100 text-yellow-800' :
-              'bg-green-100 text-green-800'
-            }`}>
+                'bg-green-100 text-green-800'
+              }`}>
               {event.type}
             </span>
           </div>

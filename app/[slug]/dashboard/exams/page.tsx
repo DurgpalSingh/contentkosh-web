@@ -45,6 +45,7 @@ export default function ExamsPage() {
             });
             setExams(sortedExams);
             setError(null);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             console.error('Error fetching exams:', err);
             setError('Failed to load exams. Please try again.');
@@ -76,7 +77,8 @@ export default function ExamsPage() {
             await fetchExams();
             setIsDeleteModalOpen(false);
             setSelectedExam(null);
-        } catch (err) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } catch (err: any) {
             console.error('Error deleting exam:', err);
         }
     };
