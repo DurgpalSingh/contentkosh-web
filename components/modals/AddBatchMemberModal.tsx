@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { BatchMemberRole } from '../dashboard/batches/BatchMemberCard';
+import { USER_ROLES } from '@/lib/constants';
+import { TAB_ROLES } from '@/app/[slug]/dashboard/batches/[batchId]/page';
 
 interface AddBatchMemberModalProps {
   isOpen: boolean;
@@ -71,7 +73,7 @@ export function AddBatchMemberModal({
   onClose,
   onAdded,
 }: AddBatchMemberModalProps) {
-  const roleLabel = role === 'STUDENT' ? 'Student' : 'Teacher';
+  const roleLabel = role === USER_ROLES.STUDENT ? TAB_ROLES.STUDENT : TAB_ROLES.TEACHER;
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -118,8 +120,8 @@ export function AddBatchMemberModal({
           setSearchLoading(true);
           setError(null);
 
-          const response = await UsersService.getApiBusinessUsers(businessId, role);
-          const users = response?.data as BusinessUserRow[] | undefined;
+          const userResponse = await UsersService.getApiBusinessUsers(businessId, role);
+          const users = userResponse?.data as BusinessUserRow[] | undefined;
           const filtered = filterBusinessUsers(users, query);
 
           if (!isMounted) return;

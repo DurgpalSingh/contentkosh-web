@@ -16,6 +16,13 @@ import { BatchMemberRole } from '@/components/dashboard/batches/BatchMemberCard'
 import { Input } from '@/components/ui/input';
 import { AddBatchMemberModal } from '@/components/modals/AddBatchMemberModal';
 
+export const TAB_ROLES = {
+  TEACHER: 'Teacher',
+  STUDENT: 'Student',
+} as const;
+
+type MemberTab = typeof TAB_ROLES.STUDENT | typeof TAB_ROLES.TEACHER;
+
 type ApiResponse<T> = {
   data?: T;
 };
@@ -52,6 +59,10 @@ function getMemberUserId(member: BatchUser): number | null {
   return member.userId ?? member.user?.id ?? null;
 }
 
+function getRoleFromTab(tab: MemberTab): typeof USER_ROLES.STUDENT | typeof USER_ROLES.TEACHER {
+  return tab === TAB_ROLES.STUDENT ? USER_ROLES.STUDENT : USER_ROLES.TEACHER;
+}
+
 export default function BatchDetailsPage() {
   const { user: currentUser, business, isAuthenticated, isLoading: authLoading } = useAuthStore();
   const params = useParams<{ slug: string; batchId: string }>();
@@ -63,11 +74,12 @@ export default function BatchDetailsPage() {
   const isAdmin = currentUser?.role === USER_ROLES.ADMIN;
 
   const [allBatches, setAllBatches] = useState<Batch[]>([]);
+  const [batchById, setBatchById] = useState<Map<number, Batch>>(new Map());
   const [batch, setBatch] = useState<Batch | null>(null);
   const [members, setMembers] = useState<BatchUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'students' | 'teachers'>('students');
+  const [activeTab, setActiveTab] = useState<MemberTab>(TAB_ROLES.STUDENT);
   const [memberSearch, setMemberSearch] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [deletingUserId, setDeletingUserId] = useState<number | null>(null);
@@ -89,8 +101,8 @@ export default function BatchDetailsPage() {
     }
 
     // Reuse cached batches to avoid refetching on batch switch.
-    if (allBatches.length > 0) {
-      const cachedBatch = allBatches.find((item) => item.id === batchId) ?? null;
+    if (batchById.size > 0) {
+      const cachedBatch = batchById.get(batchId) ?? null;
       setBatch(cachedBatch);
       setError(cachedBatch ? null : 'Batch not found');
       setLoading(false);
@@ -101,11 +113,13 @@ export default function BatchDetailsPage() {
       setLoading(true);
       setError(null);
 
-      const allBatchesRes = await BatchesService.getApiBatchesAll('batchUsers');
-      const fetchedBatches = getSortedBatches(toBatches(allBatchesRes));
-      const targetBatch = fetchedBatches.find((item) => item.id === batchId) ?? null;
+      const allBatchesRes = await BatchesService.getApiBatchesAll();
+      const sortedBatches = getSortedBatches(toBatches(allBatchesRes));
+      const fetchedBatchById = new Map(sortedBatches.map((item) => [item.id, item]));
+      const targetBatch = fetchedBatchById.get(batchId) ?? null;
 
-      setAllBatches(fetchedBatches);
+      setBatchById(fetchedBatchById as Map<number, Batch>);
+      setAllBatches(sortedBatches);
       setBatch(targetBatch);
       if (!targetBatch) setError('Batch not found');
     } catch (requestError) {
@@ -115,9 +129,9 @@ export default function BatchDetailsPage() {
     } finally {
       setLoading(false);
     }
-  }, [allBatches, batchId, hasValidBatchId]);
+  }, [batchById, batchId, hasValidBatchId]);
 
-  const loadBatchMembers = useCallback(async (targetBatchId: number, role: 'STUDENT' | 'TEACHER') => {
+  const loadBatchMembers = useCallback(async (targetBatchId: number, role: BatchMemberRole) => {
     const membersRes = await BatchUsersService.getApiBatchesUsers(targetBatchId, role);
     setMembers(toBatchUsers(membersRes));
   }, []);
@@ -134,7 +148,7 @@ export default function BatchDetailsPage() {
 
     const fetchMembersByTab = async () => {
       try {
-        const role = activeTab === 'students' ? 'STUDENT' : 'TEACHER';
+        const role = getRoleFromTab(activeTab);
         await loadBatchMembers(batchId, role);
       } catch (requestError) {
         console.error('Failed to load batch members:', requestError);
@@ -152,8 +166,8 @@ export default function BatchDetailsPage() {
 
   const tabs = useMemo(
     () => [
-      { id: 'students', label: 'Students', icon: Users },
-      { id: 'teachers', label: 'Teachers', icon: UserCog },
+      { id: TAB_ROLES.STUDENT, label: TAB_ROLES.STUDENT, icon: Users },
+      { id: TAB_ROLES.TEACHER, label: TAB_ROLES.TEACHER, icon: UserCog },
     ],
     []
   );
@@ -188,7 +202,7 @@ export default function BatchDetailsPage() {
 
   const handleMemberAdded = async (targetBatchId: number) => {
     if (targetBatchId === batchId) {
-      const role = activeTab === 'students' ? 'STUDENT' : 'TEACHER';
+      const role = getRoleFromTab(activeTab);
       await loadBatchMembers(targetBatchId, role);
       return;
     }
@@ -215,7 +229,7 @@ export default function BatchDetailsPage() {
         userId,
         batchId: batch.id,
       });
-      const role = activeTab === 'students' ? 'STUDENT' : 'TEACHER';
+      const role = getRoleFromTab(activeTab);
       await loadBatchMembers(batch.id, role);
 
       if (selectedMember?.member && getMemberUserId(selectedMember.member) === userId) {
@@ -297,7 +311,7 @@ export default function BatchDetailsPage() {
       </div>
 
       <div>
-        <BatchMembersTabs tabs={tabs} activeTab={activeTab} onChange={(tab) => setActiveTab(tab as 'students' | 'teachers')} />
+        <BatchMembersTabs tabs={tabs} activeTab={activeTab} onChange={(tab) => setActiveTab(tab as MemberTab)} />
 
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
           <div className="relative flex-1">
@@ -312,15 +326,15 @@ export default function BatchDetailsPage() {
           {isAdmin && (
             <Button onClick={() => setIsAddModalOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
-              {activeTab === 'students' ? 'Add Student' : 'Add Teacher'}
+              {activeTab === TAB_ROLES.STUDENT ? 'Add Student' : 'Add Teacher'}
             </Button>
           )}
         </div>
 
         <div className="min-h-[400px]">
-          {activeTab === 'students' && (
+          {activeTab === TAB_ROLES.STUDENT && (
             <BatchMembersPanel
-              role="STUDENT"
+              role={USER_ROLES.STUDENT}
               members={filteredMembers}
               onViewDetails={(member, role) => setSelectedMember({ member, role })}
               onDeleteMember={isAdmin ? handleDeleteMember : undefined}
@@ -328,9 +342,9 @@ export default function BatchDetailsPage() {
             />
           )}
 
-          {activeTab === 'teachers' && (
+          {activeTab === TAB_ROLES.TEACHER && (
             <BatchMembersPanel
-              role="TEACHER"
+              role={USER_ROLES.TEACHER}
               members={filteredMembers}
               onViewDetails={(member, role) => setSelectedMember({ member, role })}
               onDeleteMember={isAdmin ? handleDeleteMember : undefined}
@@ -343,7 +357,7 @@ export default function BatchDetailsPage() {
       {isAdmin && business?.id && batch.id && (
         <AddBatchMemberModal
           isOpen={isAddModalOpen}
-          role={activeTab === 'students' ? 'STUDENT' : 'TEACHER'}
+          role={getRoleFromTab(activeTab)}
           businessId={business.id}
           selectedBatchId={batch.id}
           batches={allBatches}
@@ -354,7 +368,7 @@ export default function BatchDetailsPage() {
 
       <BatchMemberDetailsModal
         member={selectedMember?.member ?? null}
-        role={selectedMember?.role ?? 'STUDENT'}
+        role={selectedMember?.role ?? USER_ROLES.STUDENT}
         onClose={() => setSelectedMember(null)}
       />
 
@@ -362,7 +376,7 @@ export default function BatchDetailsPage() {
         isOpen={Boolean(memberToDelete)}
         onClose={() => setMemberToDelete(null)}
         onConfirm={confirmDeleteMember}
-        title={`Remove ${memberToDelete?.role === 'TEACHER' ? 'Teacher' : 'Student'}`}
+        title={`Remove ${memberToDelete?.role === USER_ROLES.TEACHER ? 'Teacher' : 'Student'}`}
         message="Are you sure you want to remove this member from the batch?"
         itemName={memberToDelete?.member.user?.name || memberToDelete?.member.user?.email || 'Selected member'}
       />

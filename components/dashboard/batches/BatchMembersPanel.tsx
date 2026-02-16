@@ -3,6 +3,7 @@
 import { BatchUser } from '@/lib/api';
 import { UserCog, Users } from 'lucide-react';
 import { BatchMemberCard, BatchMemberRole } from './BatchMemberCard';
+import { USER_ROLES } from '@/lib/constants';
 
 interface BatchMembersPanelProps {
   role: BatchMemberRole;
@@ -13,10 +14,10 @@ interface BatchMembersPanelProps {
 }
 
 export function BatchMembersPanel({ role, members, onViewDetails, onDeleteMember, deletingUserId = null }: BatchMembersPanelProps) {
-  const title = role === 'TEACHER' ? 'Assigned Teachers' : 'Enrolled Students';
-  const Icon = role === 'TEACHER' ? UserCog : Users;
+  const title = role === USER_ROLES.TEACHER ? 'Assigned Teachers' : 'Enrolled Students';
+  const Icon = role === USER_ROLES.TEACHER ? UserCog : Users;
   const emptyMessage =
-    role === 'TEACHER'
+    role === USER_ROLES.TEACHER
       ? 'No teachers assigned to this batch yet.'
       : 'No students enrolled in this batch yet.';
 
