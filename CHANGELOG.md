@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## Version [1.1.19] - Batch Details Page Refactor & Member Management
+## Version [1.1.20] - Batch Details Page Refactor & Member Management
 **P.R Raised by** : shubh404-SE
 **Date** : 2026-02-12
 
