@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## Version [1.1.22] - Dynamic Course Status Calculation
+**P.R Raised by** : shubh404-SE
+**Date** : 2026-02-17
+
+### Added
+- **Role Dropdown in AddUserModal**: added a dropdown to assign a role to a user.
+
+---
+
 ## Version [1.1.21] - Dynamic Course Status Calculation
 **P.R Raised by** : shubh404-SE
 **Date** : 2026-02-17

@@ -5,6 +5,7 @@ import { X, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { UsersService, CreateUserRequest } from '@/lib/api';
 import { validateEntityName, validateEmail, validateMobile, validatePassword } from '@/lib/validation';
+import { USER_ROLES } from '@/lib/constants';
 
 interface AddUserModalProps {
     isOpen: boolean;
@@ -204,6 +205,28 @@ export function AddUserModal({
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                             disabled={loading}
                         />
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <label
+                            htmlFor="user-role"
+                            className="block text-sm font-medium text-gray-700"
+                        >
+                            User Role <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                            id="user-role"
+                            value={role}
+                            onChange={(e) => setRole(e.target.value as CreateUserRequest.role)}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white cursor-pointer"
+                            disabled={loading}
+                        >
+                            {Object.entries(CreateUserRequest.role).map(([key, value]) => (
+                                <option key={key} value={value}>
+                                    {USER_ROLES[value].charAt(0).toUpperCase() + USER_ROLES[value].slice(1).toLowerCase()}
+                                </option>
+                            ))}
+                        </select>
                     </div>
 
                     <div className="space-y-1.5">
