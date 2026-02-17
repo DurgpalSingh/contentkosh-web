@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## Version [1.1.21] - Dynamic Course Status Calculation
+**P.R Raised by** : shubh404-SE
+**Date** : 2026-02-17
+
+### Added
+- **Course Status Recalculation**: Implemented dynamic course status calculation based on current date and course dates.
+  - Added `calculateCourseStatus()` helper function to compute course status in real-time.
+  - Status is recalculated automatically whenever courses are fetched from the API.
+
+---
+
 ## Version [1.1.20] - Batch Details Page Refactor & Member Management
 **P.R Raised by** : shubh404-SE
 **Date** : 2026-02-12

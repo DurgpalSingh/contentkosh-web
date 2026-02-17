@@ -21,6 +21,22 @@ interface ExtendedCourse extends Course {
   subjects?: Subject[];
 }
 
+const calculateCourseStatus = (startDate: string | undefined, endDate: string | undefined): Course.status => {
+  if (!startDate || !endDate) {
+    return Course.status.ACTIVE; 
+  }
+
+  const now = new Date();
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+
+  if (now > end) {
+    return Course.status.INACTIVE;
+  } else {
+    return Course.status.ACTIVE;
+  }
+};
+
 export default function CoursesPage() {
   const { user, business, isAuthenticated, isLoading, isInitialized } = useAuthStore();
   const router = useRouter();
@@ -92,6 +108,7 @@ export default function CoursesPage() {
         ...course,
         examId,
         examName: examMap.get(examId),
+        status: course.status === Course.status.INACTIVE? course.status: calculateCourseStatus(course.startDate, course.endDate),
       }));
 
       // Sort newest first
