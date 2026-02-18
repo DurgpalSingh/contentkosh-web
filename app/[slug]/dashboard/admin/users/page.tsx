@@ -110,8 +110,8 @@ export default function UsersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Admins</h1>
-          <p className="text-gray-600">Manage administrators in your institute</p>
+          <h1 className="text-3xl font-bold text-gray-900">Users</h1>
+          <p className="text-gray-600">Manage all users in your institute</p>
         </div>
         <div className="flex space-x-3">
           <Button
@@ -119,7 +119,7 @@ export default function UsersPage() {
             onClick={() => setIsAddAdminModalOpen(true)}
           >
             <User className="h-4 w-4 mr-2" />
-            Add Admin
+            Add User
           </Button>
         </div>
       </div>
@@ -149,14 +149,14 @@ export default function UsersPage() {
             className="bg-blue-600 hover:bg-blue-700 text-white"
             onClick={() => setIsAddAdminModalOpen(true)}
           >
-            Add First Admin
+            Add First user
           </Button>
         </div>
       ) : (
         <div className="bg-white shadow rounded-lg">
           <div className="px-6 py-4 border-b border-gray-200">
             <h3 className="text-lg font-medium text-gray-900">
-              All Admins ({users.length})
+              All Users ({users.length})
             </h3>
           </div>
           <div className="divide-y divide-gray-200">
