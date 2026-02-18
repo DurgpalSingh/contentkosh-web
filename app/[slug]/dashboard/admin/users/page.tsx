@@ -29,7 +29,7 @@ export default function UsersPage() {
 
   const [selectedUser, setSelectedUser] = useState<BusinessUser | null>(null);
 
-  const fetchData = useCallback(async () => {
+  const fetchUsers = useCallback(async () => {
     if (!business?.id) {
       setError('Business information not available');
       setLoading(false);
@@ -47,8 +47,8 @@ export default function UsersPage() {
     } catch (err: unknown) {
       const message =
         err instanceof ApiError
-          ? (err.body?.message ?? 'Failed to fetch data')
-          : 'Failed to fetch data';
+          ? (err.body?.message ?? 'Failed to fetch users')
+          : 'Failed to fetch users';
       setError(message);
       setUsers([]);
     } finally {
@@ -58,12 +58,12 @@ export default function UsersPage() {
 
   useEffect(() => {
     if (isAuthenticated && business?.id) {
-      fetchData();
+      fetchUsers();
     }
-  }, [isAuthenticated, business?.id, fetchData]);
+  }, [isAuthenticated, business?.id, fetchUsers]);
 
   const handleUserAction = () => {
-    fetchData();
+    fetchUsers();
     setSelectedUser(null);
   };
 
@@ -81,7 +81,7 @@ export default function UsersPage() {
     if (!selectedUser?.user?.id) return;
 
     try {
-      await UsersService.deleteApiUsers(selectedUser.user!.id);
+      await UsersService.deleteApiUsers(selectedUser.user.id);
       handleUserAction();
     } catch (error) {
       console.error("Failed to delete user", error);

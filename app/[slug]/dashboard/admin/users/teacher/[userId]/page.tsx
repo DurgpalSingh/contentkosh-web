@@ -94,9 +94,6 @@ export default function TeacherProfilePage() {
     return null;
   }
 
-  const userData = teacher?.user ?? targetUser;
-  const createBusinessId = teacher?.businessId ?? business?.id ?? 0;
-
   return (
     <div className="space-y-6">
       <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 sm:p-6">
@@ -134,7 +131,7 @@ export default function TeacherProfilePage() {
         </div>
       )}
 
-      {!teacher && !error && userData && (
+      {!teacher && !error && targetUser && (
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
@@ -144,13 +141,13 @@ export default function TeacherProfilePage() {
               </div>
               <h3 className="text-lg font-semibold text-blue-900 mb-2">Teacher profile not created yet</h3>
               <p className="text-sm text-blue-700 leading-relaxed">
-                The profile for <strong>{userData.name}</strong> has not been created yet. Click the button below to create it now.
+                The profile for <strong>{targetUser.name}</strong> has not been created yet. Click the button below to create it now.
               </p>
             </div>
             <Button
               className="bg-blue-600 hover:bg-blue-700 text-white whitespace-nowrap"
               onClick={() => setIsCreateProfileModalOpen(true)}
-              disabled={!createBusinessId}
+              disabled={!business?.id}
             >
               Create Profile
             </Button>
@@ -158,30 +155,30 @@ export default function TeacherProfilePage() {
         </div>
       )}
 
-      {userData && (
+      {targetUser && (
         <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
             <div className="h-16 w-16 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center flex-shrink-0">
               <UserIcon className="h-8 w-8 text-blue-600" />
             </div>
             <div className="flex-1 min-w-0">
-              <h2 className="text-2xl font-bold text-gray-900 truncate">{userData.name}</h2>
+              <h2 className="text-2xl font-bold text-gray-900 truncate">{targetUser.name}</h2>
               <div className="flex items-center gap-4 mt-3 flex-wrap">
                 <div className="flex items-center text-gray-600 min-w-0">
                   <Mail className="h-4 w-4 mr-2 flex-shrink-0" />
-                  <span className="truncate">{userData.email}</span>
+                  <span className="truncate">{targetUser.email}</span>
                 </div>
-                {userData.mobile && (
+                {targetUser.mobile && (
                   <div className="flex items-center text-gray-600">
                     <Phone className="h-4 w-4 mr-2 flex-shrink-0" />
-                    <span>{userData.mobile}</span>
+                    <span>{targetUser.mobile}</span>
                   </div>
                 )}
               </div>
               <div className="flex items-center mt-3">
                 <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
                   <BookOpen className="h-4 w-4 mr-2" />
-                  {userData.role}
+                  {targetUser.role}
                 </span>
               </div>
             </div>
@@ -299,16 +296,16 @@ export default function TeacherProfilePage() {
         </div>
       )}
 
-      {userData && createBusinessId > 0 && (
+      {targetUser && business?.id && business.id > 0 && (
         <>
           <CreateTeacherProfileModal
             isOpen={isCreateProfileModalOpen}
             onClose={() => setIsCreateProfileModalOpen(false)}
-            businessId={createBusinessId}
+            businessId={business.id}
             user={{
-              id: userData.id,
-              name: userData.name,
-              email: userData.email
+              id: targetUser.id,
+              name: targetUser.name,
+              email: targetUser.email
             }}
             onProfileCreated={handleProfileCreated}
           />

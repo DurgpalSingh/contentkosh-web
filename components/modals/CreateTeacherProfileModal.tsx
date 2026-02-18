@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { X, UserCircle2, Briefcase, MapPin, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { TeachersService, CreateTeacherRequest, Gender, User } from '@/lib/api';
 
 interface CreateTeacherProfileModalProps {
@@ -117,7 +119,7 @@ export function CreateTeacherProfileModal({
       resetForm();
       onProfileCreated();
       onClose();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     } catch (err: any) {
       setError(err.body?.message || 'Failed to create teacher profile');
     } finally {
@@ -131,9 +133,6 @@ export function CreateTeacherProfileModal({
   };
 
   if (!isOpen) return null;
-
-  const inputClassName =
-    'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:opacity-70';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -193,12 +192,12 @@ export function CreateTeacherProfileModal({
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Qualification <span className="text-red-500">*</span>
                 </label>
-                <input
+                <Input
                   type="text"
                   value={qualification}
                   onChange={(e) => setQualification(e.target.value)}
                   placeholder="e.g., B.Tech, M.Sc"
-                  className={inputClassName}
+                  className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:opacity-70'
                   disabled={loading}
                 />
               </div>
@@ -207,12 +206,12 @@ export function CreateTeacherProfileModal({
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Experience (Years) <span className="text-red-500">*</span>
                 </label>
-                <input
+                <Input
                   type="number"
                   min="0"
                   value={experienceYears}
                   onChange={(e) => setExperienceYears(parseInt(e.target.value, 10) || 0)}
-                  className={inputClassName}
+                  className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:opacity-70'
                   disabled={loading}
                 />
               </div>
@@ -221,12 +220,12 @@ export function CreateTeacherProfileModal({
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Designation <span className="text-red-500">*</span>
                 </label>
-                <input
+                <Input
                   type="text"
                   value={designation}
                   onChange={(e) => setDesignation(e.target.value)}
                   placeholder="e.g., Senior Teacher, Lecturer"
-                  className={inputClassName}
+                  className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:opacity-70'
                   disabled={loading}
                 />
               </div>
@@ -235,12 +234,12 @@ export function CreateTeacherProfileModal({
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Bio <span className="text-gray-400 text-xs">(Optional)</span>
                 </label>
-                <textarea
+                <Textarea
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
                   placeholder="Brief bio or introduction..."
                   rows={3}
-                  className={inputClassName}
+                  className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:opacity-70'
                   disabled={loading}
                 />
               </div>
@@ -250,7 +249,7 @@ export function CreateTeacherProfileModal({
                   Languages <span className="text-gray-400 text-xs">(Optional)</span>
                 </label>
                 <div className="flex gap-2 mb-2">
-                  <input
+                  <Input
                     type="text"
                     value={languageInput}
                     onChange={(e) => setLanguageInput(e.target.value)}
@@ -261,7 +260,7 @@ export function CreateTeacherProfileModal({
                       }
                     }}
                     placeholder="e.g., English, Hindi"
-                    className={inputClassName}
+                    className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:opacity-70'
                     disabled={loading}
                   />
                   <Button
@@ -307,7 +306,7 @@ export function CreateTeacherProfileModal({
                 <select
                   value={gender}
                   onChange={(e) => setGender(e.target.value as Gender | '')}
-                  className={inputClassName}
+                  className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:opacity-70'
                   disabled={loading}
                 >
                   <option value="">Select Gender</option>
@@ -319,23 +318,23 @@ export function CreateTeacherProfileModal({
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
-                <input
+                <Input
                   type="date"
                   value={dob}
                   onChange={(e) => setDob(e.target.value)}
-                  className={inputClassName}
+                  className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:opacity-70'
                   disabled={loading}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
-                <textarea
+                <Textarea
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
                   placeholder="Full address..."
                   rows={3}
-                  className={inputClassName}
+                  className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:opacity-70'
                   disabled={loading}
                 />
               </div>
