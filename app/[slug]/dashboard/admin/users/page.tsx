@@ -96,7 +96,7 @@ export default function UsersPage() {
         name: userItem.user.name || '',
         email: userItem.user.email || '',
         mobile: userItem.user.mobile,
-        role: userItem?.role ,
+        role: userItem?.role,
       });
       router.push(`${window.location.pathname}/teacher/${userItem.user.id}`);
     }
@@ -161,22 +161,25 @@ export default function UsersPage() {
           </Button>
         </div>
       ) : (
-        <div className="bg-white shadow rounded-lg">
-          <div className="px-6 py-4 border-b border-gray-200">
+        <div className="bg-white shadow rounded-lg flex flex-col h-[calc(100vh-220px)]">
+          <div className="px-6 py-4 border-b border-gray-200 flex-shrink-0">
             <h3 className="text-lg font-medium text-gray-900">
               All Users ({users.length})
             </h3>
           </div>
-          <div className="divide-y divide-gray-200">
-            {users && users.map((businessUser) => (
-              <UserRowComponent
-                key={businessUser.id}
-                user={businessUser}
-                onRowClick={() => handleRowClick(businessUser)}
-                onEdit={() => handleEditClick(businessUser)}
-                onDelete={() => handleDeleteClick(businessUser)}
-              />
-            ))}
+          
+          <div className="overflow-y-auto">
+            <div className="divide-y divide-gray-200">
+              {users && users.map((businessUser) => (
+                <UserRowComponent
+                  key={businessUser.id}
+                  user={businessUser}
+                  onRowClick={() => handleRowClick(businessUser)}
+                  onEdit={() => handleEditClick(businessUser)}
+                  onDelete={() => handleDeleteClick(businessUser)}
+                />
+              ))}
+            </div>
           </div>
         </div>
       )}
@@ -253,7 +256,7 @@ function UserRowComponent({ user, onRowClick, onEdit, onDelete }: { user: Busine
   const isTeacher = user.role === 'TEACHER';
 
   return (
-    <div 
+    <div
       className={`px-4 sm:px-6 py-4 hover:bg-gray-50 transition-colors cursor-pointer ${isTeacher ? 'hover:shadow-md' : ''}`}
       onClick={isTeacher ? onRowClick : undefined}
     >
