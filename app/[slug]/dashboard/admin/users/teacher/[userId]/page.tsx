@@ -37,21 +37,18 @@ export default function TeacherProfilePage() {
         setError('Invalid teacher user id');
         return;
       }
+      if (selectedTeacherUser && selectedTeacherUser.id === userId) {
+        setTargetUser(selectedTeacherUser as TeacherWithUser['user']);
+      }
 
       const profile = await TeachersService.getApiTeachersByUserId(userId);
       if (profile?.data) {
         setTeacher(profile.data as TeacherWithUser);
-        if ((profile.data as TeacherWithUser).user) {
-          setTargetUser((profile.data as TeacherWithUser).user!);
-        }
       }
     } catch (err: unknown) {
       if (err instanceof ApiError && err.status === 404) {
         // Profile doesn't exist yet - use user details from store populated by users page.
-        setTeacher(null);
-        if (selectedTeacherUser && selectedTeacherUser.id === userId) {
-          setTargetUser(selectedTeacherUser as TeacherWithUser['user']);
-        } else {
+        if (!selectedTeacherUser || selectedTeacherUser.id !== userId) {
           setError('Teacher profile not found. Please open from Users page to create profile.');
         }
       } else {
