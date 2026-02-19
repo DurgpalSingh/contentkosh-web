@@ -264,74 +264,79 @@ export default function BatchDetailsPage() {
   }
 
   return (
-    <div className="space-y-8 pb-12">
-      <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="relative">
-                <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+    <div className="flex h-[calc(100vh-8rem)] min-h-[560px] flex-col gap-4">
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="relative w-full sm:w-auto">
+                <Filter className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <select
-                  className="pl-9 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none appearance-none cursor-pointer min-w-[200px] hover:bg-slate-100 transition-colors"
+                  className="w-full min-w-[220px] cursor-pointer appearance-none rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-8 text-sm font-semibold text-slate-900 outline-none transition-colors hover:bg-slate-100 focus:border-transparent focus:ring-2 focus:ring-blue-500"
                   value={batch?.id || ''}
                   onChange={handleBatchChange}
                 >
                   <option value="" disabled>Select a Batch</option>
-                  {allBatches.map(b => (
+                  {allBatches.map((b) => (
                     <option key={b.id} value={b.id}>
                       {b.displayName}
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               </div>
               <span
-                className={`px-3 py-1 text-xs font-bold rounded-full uppercase tracking-wide ${batch.isActive ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'
+                className={`rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${batch.isActive ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'
                   }`}
               >
                 {batch.isActive ? 'Active' : 'Inactive'}
               </span>
             </div>
 
-            <div className="flex flex-wrap items-center gap-4 text-sm text-slate-500 mb-4">
-              <span className="font-mono bg-slate-100 px-2 py-0.5 rounded text-xs border border-slate-200">
+            <div className="flex flex-wrap items-center gap-3 text-sm text-slate-500">
+              <span className="rounded border border-slate-200 bg-slate-100 px-2 py-0.5 font-mono text-xs">
                 {batch.codeName || '-'}
               </span>
               <span className="flex items-center">
-                <Calendar className="h-4 w-4 mr-1.5" />
+                <Calendar className="mr-1.5 h-4 w-4" />
                 {batch.startDate ? new Date(batch.startDate).toLocaleDateString() : 'N/A'} -{' '}
                 {batch.endDate ? new Date(batch.endDate).toLocaleDateString() : 'N/A'}
               </span>
             </div>
           </div>
-          <Button variant="ghost" onClick={goToBatchesList} className="text-slate-500 hover:text-slate-900">
-            <ArrowLeft className="h-4 w-4 mr-2" /> Back to List
+
+          <Button variant="ghost" onClick={goToBatchesList} className="w-full text-slate-600 hover:text-slate-900 sm:w-auto">
+            <ArrowLeft className="mr-2 h-4 w-4" /> Back to List
           </Button>
         </div>
       </div>
 
-      <div>
-        <BatchMembersTabs tabs={tabs} activeTab={activeTab} onChange={(tab) => setActiveTab(tab as MemberTab)} />
-
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
-          <div className="relative flex-1">
-            <Search className="h-4 w-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <Input
-              value={memberSearch}
-              onChange={(event) => setMemberSearch(event.target.value)}
-              placeholder="Search by name, email, or user ID"
-              className="pl-9"
-            />
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="z-10 shrink-0 border-b border-slate-200 bg-white/95 backdrop-blur">
+          <div className="px-4 pt-4 sm:px-6">
+            <BatchMembersTabs tabs={tabs} activeTab={activeTab} onChange={(tab) => setActiveTab(tab as MemberTab)} />
           </div>
-          {isAdmin && (
-            <Button onClick={() => setIsAddModalOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              {activeTab === TAB_ROLES.STUDENT ? 'Add Student' : 'Add Teacher'}
-            </Button>
-          )}
+
+          <div className="flex flex-col gap-3 px-4 pb-4 pt-3 sm:px-6 lg:flex-row lg:items-center">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Input
+                value={memberSearch}
+                onChange={(event) => setMemberSearch(event.target.value)}
+                placeholder="Search by name, email, or user ID"
+                className="pl-9"
+              />
+            </div>
+            {isAdmin && (
+              <Button onClick={() => setIsAddModalOpen(true)} className="w-full lg:w-auto">
+                <Plus className="mr-2 h-4 w-4" />
+                {activeTab === TAB_ROLES.STUDENT ? 'Add Student' : 'Add Teacher'}
+              </Button>
+            )}
+          </div>
         </div>
 
-        <div className="min-h-[400px]">
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6">
           {activeTab === TAB_ROLES.STUDENT && (
             <BatchMembersPanel
               role={USER_ROLES.STUDENT}
