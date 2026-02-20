@@ -42,8 +42,7 @@ export default function UsersPage() {
 
       // Fetch all users
       const usersResponse = await UsersService.getApiBusinessUsers(business.id);
-      const allUsers = Array.isArray(usersResponse?.data) ? (usersResponse.data as BusinessUser[]) : [];
-      setUsers(allUsers);
+      setUsers(usersResponse?.data ? (usersResponse.data as BusinessUser[]) : []);
     } catch (err: unknown) {
       const message =
         err instanceof ApiError

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { TeachersService, UpdateTeacherRequest, Gender, TeacherWithUser } from '@/lib/api';
+import { LanguageInputChips } from './LanguageInputChips';
 
 interface EditTeacherProfileModalProps {
   isOpen: boolean;
@@ -29,7 +30,6 @@ export function EditTeacherProfileModal({
   const [designation, setDesignation] = useState('');
   const [bio, setBio] = useState('');
   const [languages, setLanguages] = useState<string[]>([]);
-  const [languageInput, setLanguageInput] = useState('');
 
   const [gender, setGender] = useState<Gender | ''>('');
   const [dob, setDob] = useState('');
@@ -42,7 +42,6 @@ export function EditTeacherProfileModal({
       setDesignation(teacher.designation || '');
       setBio(teacher.bio || '');
       setLanguages(teacher.languages || []);
-      setLanguageInput('');
       setGender((teacher.gender as Gender) || '');
       setDob(teacher.dob ? new Date(teacher.dob).toISOString().split('T')[0] : '');
       setAddress(teacher.address || '');
@@ -61,18 +60,6 @@ export function EditTeacherProfileModal({
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
-
-  const handleAddLanguage = () => {
-    const value = languageInput.trim();
-    if (value && !languages.includes(value)) {
-      setLanguages([...languages, value]);
-      setLanguageInput('');
-    }
-  };
-
-  const handleRemoveLanguage = (lang: string) => {
-    setLanguages(languages.filter((l) => l !== lang));
-  };
 
   const handleSubmit = async () => {
     if (!qualification.trim()) {
@@ -243,50 +230,7 @@ export function EditTeacherProfileModal({
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Languages <span className="text-gray-400 text-xs">(Optional)</span>
                 </label>
-                <div className="flex gap-2 mb-2">
-                  <Input
-                    type="text"
-                    value={languageInput}
-                    onChange={(e) => setLanguageInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleAddLanguage();
-                      }
-                    }}
-                    placeholder="e.g., English, Hindi"
-                    className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:opacity-70'
-                    disabled={loading}
-                  />
-                  <Button
-                    type="button"
-                    onClick={handleAddLanguage}
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
-                    disabled={loading || !languageInput.trim()}
-                  >
-                    Add
-                  </Button>
-                </div>
-                {languages.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {languages.map((lang) => (
-                      <span
-                        key={lang}
-                        className="inline-flex items-center gap-2 bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm"
-                      >
-                        {lang}
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveLanguage(lang)}
-                          className="text-blue-800 hover:text-blue-900"
-                          disabled={loading}
-                        >
-                          x
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                )}
+                <LanguageInputChips languages={languages} onChange={setLanguages} disabled={loading} />
               </div>
             </div>
           ) : (

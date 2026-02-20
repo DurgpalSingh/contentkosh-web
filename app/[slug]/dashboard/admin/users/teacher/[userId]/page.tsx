@@ -32,13 +32,11 @@ export default function TeacherProfilePage() {
       setLoading(true);
       setError(null);
       setTargetUser(null);
+      setTeacher(null);
 
       if (!Number.isFinite(userId)) {
         setError('Invalid teacher user id');
         return;
-      }
-      if (selectedTeacherUser && selectedTeacherUser.id === userId) {
-        setTargetUser(selectedTeacherUser as TeacherWithUser['user']);
       }
 
       const profile = await TeachersService.getApiTeachersByUserId(userId);
@@ -69,6 +67,13 @@ export default function TeacherProfilePage() {
     }
   }, [userId, isAuthenticated, isInitialized, fetchTeacherProfile]);
 
+  useEffect(() => {
+    // in case profile doesn't exist yet, we can still show user details from store populated by users page.
+    if (selectedTeacherUser && selectedTeacherUser.id === userId) {
+      setTargetUser(selectedTeacherUser as TeacherWithUser['user']);
+    }
+  }, [selectedTeacherUser, userId])
+
   const handleProfileCreated = useCallback(() => {
     setIsCreateProfileModalOpen(false);
     fetchTeacherProfile();
@@ -78,6 +83,11 @@ export default function TeacherProfilePage() {
     setIsEditProfileModalOpen(false);
     fetchTeacherProfile();
   }, [fetchTeacherProfile]);
+
+  const goBack = () => {
+    useTeacherStore.persist.clearStorage();
+    router.push(`/${params.slug}/dashboard/admin/users`);
+  };
 
   if (!isInitialized || loading) {
     return (
@@ -107,7 +117,7 @@ export default function TeacherProfilePage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => router.back()}
+            onClick={goBack}
             className="text-gray-600 hover:text-gray-900"
           >
             <ArrowLeft className="h-5 w-5 mr-2" />
