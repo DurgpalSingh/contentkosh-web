@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## Version [1.1.23] - Course Page UI Polishing
+**P.R Raised by** : shubh404-SE
+**Date** : 2026-02-20
+
+### Changed
+- **Course Grid Card Responsiveness**:
+  - Refactored action footer buttons to responsive grid layout.
+  - Prevented button overflow with width and shrink-safe classes.
+
+---
+
 ## Version [1.1.22] - Dynamic Course Status Calculation
 **P.R Raised by** : shubh404-SE
 **Date** : 2026-02-17

@@ -30,7 +30,7 @@ const calculateCourseStatus = (startDate: string | undefined, endDate: string | 
   const start = new Date(startDate);
   const end = new Date(endDate);
 
-  if (now > end) {
+  if (now > end || now < start) {
     return Course.status.INACTIVE;
   } else {
     return Course.status.ACTIVE;
