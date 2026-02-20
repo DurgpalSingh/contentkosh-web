@@ -61,7 +61,7 @@ export function CourseGridCard({
                     </div>
 
                     {/* Menu */}
-                    <div className="relative ml-2">
+                    <div className="relative ml-2 shrink-0">
                         <Button
                             variant="ghost"
                             size="icon"
@@ -117,7 +117,7 @@ export function CourseGridCard({
                 </div>
 
                 {/* Description */}
-                <p className="text-sm text-slate-600 mb-3 line-clamp-2 min-h-[40px]">
+                <p className="mb-3 min-h-10 text-sm text-slate-600 line-clamp-2">
                     {course.description || 'No description available'}
                 </p>
 
@@ -128,7 +128,7 @@ export function CourseGridCard({
                         <span>
                             {startDate && endDate && (
                                 <>
-                                    {startDate} – {endDate}
+                                    {startDate} - {endDate}
                                 </>
                             )}
                             {startDate && !endDate && <>Starts on {startDate}</>}
@@ -168,22 +168,22 @@ export function CourseGridCard({
             </div>
 
             {/* Actions */}
-            <div className="p-4 bg-slate-50 border-t border-slate-100 mt-auto flex space-x-2">
+            <div className="mt-auto grid grid-cols-1 gap-2 border-t border-slate-100 bg-slate-50 p-4 sm:grid-cols-2">
                 <Button
                     variant="outline"
-                    className="flex-1 border-slate-300 text-slate-700 hover:bg-slate-50"
+                    className="w-full min-w-0 justify-center border-slate-300 text-slate-700 hover:bg-slate-50"
                     onClick={() => onViewSubjects(course)}
                 >
-                    <Layers className="h-4 w-4 mr-2" />
+                    <Layers className="mr-2 h-4 w-4 shrink-0" />
                     Subjects
                 </Button>
 
                 <Button
                     variant="outline"
-                    className="flex-1 border-blue-600 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                    className="w-full min-w-0 justify-center border-blue-600 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
                     onClick={() => onViewBatches(course)}
                 >
-                    <Calendar className="h-4 w-4 mr-2" />
+                    <Calendar className="mr-2 h-4 w-4 shrink-0" />
                     Batches
                 </Button>
             </div>
