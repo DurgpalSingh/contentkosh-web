@@ -264,7 +264,7 @@ export default function BatchDetailsPage() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-8rem)] min-h-[560px] flex-col gap-4">
+    <div className="flex h-[calc(100vh-8rem)] min-h-full flex-col gap-4">
       <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-3">
@@ -272,7 +272,7 @@ export default function BatchDetailsPage() {
               <div className="relative w-full sm:w-auto">
                 <Filter className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <select
-                  className="w-full min-w-[220px] cursor-pointer appearance-none rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-8 text-sm font-semibold text-slate-900 outline-none transition-colors hover:bg-slate-100 focus:border-transparent focus:ring-2 focus:ring-blue-500"
+                  className="w-full min-w-60 cursor-pointer appearance-none rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-8 text-sm font-semibold text-slate-900 outline-none transition-colors hover:bg-slate-100 focus:border-transparent focus:ring-2 focus:ring-blue-500"
                   value={batch?.id || ''}
                   onChange={handleBatchChange}
                 >
