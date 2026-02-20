@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## Version [1.1.24] - Batch Details UI Responsiveness Improvements
+**P.R Raised by** : shubh404-SE
+**Date** : 2026-02-19
+
+### Changed
+- **Batch Details Page UI**:
+  - Kept header, tabs, and search/action bar fixed while scrolling members.
+  - Added a dedicated scrollable container for Students/Teachers list
+
+
+---
+
 ## Version [1.1.23] - Course Page UI Polishing
 **P.R Raised by** : shubh404-SE
 **Date** : 2026-02-20

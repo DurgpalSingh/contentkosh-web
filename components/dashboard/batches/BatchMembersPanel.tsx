@@ -35,7 +35,7 @@ export function BatchMembersPanel({ role, members, onViewDetails, onDeleteMember
           <p className="text-slate-500 font-medium">{emptyMessage}</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4">
+        <div className="grid grid-cols-1 gap-2">
           {members.map((member) => (
             <BatchMemberCard
               key={member.id}

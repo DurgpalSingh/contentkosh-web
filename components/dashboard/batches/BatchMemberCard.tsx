@@ -35,7 +35,7 @@ export function BatchMemberCard({ member, role, onViewDetails, onDelete, isDelet
       };
 
   return (
-    <div className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md">
+    <div className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 hover:border-slate-300 hover:shadow-md">
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div className="flex min-w-0 flex-1 items-start gap-4">
         <div
