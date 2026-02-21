@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## Version [1.1.25] - Teacher Profile UX & Flow Improvements
+**P.R Raised by** : shubh404-SE
+**Date** : 2026-02-18
+
+### Added
+- **Teacher Profile State Store**: Added `useTeacherStore` to pass selected teacher user context from Users page to Teacher Profile page.
+- Before redirecting from Users page to Teacher Profile page, selected teacher user details are stored in Zustand.
+- **Teacher Profile Page**:
+  - Improved 404 handling for missing teacher profile.
+  - Teacher Profile now uses store context when profile does not exist and prompts profile creation.
+- **Teacher Profile UI Refresh**:
+  - Improved profile-not-created state and section presentation.
+  - Added cleaner professional summary cards and improved page hierarchy.
+- **Teacher Modals UI Refresh**:
+  - Created `CreateTeacherProfileModal` and `EditTeacherProfileModal` 
+  - Improved step indicators, spacing, and section clarity.
+
+---
+
 ## Version [1.1.24] - Batch Details UI Responsiveness Improvements
 **P.R Raised by** : shubh404-SE
 **Date** : 2026-02-19

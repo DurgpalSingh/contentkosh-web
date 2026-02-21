@@ -46,6 +46,9 @@ export { UpdateExamRequest } from './models/UpdateExamRequest';
 export { UpdateSubjectRequest } from './models/UpdateSubjectRequest';
 export { UpdateUserRequest } from './models/UpdateUserRequest';
 export { User } from './models/User';
+export type { Teacher, CreateTeacherRequest, UpdateTeacherRequest } from './models/Teacher';
+export type { TeacherWithUser } from './models/TeacherWithUser';
+export { TeacherStatus, Gender } from './models/Teacher';
 
 export { AnnouncementsService } from './services/AnnouncementsService';
 export { AuthService } from './services/AuthService';
@@ -58,3 +61,4 @@ export { HealthService } from './services/HealthService';
 export { SubjectsService } from './services/SubjectsService';
 export { ContentsService } from './services/ContentsService';
 export { UsersService } from './services/UsersService';
+export { TeachersService } from './services/TeachersService';

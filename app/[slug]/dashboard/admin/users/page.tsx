@@ -1,14 +1,14 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-// import { useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useTeacherStore } from '@/store/useTeacherStore';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Button } from '@/components/ui/button';
-import { UsersService } from '@/lib/api';
-import { BusinessUser } from '@/lib/api';
+import { UsersService, BusinessUser } from '@/lib/api';
 import { ApiError } from '@/lib/api/core/ApiError';
-import { Users, Mail, Calendar, Shield, User } from 'lucide-react';
+import { Users, Mail, Calendar, Shield, User as UserIcon, Edit, ChevronRight } from 'lucide-react';
 
 import { DeleteConfirmModal } from '@/components/modals/DeleteConfirmModal';
 import { EditUserModal } from '@/components/modals/EditUserModal';
@@ -17,6 +17,8 @@ import { CreateUserRequest } from '@/lib/api';
 
 export default function UsersPage() {
   const { user, business, isAuthenticated, isLoading, isInitialized } = useAuthStore();
+  const { setSelectedTeacherUser } = useTeacherStore();
+  const router = useRouter();
   const [users, setUsers] = useState<BusinessUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -24,6 +26,7 @@ export default function UsersPage() {
   const [isAddAdminModalOpen, setIsAddAdminModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
   const [selectedUser, setSelectedUser] = useState<BusinessUser | null>(null);
 
   const fetchUsers = useCallback(async () => {
@@ -36,19 +39,10 @@ export default function UsersPage() {
     try {
       setLoading(true);
       setError(null);
-      const response = await UsersService.getApiBusinessUsers(business.id);
 
-      if (response && Array.isArray(response.data)) {
-        const validated = response.data.filter(
-          (item): item is BusinessUser =>
-            typeof item === 'object' && item !== null && 'id' in item,
-        );
-        setUsers(validated);
-      } else {
-        setUsers([]);
-        console.error("Unexpected response format", response);
-        setError("Received invalid data from server");
-      }
+      // Fetch all users
+      const usersResponse = await UsersService.getApiBusinessUsers(business.id);
+      setUsers(usersResponse?.data ? (usersResponse.data as BusinessUser[]) : []);
     } catch (err: unknown) {
       const message =
         err instanceof ApiError
@@ -90,7 +84,20 @@ export default function UsersPage() {
       handleUserAction();
     } catch (error) {
       console.error("Failed to delete user", error);
-      throw error; // Let the modal handle the error display
+      throw error;
+    }
+  };
+
+  const handleRowClick = (userItem: BusinessUser) => {
+    if (userItem.user?.id && userItem.role === 'TEACHER') {
+      setSelectedTeacherUser({
+        id: userItem.user.id,
+        name: userItem.user.name || '',
+        email: userItem.user.email || '',
+        mobile: userItem.user.mobile,
+        role: userItem?.role,
+      });
+      router.push(`${window.location.pathname}/teacher/${userItem.user.id}`);
     }
   };
 
@@ -118,33 +125,33 @@ export default function UsersPage() {
             className="bg-blue-600 hover:bg-blue-700 text-white"
             onClick={() => setIsAddAdminModalOpen(true)}
           >
-            <User className="h-4 w-4 mr-2" />
+            <UserIcon className="h-4 w-4 mr-2" />
             Add User
           </Button>
         </div>
       </div>
 
-      {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <LoadingSpinner size="lg" />
-        </div>
-      ) : error ? (
+      {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-6">
           <div className="flex items-center">
-            <div className="text-red-600 mr-3">
-              <Shield className="h-5 w-5" />
-            </div>
+            <Shield className="h-5 w-5 text-red-600 mr-3" />
             <div>
               <h3 className="text-sm font-medium text-red-800">Error</h3>
               <p className="text-sm text-red-600 mt-1">{error}</p>
             </div>
           </div>
         </div>
-      ) : users.length === 0 ? (
+      )}
+
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <LoadingSpinner size="lg" />
+        </div>
+      ) : users && users.length === 0 ? (
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-12 text-center">
           <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No admins found</h3>
-          <p className="text-gray-600 mb-4">There are no admin users in your institute yet.</p>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No users found</h3>
+          <p className="text-gray-600 mb-4">There are no users in your institute yet.</p>
           <Button
             className="bg-blue-600 hover:bg-blue-700 text-white"
             onClick={() => setIsAddAdminModalOpen(true)}
@@ -153,25 +160,30 @@ export default function UsersPage() {
           </Button>
         </div>
       ) : (
-        <div className="bg-white shadow rounded-lg">
-          <div className="px-6 py-4 border-b border-gray-200">
+        <div className="bg-white shadow rounded-lg flex flex-col h-[calc(100vh-220px)]">
+          <div className="px-6 py-4 border-b border-gray-200 flex-shrink-0">
             <h3 className="text-lg font-medium text-gray-900">
               All Users ({users.length})
             </h3>
           </div>
-          <div className="divide-y divide-gray-200">
-            {users.map((businessUser) => (
-              <UserCard
-                key={businessUser.id}
-                businessUser={businessUser}
-                onEdit={() => handleEditClick(businessUser)}
-                onDelete={() => handleDeleteClick(businessUser)}
-              />
-            ))}
+          
+          <div className="overflow-y-auto">
+            <div className="divide-y divide-gray-200">
+              {users && users.map((businessUser) => (
+                <UserRowComponent
+                  key={businessUser.id}
+                  user={businessUser}
+                  onRowClick={() => handleRowClick(businessUser)}
+                  onEdit={() => handleEditClick(businessUser)}
+                  onDelete={() => handleDeleteClick(businessUser)}
+                />
+              ))}
+            </div>
           </div>
         </div>
       )}
 
+      {/* Modals */}
       {business?.id && (
         <AddUserModal
           isOpen={isAddAdminModalOpen}
@@ -201,8 +213,8 @@ export default function UsersPage() {
               setSelectedUser(null);
             }}
             onConfirm={handleConfirmDelete}
-            title="Remove Admin"
-            message="Are you sure you want to remove this admin? They will no longer have access to the business dashboard."
+            title="Remove User"
+            message="Are you sure you want to remove this user? They will no longer have access to the business dashboard."
             itemName={selectedUser.user?.name}
           />
         </>
@@ -211,15 +223,7 @@ export default function UsersPage() {
   );
 }
 
-function UserCard({
-  businessUser,
-  onEdit,
-  onDelete
-}: {
-  businessUser: BusinessUser;
-  onEdit: () => void;
-  onDelete: () => void;
-}) {
+function UserRowComponent({ user, onRowClick, onEdit, onDelete }: { user: BusinessUser; onRowClick: () => void; onEdit: () => void; onDelete: () => void }) {
   const getRoleColor = (role?: string) => {
     switch (role) {
       case 'ADMIN':
@@ -240,70 +244,70 @@ function UserCard({
       case 'SUPERADMIN':
         return <Shield className="h-4 w-4" />;
       case 'TEACHER':
-        return <User className="h-4 w-4" />;
+        return <UserIcon className="h-4 w-4" />;
       case 'STUDENT':
-        return <User className="h-4 w-4" />;
+        return <UserIcon className="h-4 w-4" />;
       default:
-        return <User className="h-4 w-4" />;
+        return <UserIcon className="h-4 w-4" />;
     }
   };
 
+  const isTeacher = user.role === 'TEACHER';
+
   return (
-    <div className="px-6 py-4 hover:bg-gray-50 transition-colors">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <div className="flex-shrink-0">
-            <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-              <User className="h-5 w-5 text-gray-600" />
-            </div>
+    <div
+      className={`px-4 sm:px-6 py-4 hover:bg-gray-50 transition-colors cursor-pointer ${isTeacher ? 'hover:shadow-md' : ''}`}
+      onClick={isTeacher ? onRowClick : undefined}
+    >
+      <div className="flex items-center justify-between gap-4 flex-wrap sm:flex-nowrap">
+        <div className="flex items-center space-x-4 flex-1 min-w-0">
+          <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
+            <UserIcon className="h-5 w-5 text-gray-600" />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center space-x-3">
-              <h4 className="text-sm font-medium text-gray-900 truncate">
-                {businessUser.user?.name || 'Unknown User'}
-              </h4>
-              <span
-                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRoleColor(
-                  businessUser.role
-                )}`}
-              >
-                {getRoleIcon(businessUser.role)}
-                <span className="ml-1">{businessUser.role || 'Unknown'}</span>
+            <div className="flex items-center space-x-2 sm:space-x-3 flex-wrap">
+              <h4 className="text-sm font-medium text-gray-900 truncate">{user.user?.name || 'Unknown'}</h4>
+              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRoleColor(user.role)}`}>
+                {getRoleIcon(user.role)}
+                <span className="ml-1">{user.role || 'Unknown'}</span>
               </span>
             </div>
-            <div className="flex items-center mt-1 text-sm text-gray-500">
-              <Mail className="h-4 w-4 mr-2" />
-              <span className="truncate">{businessUser.user?.email || 'No email'}</span>
+            <div className="flex items-center mt-1 text-xs sm:text-sm text-gray-500">
+              <Mail className="h-4 w-4 mr-2 flex-shrink-0" />
+              <span className="truncate">{user.user?.email || 'No email'}</span>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center space-x-4">
-          <div className="text-sm text-gray-500">
+        <div className="flex items-center space-x-2 sm:space-x-4 ml-auto flex-shrink-0">
+          <div className="hidden sm:block text-sm text-gray-500">
             <div className="flex items-center">
               <Calendar className="h-4 w-4 mr-1" />
-              <span>
-                {businessUser.createdAt
-                  ? new Date(businessUser.createdAt).toLocaleDateString()
-                  : 'Unknown date'}
-              </span>
+              <span>{user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'Unknown'}</span>
             </div>
           </div>
 
-          <div className="flex space-x-3">
+          <div className="flex space-x-2 sm:space-x-3">
             <Button
               variant="ghost"
               size="sm"
-              className="text-blue-600 hover:text-blue-800 hover:bg-blue-50"
-              onClick={onEdit}
+              className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 text-xs sm:text-sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit();
+              }}
             >
-              Edit
+              <Edit className="h-4 w-4 mr-1" />
+              <span className="hidden sm:inline">Edit</span>
             </Button>
             <Button
               variant="ghost"
               size="sm"
-              className="text-red-600 hover:text-red-800 hover:bg-red-50"
-              onClick={onDelete}
+              className="text-red-600 hover:text-red-800 hover:bg-red-50 text-xs sm:text-sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
             >
               Remove
             </Button>
