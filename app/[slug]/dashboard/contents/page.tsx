@@ -12,6 +12,8 @@ import { DeleteConfirmModal } from '@/components/modals/DeleteConfirmModal';
 import { ContentsService, BatchesService, Content, Batch } from '@/lib/api';
 import { ContentGridCard } from '@/components/dashboard/contents/ContentGridCard';
 import { ContentsFilterModal } from '@/components/dashboard/contents/ContentsFilterModal';
+import { USER_ROLES } from '@/lib/constants';
+import { EmptyState } from '@/components/common/EmptyState';
 
 export default function ContentsPage() {
   const { user, business, isAuthenticated, isLoading, isInitialized } = useAuthStore();
@@ -31,7 +33,8 @@ export default function ContentsPage() {
   const [selectedContent, setSelectedContent] = useState<Content | null>(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
-  const isStudent = user?.role === 'STUDENT';
+  const isAdmin = user?.role === USER_ROLES.ADMIN;
+  const isStudent = user?.role === USER_ROLES.STUDENT;
 
   const filteredContents = useMemo(() => {
     if (!searchQuery.trim()) return contents;
@@ -206,12 +209,23 @@ export default function ContentsPage() {
         {error ? (
           <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-red-700 text-center">{error}</div>
         ) : filteredContents.length === 0 ? (
-          <div className="text-center py-12">
-            <h3 className="text-lg font-medium text-gray-900">No contents found</h3>
-            <p className="text-gray-600 mt-2">
-              {selectedBatchId ? 'Add content to this batch to get started' : 'Select a batch to view contents'}
-            </p>
-          </div>
+          searchQuery ? (
+            <div className="text-center py-12">
+              <h3 className="text-lg font-medium text-gray-900">No contents found</h3>
+              <p className="text-gray-600 mt-2">No contents match your search query.</p>
+            </div>
+          ) : (
+            <EmptyState
+              title={isAdmin ? 'No contents found' : 'No Content Assigned Yet.'}
+              description={
+                isAdmin
+                  ? (selectedBatchId
+                    ? 'Add content to this batch to get started.'
+                    : 'Select a batch to view contents.')
+                  : 'You are not assigned to any batch. Please contact the administrator.'
+              }
+            />
+          )
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredContents.map(c => (

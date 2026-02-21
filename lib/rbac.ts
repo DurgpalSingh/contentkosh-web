@@ -79,13 +79,13 @@ export const NAVIGATION_CONFIG: NavigationItem[] = [
         name: 'Exams',
         href: '/dashboard/exams',
         icon: ClipboardList,
-        roles: [USER_ROLES.ADMIN, USER_ROLES.TEACHER],
+        roles: [USER_ROLES.ADMIN],
     },
     {
         name: 'Courses',
         href: '/dashboard/courses',
         icon: BookOpen,
-        roles: [USER_ROLES.ADMIN, USER_ROLES.TEACHER],
+        roles: [USER_ROLES.ADMIN],
     },
     {
         name: 'Batches',

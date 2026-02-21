@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { BookOpen, Calendar, MoreVertical, Edit, Trash2, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Exam } from '@/lib/api';
+import { USER_ROLES } from '@/lib/constants';
+import { useAuthStore } from '@/store/useAuthStore';
 
 interface ExamGridCardProps {
     exam: Exam;
@@ -19,6 +21,8 @@ export function ExamGridCard({
     onDelete,
 }: ExamGridCardProps) {
     const [showMenu, setShowMenu] = useState(false);
+    const { user } = useAuthStore();
+    const isAdmin = user?.role === USER_ROLES.ADMIN;
 
     return (
         <div className="bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden flex flex-col h-full">
@@ -41,7 +45,7 @@ export function ExamGridCard({
                         </span>
                     </div>
 
-                    <div className="relative">
+                    {isAdmin && <div className="relative">
                         <Button
                             variant="ghost"
                             size="icon"
@@ -88,7 +92,7 @@ export function ExamGridCard({
                                 </div>
                             </>
                         )}
-                    </div>
+                    </div>}
                 </div>
 
                 <p

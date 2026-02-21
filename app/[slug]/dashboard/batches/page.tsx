@@ -13,6 +13,7 @@ import { AddBatchModal } from '@/components/modals/AddBatchModal';
 import { EditBatchModal } from '@/components/modals/EditBatchModal';
 import { DeleteConfirmModal } from '@/components/modals/DeleteConfirmModal';
 import { USER_ROLES } from '@/lib/constants';
+import { EmptyState } from '@/components/common/EmptyState';
 
 interface ExtendedBatch extends Batch {
   courseId?: number;
@@ -270,21 +271,31 @@ export default function BatchesPage() {
             {error}
           </div>
         ) : courses.length === 0 ? (
-          <div className="text-center py-12">
-            <Calendar className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900">No courses found</h3>
-            <p className="text-gray-600 mt-2">Create a course first to manage batches</p>
-          </div>
+          <EmptyState
+            title='No courses found'
+            description={
+              isAdmin
+                ? 'Create a course first to manage batches.'
+                : 'You are not assigned to any batch. Please contact the administrator.'
+            }
+          />
         ) : filteredBatches.length === 0 ? (
-          <div className="text-center py-12">
-            <Calendar className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900">No batches found</h3>
-            <p className="text-gray-600 mt-2">
-              {searchQuery
-                ? 'Try adjusting your search'
-                : 'This course has no batches yet'}
-            </p>
-          </div>
+          searchQuery ? (
+            <div className="text-center py-12">
+              <Calendar className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+              <h3 className="text-lg font-medium text-gray-900">No batches found</h3>
+              <p className="text-gray-600 mt-2">Try adjusting your search</p>
+            </div>
+          ) : (
+            <EmptyState
+              title='No batches found'
+              description={
+                isAdmin
+                  ? 'This course has no batches yet.'
+                  : 'You are not assigned to any batch. Please contact the administrator.'
+              }
+            />
+          )
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredBatches.map((batch) => (
@@ -294,8 +305,8 @@ export default function BatchesPage() {
                 courseName={batch.courseName}
                 memberCount={batch.memberCount}
                 onViewDetails={handleViewDetails}
-                onEdit={handleEditBatch}
-                onDelete={handleDeleteBatch}
+                onEdit={isAdmin ? handleEditBatch : undefined}
+                onDelete={isAdmin ? handleDeleteBatch : undefined}
               />
             ))}
           </div>

@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## Version [1.1.26] - Empty State Refactor & Teacher Menu Restriction
+**P.R Raised by** : shubh404-SE
+**Date** : 2026-02-22
+
+### Added
+- **Generic Empty State Component**:
+  - Added reusable EmptyState component in components/common/EmptyState.tsx.
+  - Supports configurable 	itle, description, optional icon, and optional action.
+
+### Changed
+- **Role-based Empty Messages Controlled at Page Level**:
+  - Updated empty-state rendering in Exams, Courses, Subjects, Batches, and Contents pages.
+  - Moved role-specific messaging (Admin vs Teacher) from component internals to page-level logic for manual control.
+- **Teacher Role UI Restriction (3-dot menu)**:
+  - Removed/hidden 3-dot action menu for teacher role in card-level admin actions (Exam/Course/Subject cards).
+
+---
 ## Version [1.1.25] - Teacher Profile UX & Flow Improvements
 **P.R Raised by** : shubh404-SE
 **Date** : 2026-02-18
@@ -438,3 +455,6 @@ All notable changes to this project will be documented in this file.
 - Updated `components/dashboard/DashboardLayout.tsx` to redirect to login after logout
 
 ---
+
+
+
