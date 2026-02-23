@@ -9,13 +9,17 @@ import { AddSubjectModal } from '@/components/modals/AddSubjectModal';
 import { EditSubjectModal } from '@/components/modals/EditSubjectModal';
 import { DeleteConfirmModal } from '@/components/modals/DeleteConfirmModal';
 import { CoursesService, SubjectsService, Subject, Course } from '@/lib/api';
-import { Plus, ArrowLeft, BookOpen } from 'lucide-react';
+import { Plus, ArrowLeft } from 'lucide-react';
 import { SubjectGridCard } from '@/components/dashboard/courses/subjects/SubjectGridCard';
+import { USER_ROLES } from '@/lib/constants';
+import { EmptyState } from '@/components/common/EmptyState';
 
 export default function CourseSubjectsPage() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === USER_ROLES.ADMIN;
 
   const courseId = Number(params?.courseId);
   const examId = Number(searchParams.get('examId')) || undefined;
@@ -126,13 +130,13 @@ export default function CourseSubjectsPage() {
             </div>
           </div>
 
-          <Button
+          {isAdmin && <Button
             onClick={handleAdd}
             className="inline-flex items-center gap-2 rounded-lg border border-blue-600 bg-white px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 transition-colors"
           >
             <Plus className="h-4 w-4" />
             Add Subject
-          </Button>
+          </Button>}
         </div>
 
         {/* Divider */}
@@ -147,27 +151,25 @@ export default function CourseSubjectsPage() {
 
         {/* Content */}
         {subjects.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 p-14 text-center">
-            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-white shadow-sm">
-              <BookOpen className="h-6 w-6 text-slate-400" />
-            </div>
-
-            <h3 className="text-lg font-semibold text-slate-900">
-              No subjects yet
-            </h3>
-
-            <p className="mt-1 max-w-sm text-sm text-slate-600">
-              Start by adding subjects to organize lessons and materials for this course.
-            </p>
-
-            <Button
-              onClick={handleAdd}
-              className="mt-6 inline-flex items-center gap-2 rounded-lg border border-blue-600 bg-white px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50"
-            >
-              <Plus className="h-4 w-4" />
-              Add Subject
-            </Button>
-          </div>
+          <EmptyState
+            title='No subjects yet'
+            description={
+              isAdmin
+                ? 'Start by adding subjects to organize lessons and materials for this course.'
+                : 'You are not assigned to any batch. Please contact the administrator.'
+            }
+            action={
+              isAdmin ? (
+                <Button
+                  onClick={handleAdd}
+                  className="mt-6 inline-flex items-center gap-2 rounded-lg border border-blue-600 bg-white px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Subject
+                </Button>
+              ) : undefined
+            }
+          />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
             {subjects.map((subject) => (

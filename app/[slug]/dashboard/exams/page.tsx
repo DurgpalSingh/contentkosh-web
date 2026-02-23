@@ -9,9 +9,10 @@ import { AddExamModal } from '@/components/modals/AddExamModal';
 import { EditExamModal } from '@/components/modals/EditExamModal';
 import { DeleteConfirmModal } from '@/components/modals/DeleteConfirmModal';
 import { ExamsService, Exam } from '@/lib/api';
-import { Plus, BookOpen } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { ExamGridCard } from '@/components/dashboard/exams/ExamGridCard';
 import { USER_ROLES } from '@/lib/constants';
+import { EmptyState } from '@/components/common/EmptyState';
 
 export default function ExamsPage() {
     const { user, business, isAuthenticated, isLoading, isInitialized } = useAuthStore();
@@ -125,22 +126,25 @@ export default function ExamsPage() {
                         {error}
                     </div>
                 ) : exams.length === 0 ? (
-                    <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl p-12 text-center">
-                        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 mb-4">
-                            <BookOpen className="h-6 w-6 text-gray-400" />
-                        </div>
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">No exams created</h3>
-                        <p className="text-gray-500 mb-6">Get started by creating your first exam.</p>
-                        {isAdmin && (
-                            <Button
-                                onClick={() => setIsAddExamModalOpen(true)}
-                                className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium"
-                            >
-                                <Plus className="h-4 w-4 mr-2" />
-                                Create Exam
-                            </Button>
-                        )}
-                    </div>
+                    <EmptyState
+                        title='No exams created'
+                        description={
+                            isAdmin
+                                ? 'Get started by creating your first exam.'
+                                : 'You are not assigned to any batch. Please contact the administrator.'
+                        }
+                        action={
+                            isAdmin ? (
+                                <Button
+                                    onClick={() => setIsAddExamModalOpen(true)}
+                                    className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium"
+                                >
+                                    <Plus className="h-4 w-4 mr-2" />
+                                    Create Exam
+                                </Button>
+                            ) : undefined
+                        }
+                    />
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         {exams.map((exam) => (

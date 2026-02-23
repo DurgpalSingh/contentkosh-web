@@ -14,6 +14,7 @@ import { Plus, BookOpen, Search } from 'lucide-react';
 import { CourseGridCard } from '@/components/dashboard/courses/CourseGridCard';
 import { CourseFilter } from '@/components/dashboard/courses/CourseFilter';
 import { USER_ROLES } from '@/lib/constants';
+import { EmptyState } from '@/components/common/EmptyState';
 
 interface ExtendedCourse extends Course {
   examName?: string;
@@ -290,46 +291,57 @@ export default function CoursesPage() {
             {error}
           </div>
         ) : exams.length === 0 ? (
-          <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl p-12 text-center">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 mb-4">
-              <BookOpen className="h-6 w-6 text-gray-400" />
-            </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No exams found</h3>
-            <p className="text-gray-500 mb-6">Create your first exam to start adding courses.</p>
-            {/* Show Add Course button even if no exams, to show the modal warning */}
-            {isAdmin && (
-              <Button
-                onClick={handleAddCourseClick}
-                variant="outline"
-                className="mt-4"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Course
-              </Button>
-            )}
-          </div>
+          <EmptyState
+            title='No exams found'
+            description={
+              isAdmin
+                ? 'Create your first exam to start adding courses.'
+                : 'You are not assigned to any batch. Please contact the administrator.'
+            }
+            action={
+              isAdmin ? (
+                <Button
+                  onClick={handleAddCourseClick}
+                  variant="outline"
+                  className="mt-4"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Course
+                </Button>
+              ) : undefined
+            }
+          />
         ) : filteredCourses.length === 0 ? (
-          <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl p-12 text-center">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 mb-4">
-              <BookOpen className="h-6 w-6 text-gray-400" />
+          searchQuery ? (
+            <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl p-12 text-center">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 mb-4">
+                <BookOpen className="h-6 w-6 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No courses found</h3>
+              <p className="text-gray-500 mb-6">No courses match your search query.</p>
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No courses found</h3>
-            <p className="text-gray-500 mb-6">
-              {searchQuery
-                ? 'No courses match your search query.'
-                : 'This exam has no courses yet.'}
-            </p>
-            {!searchQuery && isAdmin && (
-              <Button
-                onClick={handleAddCourseClick}
-                variant="outline"
-                className="mt-4"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Course
-              </Button>
-            )}
-          </div>
+          ) : (
+            <EmptyState
+              title='No courses found'
+              description={
+                isAdmin
+                  ? 'This exam has no courses yet.'
+                  : 'You are not assigned to any batch. Please contact the administrator.'
+              }
+              action={
+                isAdmin ? (
+                  <Button
+                    onClick={handleAddCourseClick}
+                    variant="outline"
+                    className="mt-4"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Course
+                  </Button>
+                ) : undefined
+              }
+            />
+          )
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredCourses.map((course) => (

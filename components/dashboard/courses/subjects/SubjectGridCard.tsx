@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { MoreVertical, Edit, Trash2, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Subject } from '@/lib/api';
+import { USER_ROLES } from '@/lib/constants';
+import { useAuthStore } from '@/store/useAuthStore';
 
 interface SubjectGridCardProps {
   subject: Subject;
@@ -16,6 +18,8 @@ export function SubjectGridCard({
   onEdit,
   onDelete,
 }: SubjectGridCardProps) {
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === USER_ROLES.ADMIN;
   const [showMenu, setShowMenu] = useState(false);
 
   return (
@@ -44,8 +48,8 @@ export function SubjectGridCard({
           <div className="mt-2 text-xs text-slate-400">
             <span
               className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${subject.status === 'ACTIVE'
-                  ? 'bg-green-100 text-green-800'
-                  : 'bg-slate-100 text-slate-800'
+                ? 'bg-green-100 text-green-800'
+                : 'bg-slate-100 text-slate-800'
                 }`}
             >
               {subject.status === 'ACTIVE' ? 'Active' : 'Inactive'}
@@ -54,7 +58,7 @@ export function SubjectGridCard({
         </div>
 
         {/* Actions */}
-        {(onEdit || onDelete) && (
+        {isAdmin && (onEdit || onDelete) && (
           <div className="relative opacity-0 group-hover:opacity-100 transition-opacity">
             <Button
               variant="ghost"

@@ -12,6 +12,8 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Course } from '@/lib/api';
+import { USER_ROLES } from '@/lib/constants';
+import { useAuthStore } from '@/store/useAuthStore';
 
 interface CourseGridCardProps {
     course: Course;
@@ -31,7 +33,8 @@ export function CourseGridCard({
     onDelete,
 }: CourseGridCardProps) {
     const [showMenu, setShowMenu] = useState(false);
-
+    const { user } = useAuthStore();
+    const isAdmin = user?.role === USER_ROLES.ADMIN;
     const formatDate = (date?: string | Date | null) => {
         if (!date) return null;
         const d = new Date(date);
@@ -61,7 +64,7 @@ export function CourseGridCard({
                     </div>
 
                     {/* Menu */}
-                    <div className="relative ml-2 shrink-0">
+                    {isAdmin && <div className="relative ml-2 shrink-0">
                         <Button
                             variant="ghost"
                             size="icon"
@@ -113,7 +116,7 @@ export function CourseGridCard({
                                 </div>
                             </>
                         )}
-                    </div>
+                    </div>}
                 </div>
 
                 {/* Description */}
@@ -157,8 +160,8 @@ export function CourseGridCard({
                     <div>
                         <span
                             className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${course.status === 'ACTIVE'
-                                    ? 'bg-green-100 text-green-800'
-                                    : 'bg-slate-100 text-slate-800'
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-slate-100 text-slate-800'
                                 }`}
                         >
                             {course.status === 'ACTIVE' ? 'Active' : 'Inactive'}
