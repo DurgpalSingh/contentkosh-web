@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ContentsService, CreateContentRequest } from '@/lib/api';
+import { UPLOAD_CONSTANTS } from '@/lib/constants';
+import { FRONTEND_UPLOAD_ACCEPT } from '@/lib/upload-config';
+import { validateUploadFile } from '@/lib/upload-validation';
 
 interface AddContentModalProps {
   isOpen: boolean;
@@ -48,7 +51,7 @@ export function AddContentModal({
     setError(null);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedBatchId) {
       setError('Please select a batch');
@@ -56,6 +59,12 @@ export function AddContentModal({
     }
     if (!file) {
       setError('Please select a file');
+      return;
+    }
+
+    const validation = validateUploadFile(file);
+    if (!validation.isValid) {
+      setError(validation.message || UPLOAD_CONSTANTS.MESSAGES.INVALID_FILE);
       return;
     }
 
@@ -101,6 +110,27 @@ export function AddContentModal({
     onClose();
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files ? e.target.files[0] : null;
+
+    if (!selectedFile) {
+      setFile(null);
+      setError(null);
+      return;
+    }
+
+    const validation = validateUploadFile(selectedFile);
+    if (!validation.isValid) {
+      setFile(null);
+      setError(validation.message || UPLOAD_CONSTANTS.MESSAGES.INVALID_FILE);
+      e.target.value = '';
+      return;
+    }
+
+    setFile(selectedFile);
+    setError(null);
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -141,7 +171,7 @@ export function AddContentModal({
 
           <div>
             <label className="block text-sm font-medium text-slate-700">File (PDF or Image) <span className="text-red-500">*</span></label>
-            <input type="file" accept="application/pdf,image/*" onChange={(e) => setFile(e.target.files ? e.target.files[0] : null)} className="mt-1" required />
+            <input type="file" accept={FRONTEND_UPLOAD_ACCEPT} onChange={handleFileChange} className="mt-1" required />
           </div>
 
           <div className="flex justify-end space-x-3 pt-4">
