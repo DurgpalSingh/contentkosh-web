@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## Version [1.1.28] - Filter/search users
+**P.R Raised by** : shubh404-SE
+**Date** : 2026-02-24
+**Ticket** - CK-79, CK-78
+
+### Added
+- **Filter and Search functionality for users Module**
+
+---
+
 ## Version [1.1.27] - Drag-and-Drop File Upload UI Enhancement
 **P.R Raised by** : shubh404-SE
 **Date** : 2026-02-24
