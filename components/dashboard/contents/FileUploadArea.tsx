@@ -67,7 +67,6 @@ export function FileUploadArea({
   value,
   onChange,
   onError,
-  required = false,
   disabled = false,
   className = '',
 }: FileUploadAreaProps) {
@@ -253,7 +252,6 @@ export function FileUploadArea({
         accept={accept}
         onChange={handleFileInputChange}
         className="hidden"
-        required={required}
         disabled={disabled}
       />
       
