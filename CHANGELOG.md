@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## Version [1.1.29] - Dashboard API Integration & UI Refresh
+**P.R Raised by** : shubh404-SE
+**Date** : 2026-02-24
+
+- **Dashboard API Service**:
+  - Added `services/dashboard.service.ts` to fetch role-based dashboard data from backend `GET /api/dashboard`.
+- **Dashboard Types**:
+  - Added `types/dashboard.ts` 
+
+### Changed
+- **Dashboard Data Source**:
+  - Replaced static/mock dashboard data with live backend-driven data for:
+    - `components/dashboard/AdminDashboard.tsx`
+    - `components/dashboard/TeacherDashboard.tsx`
+    - `components/dashboard/StudentDashboard.tsx`
+
+---
+
 ## Version [1.1.28] - Filter/search users
 **P.R Raised by** : shubh404-SE
 **Date** : 2026-02-24
