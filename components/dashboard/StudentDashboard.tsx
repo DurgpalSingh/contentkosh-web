@@ -61,10 +61,10 @@ export function StudentDashboard() {
       </header>
 
       <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        <StatCard title="Enrolled Batches" value={data.stats.enrolledBatches} tone="blue" icon={<GraduationCap className="h-5 w-5" />} />
-        <StatCard title="Available Content" value={data.stats.totalContent} tone="green" icon={<BookOpen className="h-5 w-5" />} />
-        <StatCard title="Announcements" value={data.stats.activeAnnouncements} tone="amber" icon={<Bell className="h-5 w-5" />} />
-        <StatCard title="Recent Content" value={data.recentContent.length} tone="indigo" icon={<FileText className="h-5 w-5" />} />
+        <StatCard title="Enrolled Batches" value={data.stats.enrolledBatches} tone="blue" icon={<GraduationCap className="h-8 w-8" />} />
+        <StatCard title="Available Content" value={data.stats.totalContent} tone="green" icon={<BookOpen className="h-8 w-8" />} />
+        <StatCard title="Announcements" value={data.stats.activeAnnouncements} tone="amber" icon={<Bell className="h-8 w-8" />} />
+        <StatCard title="Recent Content" value={data.recentContent.length} tone="indigo" icon={<FileText className="h-8 w-8" />} />
       </section>
 
       <section className="grid grid-cols-1 xl:grid-cols-2 gap-5">

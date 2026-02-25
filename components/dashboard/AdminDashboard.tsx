@@ -61,17 +61,17 @@ export function AdminDashboard() {
       </header>
 
       <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        <StatCard title="Total Users" value={data.stats.totalUsers} tone="blue" icon={<Users className="h-5 w-5" />} />
-        <StatCard title="Teachers" value={data.stats.totalTeachers} tone="green" icon={<Users className="h-5 w-5" />} />
-        <StatCard title="Students" value={data.stats.totalStudents} tone="indigo" icon={<GraduationCap className="h-5 w-5" />} />
-        <StatCard title="Announcements" value={data.stats.activeAnnouncements} tone="amber" icon={<Bell className="h-5 w-5" />} />
+        <StatCard title="Total Users" value={data.stats.totalUsers} tone="blue" icon={<Users className="h-8 w-8" />} />
+        <StatCard title="Teachers" value={data.stats.totalTeachers} tone="green" icon={<Users className="h-8 w-8" />} />
+        <StatCard title="Students" value={data.stats.totalStudents} tone="indigo" icon={<GraduationCap className="h-8 w-8" />} />
+        <StatCard title="Announcements" value={data.stats.activeAnnouncements} tone="amber" icon={<Bell className="h-8 w-8" />} />
       </section>
 
       <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        <StatCard title="Exams" value={data.stats.totalExams} tone="slate" icon={<BookOpen className="h-5 w-5" />} />
-        <StatCard title="Courses" value={data.stats.totalCourses} tone="slate" icon={<BookOpen className="h-5 w-5" />} />
-        <StatCard title="Batches" value={data.stats.totalBatches} tone="slate" icon={<GraduationCap className="h-5 w-5" />} />
-        <StatCard title="Content" value={data.stats.totalContent} tone="slate" icon={<BookOpen className="h-5 w-5" />} />
+        <StatCard title="Exams" value={data.stats.totalExams} tone="slate" icon={<BookOpen className="h-8 w-8" />} />
+        <StatCard title="Courses" value={data.stats.totalCourses} tone="slate" icon={<BookOpen className="h-8 w-8" />} />
+        <StatCard title="Batches" value={data.stats.totalBatches} tone="slate" icon={<GraduationCap className="h-8 w-8" />} />
+        <StatCard title="Content" value={data.stats.totalContent} tone="slate" icon={<BookOpen className="h-8 w-8" />} />
       </section>
 
       <section className="grid grid-cols-1 xl:grid-cols-2 gap-5">
