@@ -2,6 +2,36 @@
 
 All notable changes to this project will be documented in this file.
 
+## Version [1.1.27] - Drag-and-Drop File Upload UI Enhancement
+**P.R Raised by** : shubh404-SE
+**Date** : 2026-02-24
+
+### Added
+- **Drag-and-Drop File Upload Component**:
+  - Created new `FileUploadArea` component in `components/dashboard/contents/FileUploadArea.tsx`.
+  - Supports both click-to-upload and drag-and-drop file selection methods.
+  - Visual feedback with color-coded states (empty, dragging, selected, error, disabled).
+  - File type validation for PDF and image files with immediate user feedback.
+  - Display selected file information (name, size, type icon) before upload.
+  - Remove file functionality with visual confirmation.
+
+- **Accessibility Features**:
+  - Full keyboard navigation support (Enter/Space keys to open file picker).
+  - Focus management and proper tab order.
+  - Screen reader announcements for drag state and file selection.
+
+- **Helper Functions**:
+  - `validateFileType()`: Validates MIME types with wildcard support (e.g., "image/*").
+  - `formatFileSize()`: Converts bytes to human-readable format (Bytes, KB, MB, GB).
+
+### Changed
+- **Add Content Modal**:
+  - Replaced basic HTML file input with new `FileUploadArea` component.
+  - Enhanced error display with AlertCircle icon for better visual feedback.
+  - Improved user experience with clear visual upload area (120px minimum height).
+
+---
+
 ## Version [1.1.26] - Empty State Refactor & Teacher Menu Restriction
 **P.R Raised by** : shubh404-SE
 **Date** : 2026-02-22

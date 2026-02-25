@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ContentsService, CreateContentRequest } from '@/lib/api';
+import { FileUploadArea } from '../dashboard/contents/FileUploadArea';
 
 interface AddContentModalProps {
   isOpen: boolean;
@@ -114,7 +115,12 @@ export function AddContentModal({
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">{error}</div>}
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm flex items-start gap-2">
+              <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+              <span>{error}</span>
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-slate-700">Batch <span className="text-red-500">*</span></label>
@@ -141,7 +147,13 @@ export function AddContentModal({
 
           <div>
             <label className="block text-sm font-medium text-slate-700">File (PDF or Image) <span className="text-red-500">*</span></label>
-            <input type="file" accept="application/pdf,image/*" onChange={(e) => setFile(e.target.files ? e.target.files[0] : null)} className="mt-1" required />
+            <FileUploadArea
+              accept="application/pdf,image/*"
+              value={file}
+              onChange={setFile}
+              onError={setError}
+              required
+            />
           </div>
 
           <div className="flex justify-end space-x-3 pt-4">
