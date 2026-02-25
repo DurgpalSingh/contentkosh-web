@@ -140,14 +140,33 @@ export default function UsersPage() {
   }, [isAuthenticated, business?.id, fetchUsers]);
 
   useEffect(() => {
-    const savedScrollY = sessionStorage.getItem('usersPageScrollY');
-    if (savedScrollY && scrollRef.current) {
-      setTimeout(() => {
-        scrollRef.current!.scrollTop = parseInt(savedScrollY, 10);
-      }, 0);
-      sessionStorage.removeItem('usersPageScrollY');
-    }
-  }, [users]);
+  if (loading) return;
+
+  restoreFilter();
+  restoreScrollPosition();
+}, [loading]);
+
+const restoreFilter = () => {
+  const savedFilter = sessionStorage.getItem('usersPageFilter');
+  if (!savedFilter) return;
+
+  setSelectedRole(savedFilter as RoleFilter);
+  sessionStorage.removeItem('usersPageFilter');
+};
+
+const restoreScrollPosition = () => {
+  const savedScrollY = sessionStorage.getItem('usersPageScrollY');
+  if (!savedScrollY || !scrollRef.current) return;
+
+  const scrollValue = Number(savedScrollY);
+  if (Number.isNaN(scrollValue)) return;
+
+  requestAnimationFrame(() => {
+    scrollRef.current!.scrollTop = scrollValue;
+  });
+
+  sessionStorage.removeItem('usersPageScrollY');
+};
 
   const handleUserAction = () => {
     fetchUsers();
@@ -180,6 +199,7 @@ export default function UsersPage() {
     if (userItem.user?.id && userItem.role === 'TEACHER') {
 
       sessionStorage.setItem('usersPageScrollY', scrollRef.current?.scrollTop.toString() || '0');
+      sessionStorage.setItem('usersPageFilter', selectedRole);
 
       setSelectedTeacherUser({
         id: userItem.user.id,
