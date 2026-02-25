@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useRef,  useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useTeacherStore } from '@/store/useTeacherStore';
@@ -99,6 +99,7 @@ export default function UsersPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRole, setSelectedRole] = useState<RoleFilter>('ALL');
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const [isAddAdminModalOpen, setIsAddAdminModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -138,6 +139,16 @@ export default function UsersPage() {
     }
   }, [isAuthenticated, business?.id, fetchUsers]);
 
+  useEffect(() => {
+    const savedScrollY = sessionStorage.getItem('usersPageScrollY');
+    if (savedScrollY && scrollRef.current) {
+      setTimeout(() => {
+        scrollRef.current!.scrollTop = parseInt(savedScrollY, 10);
+      }, 0);
+      sessionStorage.removeItem('usersPageScrollY');
+    }
+  }, [users]);
+
   const handleUserAction = () => {
     fetchUsers();
     setSelectedUser(null);
@@ -167,6 +178,9 @@ export default function UsersPage() {
 
   const handleRowClick = (userItem: BusinessUser) => {
     if (userItem.user?.id && userItem.role === 'TEACHER') {
+
+      sessionStorage.setItem('usersPageScrollY', scrollRef.current?.scrollTop.toString() || '0');
+
       setSelectedTeacherUser({
         id: userItem.user.id,
         name: userItem.user.name || '',
@@ -263,7 +277,7 @@ export default function UsersPage() {
             />
           </div>
           
-          <div className="overflow-y-auto">
+          <div ref={scrollRef} className="overflow-y-auto">
             {filteredUserRows.length === 0 ? (
               <div className="p-8 text-center text-gray-500">
                 No users match your search/filter.

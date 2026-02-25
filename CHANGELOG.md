@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## Version [1.1.31] - scroll positioning on Users Page
+**P.R Raised by** : shubh404-SE
+**Date** : 2026-02-25
+
+### Added
+- Preserved scroll position and filter role on Users page using `sessionStorage` when navigating to teacher profile.
+
+---
 
 ## Version [1.1.30] - Teacher profile field validation
 **P.R Raised by** : shubh404-SE
@@ -29,6 +37,7 @@ All notable changes to this project will be documented in this file.
     - `components/dashboard/AdminDashboard.tsx`
     - `components/dashboard/TeacherDashboard.tsx`
     - `components/dashboard/StudentDashboard.tsx`
+- Preserved scroll position on Users page using `sessionStorage` when navigating to teacher profile.
 
 ---
 
