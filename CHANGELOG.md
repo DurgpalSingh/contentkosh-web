@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+
+## Version [1.1.30] - Teacher profile field validation
+**P.R Raised by** : shubh404-SE
+**Date** : 2026-02-25
+
+### Added
+- **Validation for mondatory fields**:
+  - Added reusable 'validateProfessionalStep' validation function to validate teacher priofile professional fields
+  - Used in both CreateTeacherProfileModal and EditTeacherProfileModal
+
+---
+
 ## Version [1.1.29] - Dashboard API Integration & UI Refresh
 **P.R Raised by** : shubh404-SE
 **Date** : 2026-02-24

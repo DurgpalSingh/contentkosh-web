@@ -162,3 +162,44 @@ export function validatePassword(password: string): string | null {
     return null;
 }
 
+/**
+ * Validation errors for professional step of teacher profile.
+ */
+export interface ProfessionalStepErrors {
+  qualification?: string;
+  experienceYears?: string;
+  designation?: string;
+}
+
+/**
+ * Validates professional step fields for teacher profile.
+ * 
+ * @param qualification The teacher's qualification
+ * @param experienceYears The teacher's years of experience
+ * @param designation The teacher's designation
+ * @returns An object with validation errors, or an empty object if valid
+ */
+export function validateProfessionalStep(
+  qualification: string,
+  experienceYears: number | string,
+  designation: string
+): ProfessionalStepErrors {
+  const errors: ProfessionalStepErrors = {};
+
+  if (!qualification.trim()) {
+    errors.qualification = 'Qualification is required';
+  }
+
+  if (experienceYears === '' || experienceYears === null) {
+    errors.experienceYears = 'Experience is required';
+  } else if (typeof experienceYears === 'number' && experienceYears < 0) {
+    errors.experienceYears = 'Experience cannot be negative';
+  }
+
+  if (!designation.trim()) {
+    errors.designation = 'Designation is required';
+  }
+
+  return errors;
+}
+

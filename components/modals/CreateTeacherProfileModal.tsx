@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, UserCircle2, Briefcase, MapPin, CheckCircle2 } from 'lucide-react';
+import { X, UserCircle2, Briefcase, MapPin, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { TeachersService, CreateTeacherRequest, Gender, User } from '@/lib/api';
+import { validateProfessionalStep, ProfessionalStepErrors } from '@/lib/validation';
 import { LanguageInputChips } from './LanguageInputChips';
 
 interface CreateTeacherProfileModalProps {
@@ -26,9 +27,10 @@ export function CreateTeacherProfileModal({
   const [step, setStep] = useState<'professional' | 'personal'>('professional');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [validationErrors, setValidationErrors] = useState<ProfessionalStepErrors>({});
 
   const [qualification, setQualification] = useState('');
-  const [experienceYears, setExperienceYears] = useState(0);
+  const [experienceYears, setExperienceYears] = useState<number | ''>('');
   const [designation, setDesignation] = useState('');
   const [bio, setBio] = useState('');
   const [languages, setLanguages] = useState<string[]>([]);
@@ -51,7 +53,7 @@ export function CreateTeacherProfileModal({
   const resetForm = () => {
     setStep('professional');
     setQualification('');
-    setExperienceYears(0);
+    setExperienceYears('');
     setDesignation('');
     setBio('');
     setLanguages([]);
@@ -59,6 +61,21 @@ export function CreateTeacherProfileModal({
     setDob('');
     setAddress('');
     setError(null);
+    setValidationErrors({});
+  };
+
+  const validateProfessionalFields = (): boolean => {
+    const errors = validateProfessionalStep(qualification, experienceYears, designation);
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleNextStep = () => {
+    if (validateProfessionalFields()) {
+      setValidationErrors({});
+      setError(null);
+      setStep('personal');
+    }
   };
 
   const handleSubmit = async () => {
@@ -88,7 +105,7 @@ export function CreateTeacherProfileModal({
         businessId,
         professional: {
           qualification: qualification.trim(),
-          experienceYears: parseInt(experienceYears.toString(), 10),
+          experienceYears: typeof experienceYears === 'number' ? experienceYears : parseInt(experienceYears.toString(), 10),
           designation: designation.trim(),
           ...(bio.trim() && { bio: bio.trim() }),
           ...(languages.length > 0 && { languages }),
@@ -117,6 +134,32 @@ export function CreateTeacherProfileModal({
   const handleClose = () => {
     resetForm();
     onClose();
+  };
+
+  const clearFieldError = (fieldName: keyof ProfessionalStepErrors) => {
+    if (validationErrors[fieldName]) {
+      setValidationErrors(prev => {
+        const updated = { ...prev };
+        delete updated[fieldName];
+        return updated;
+      });
+    }
+  };
+
+  const handleQualificationChange = (value: string) => {
+    setQualification(value);
+    clearFieldError('qualification');
+  };
+
+  const handleExperienceYearsChange = (value: string) => {
+    const val = value === '' ? '' : parseInt(value, 10);
+    setExperienceYears(val);
+    clearFieldError('experienceYears');
+  };
+
+  const handleDesignationChange = (value: string) => {
+    setDesignation(value);
+    clearFieldError('designation');
   };
 
   if (!isOpen) return null;
@@ -182,11 +225,21 @@ export function CreateTeacherProfileModal({
                 <Input
                   type="text"
                   value={qualification}
-                  onChange={(e) => setQualification(e.target.value)}
+                  onChange={(e) => handleQualificationChange(e.target.value)}
                   placeholder="e.g., B.Tech, M.Sc"
-                  className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:opacity-70'
+                  className={`w-full px-4 py-2 border rounded-lg transition-colors disabled:opacity-70 ${
+                    validationErrors.qualification 
+                      ? 'border-red-400 focus:ring-2 focus:ring-red-500 focus:border-red-500' 
+                      : 'border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+                  }`}
                   disabled={loading}
                 />
+                {validationErrors.qualification && (
+                  <div className="flex items-center gap-1.5 mt-1.5 text-red-600 text-sm">
+                    <AlertCircle className="h-3.5 w-3.5" />
+                    {validationErrors.qualification}
+                  </div>
+                )}
               </div>
 
               <div>
@@ -197,10 +250,21 @@ export function CreateTeacherProfileModal({
                   type="number"
                   min="0"
                   value={experienceYears}
-                  onChange={(e) => setExperienceYears(parseInt(e.target.value, 10) || 0)}
-                  className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:opacity-70'
+                  onChange={(e) => handleExperienceYearsChange(e.target.value)}
+                  placeholder="0"
+                  className={`w-full px-4 py-2 border rounded-lg transition-colors disabled:opacity-70 ${
+                    validationErrors.experienceYears 
+                      ? 'border-red-400 focus:ring-2 focus:ring-red-500 focus:border-red-500' 
+                      : 'border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+                  }`}
                   disabled={loading}
                 />
+                {validationErrors.experienceYears && (
+                  <div className="flex items-center gap-1.5 mt-1.5 text-red-600 text-sm">
+                    <AlertCircle className="h-3.5 w-3.5" />
+                    {validationErrors.experienceYears}
+                  </div>
+                )}
               </div>
 
               <div>
@@ -210,11 +274,21 @@ export function CreateTeacherProfileModal({
                 <Input
                   type="text"
                   value={designation}
-                  onChange={(e) => setDesignation(e.target.value)}
+                  onChange={(e) => handleDesignationChange(e.target.value)}
                   placeholder="e.g., Senior Teacher, Lecturer"
-                  className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:opacity-70'
+                  className={`w-full px-4 py-2 border rounded-lg transition-colors disabled:opacity-70 ${
+                    validationErrors.designation 
+                      ? 'border-red-400 focus:ring-2 focus:ring-red-500 focus:border-red-500' 
+                      : 'border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+                  }`}
                   disabled={loading}
                 />
+                {validationErrors.designation && (
+                  <div className="flex items-center gap-1.5 mt-1.5 text-red-600 text-sm">
+                    <AlertCircle className="h-3.5 w-3.5" />
+                    {validationErrors.designation}
+                  </div>
+                )}
               </div>
 
               <div>
@@ -298,7 +372,7 @@ export function CreateTeacherProfileModal({
             {step === 'professional' ? (
               <Button
                 type="button"
-                onClick={() => setStep('personal')}
+                onClick={handleNextStep}
                 className="bg-blue-600 hover:bg-blue-700 text-white"
                 disabled={loading}
               >
