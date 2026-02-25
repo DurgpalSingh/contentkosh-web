@@ -1,19 +1,94 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useTeacherStore } from '@/store/useTeacherStore';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Button } from '@/components/ui/button';
-import { UsersService, BusinessUser } from '@/lib/api';
+import { UsersService, BusinessUser, User } from '@/lib/api';
 import { ApiError } from '@/lib/api/core/ApiError';
-import { Users, Mail, Calendar, Shield, User as UserIcon, Edit, ChevronRight } from 'lucide-react';
+import { Users, Mail, Calendar, Shield, User as UserIcon, Edit } from 'lucide-react';
+import { UsersFilterBar, RoleFilter } from '@/components/dashboard/users/UsersFilterBar';
 
 import { DeleteConfirmModal } from '@/components/modals/DeleteConfirmModal';
 import { EditUserModal } from '@/components/modals/EditUserModal';
 import { AddUserModal } from '@/components/modals/AddUserModal';
 import { CreateUserRequest } from '@/lib/api';
+
+type UserIndex = {
+  usersByKey: Map<string, BusinessUser>;
+  keysByRole: Map<RoleFilter, string[]>;
+  searchableByKey: Map<string, string>;
+  exactKeysByTerm: Map<string, Set<string>>;
+};
+
+const ROLE_FILTER_OPTIONS: RoleFilter[] = [
+  'ALL',
+  BusinessUser.role.ADMIN,
+  BusinessUser.role.SUPERADMIN,
+  BusinessUser.role.TEACHER,
+  BusinessUser.role.STUDENT,
+];
+
+const normalize = (value: string | number | undefined | null): string =>
+  String(value ?? '').trim().toLowerCase();
+
+const getUserKey = (userItem: BusinessUser, index: number): string =>
+  `${userItem.user?.id ?? 'nouser'}-${userItem.id ?? index}`;
+
+function buildUserIndex(users: BusinessUser[]): UserIndex {
+  const usersByKey = new Map<string, BusinessUser>();
+  const keysByRole = new Map<RoleFilter, string[]>([['ALL', []]]);
+  const searchableByKey = new Map<string, string>();
+  const exactKeysByTerm = new Map<string, Set<string>>();
+
+  users.forEach((userItem, index) => {
+    const key = getUserKey(userItem, index);
+    const role = userItem.role ?? BusinessUser.role.STUDENT;
+    const name = normalize(userItem.user?.name);
+    const email = normalize(userItem.user?.email);
+    const mobile = normalize(userItem.user?.mobile);
+
+    usersByKey.set(key, userItem);
+    searchableByKey.set(key, `${name} ${email} ${mobile} ${normalize(role)}`.trim());
+    keysByRole.get('ALL')?.push(key);
+
+    if (!keysByRole.has(role)) {
+      keysByRole.set(role, []);
+    }
+    keysByRole.get(role)?.push(key);
+
+    [name, email, mobile].filter(Boolean).forEach((term) => {
+      if (!exactKeysByTerm.has(term)) {
+        exactKeysByTerm.set(term, new Set());
+      }
+      exactKeysByTerm.get(term)?.add(key);
+    });
+  });
+
+  return { usersByKey, keysByRole, searchableByKey, exactKeysByTerm };
+}
+
+function getFilteredKeys(index: UserIndex, query: string, role: RoleFilter): string[] {
+  const normalizedQuery = normalize(query);
+  const roleScopedKeys = index.keysByRole.get(role) ?? [];
+
+  if (!normalizedQuery) {
+    return roleScopedKeys;
+  }
+
+  const exactMatchedKeys = index.exactKeysByTerm.get(normalizedQuery);
+  if (exactMatchedKeys) {
+    return roleScopedKeys.filter((key) => exactMatchedKeys.has(key));
+  }
+
+  const terms = normalizedQuery.split(/\s+/).filter(Boolean);
+  return roleScopedKeys.filter((key) => {
+    const searchableText = index.searchableByKey.get(key) ?? '';
+    return terms.every((term) => searchableText.includes(term));
+  });
+}
 
 export default function UsersPage() {
   const { user, business, isAuthenticated, isLoading, isInitialized } = useAuthStore();
@@ -22,6 +97,8 @@ export default function UsersPage() {
   const [users, setUsers] = useState<BusinessUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedRole, setSelectedRole] = useState<RoleFilter>('ALL');
 
   const [isAddAdminModalOpen, setIsAddAdminModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -95,11 +172,23 @@ export default function UsersPage() {
         name: userItem.user.name || '',
         email: userItem.user.email || '',
         mobile: userItem.user.mobile,
-        role: userItem?.role,
+        role: User.role.TEACHER,
       });
       router.push(`${window.location.pathname}/teacher/${userItem.user.id}`);
     }
   };
+
+  const userIndex = useMemo(() => buildUserIndex(users), [users]);
+
+  const filteredUserRows = useMemo(() => {
+    const keys = getFilteredKeys(userIndex, searchQuery, selectedRole);
+    return keys
+      .map((key) => {
+        const userItem = userIndex.usersByKey.get(key);
+        return userItem ? { key, user: userItem } : null;
+      })
+      .filter((item): item is { key: string; user: BusinessUser } => Boolean(item));
+  }, [userIndex, searchQuery, selectedRole]);
 
   if (!isInitialized || isLoading) {
     return (
@@ -161,24 +250,37 @@ export default function UsersPage() {
         </div>
       ) : (
         <div className="bg-white shadow rounded-lg flex flex-col h-[calc(100vh-220px)]">
-          <div className="px-6 py-4 border-b border-gray-200 flex-shrink-0">
+          <div className="px-6 py-4 border-b border-gray-200 flex-shrink-0 space-y-4">
             <h3 className="text-lg font-medium text-gray-900">
-              All Users ({users.length})
+              All Users ({filteredUserRows.length})
             </h3>
+            <UsersFilterBar
+              searchQuery={searchQuery}
+              selectedRole={selectedRole}
+              roleOptions={ROLE_FILTER_OPTIONS}
+              onSearchQueryChange={setSearchQuery}
+              onRoleChange={setSelectedRole}
+            />
           </div>
           
           <div className="overflow-y-auto">
-            <div className="divide-y divide-gray-200">
-              {users && users.map((businessUser) => (
-                <UserRowComponent
-                  key={businessUser.id}
-                  user={businessUser}
-                  onRowClick={() => handleRowClick(businessUser)}
-                  onEdit={() => handleEditClick(businessUser)}
-                  onDelete={() => handleDeleteClick(businessUser)}
-                />
-              ))}
-            </div>
+            {filteredUserRows.length === 0 ? (
+              <div className="p-8 text-center text-gray-500">
+                No users match your search/filter.
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-200">
+                {filteredUserRows.map((row) => (
+                  <UserRowComponent
+                    key={row.key}
+                    user={row.user}
+                    onRowClick={() => handleRowClick(row.user)}
+                    onEdit={() => handleEditClick(row.user)}
+                    onDelete={() => handleDeleteClick(row.user)}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
