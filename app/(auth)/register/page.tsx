@@ -81,11 +81,8 @@ export default function RegisterPage() {
 
       const response = await authApi.register(registerData);
 
-      if (response.user && response.token) {
-        // 2. Set Token
-        authApi.setToken(response.token);
-
-        // 3. Create Business
+      if (response.user) {
+        // 2. Create Business
         try {
           const businessData: CreateBusinessRequest = {
             instituteName: data.instituteName,
@@ -99,15 +96,15 @@ export default function RegisterPage() {
 
           await BusinessService.postApiBusiness(businessParams);
 
-          // 4. Update local state
+          // 3. Update local state
           const loginResponse = await authApi.login({
             email: data.email,
             password: data.password
           });
 
-          if (loginResponse.user && loginResponse.token) {
+          if (loginResponse.user) {
             const businessResponse = await authApi.getBusiness();
-            login(loginResponse.user, businessResponse, loginResponse.token);
+            login(loginResponse.user, businessResponse);
 
             // 5. Redirect
             // User requested "recieve their slugs in url". 
@@ -120,7 +117,7 @@ export default function RegisterPage() {
           } else {
             // Fallback if login fails strictly speaking shouldn't happen
             const businessResponse = await authApi.getBusiness();
-            login(response.user, businessResponse, response.token);
+            login(response.user, businessResponse);
             router.push(ROUTES.DASHBOARD);
           }
 

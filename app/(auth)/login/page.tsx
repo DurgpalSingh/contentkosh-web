@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -23,6 +23,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login, setProfile } = useAuthStore();
 
   const {
@@ -32,6 +33,14 @@ export default function LoginPage() {
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
   });
+  // ttrack from where the user is coming from to redirect them back after login
+  const getSafeNextPath = (): string | null => {
+    const nextPath = searchParams.get('next');
+    if (!nextPath) return null;
+    if (!nextPath.startsWith('/')) return null;
+    if (nextPath.startsWith('//')) return null;
+    return nextPath;
+  };
 
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
@@ -39,9 +48,9 @@ export default function LoginPage() {
 
     try {
       const response = await authApi.login(data as LoginRequest);
-
-      if (response.user && response.token) {
-        login(response.user, null, response.token);
+      console.log('Login response:', response);
+      if (response.user) {
+        login(response.user, null);
 
         const profile = await authApi.getProfile();
         if (profile) {
@@ -49,9 +58,11 @@ export default function LoginPage() {
         }
 
         if (profile?.business?.slug) {
-          router.push(`/${profile.business.slug}/dashboard`);
+          const safeNextPath = getSafeNextPath();
+          router.push(safeNextPath || `/${profile.business.slug}/dashboard`);
         } else {
-          router.push(ROUTES.DASHBOARD);
+          const safeNextPath = getSafeNextPath();
+          router.push(safeNextPath || ROUTES.DASHBOARD);
         }
       } else {
         setError('Invalid response from server');

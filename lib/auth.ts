@@ -4,17 +4,28 @@ import { OpenAPI } from '@/lib/api';
 
 // Configure the API base URL
 OpenAPI.BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+OpenAPI.WITH_CREDENTIALS = true;
+OpenAPI.CREDENTIALS = 'include';
+
+function getUserFromAuthResponse(response: unknown): User | undefined {
+  if (!response || typeof response !== 'object') return undefined;
+  const data = (response as { data?: unknown }).data;
+  if (!data || typeof data !== 'object') return undefined;
+
+  if ('user' in data && (data as { user?: unknown }).user && typeof (data as { user?: unknown }).user === 'object') {
+    return (data as { user?: User }).user;
+  }
+
+  return data as User;
+}
 
 export const authApi = {
   login: async (credentials: LoginRequest): Promise<AuthResponse> => {
     try {
       const response = await AuthService.postApiAuthLogin(credentials);
-      if (response.data?.refreshToken) {
-        authApi.setRefreshToken(response.data.refreshToken);
-      }
+      const user = getUserFromAuthResponse(response);
       return {
-        user: response.data?.user as User,
-        token: response.data?.accessToken,
+        user,
       };
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
@@ -28,12 +39,9 @@ export const authApi = {
       console.log('Attempting registration with data:', data);
       const response = await AuthService.postApiAuthSignup(data);
       console.log('Registration response received:', response);
-      if (response.data?.refreshToken) {
-        authApi.setRefreshToken(response.data.refreshToken);
-      }
+      const user = getUserFromAuthResponse(response);
       return {
-        user: response.data?.user as User,
-        token: response.data?.accessToken,
+        user,
       };
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
@@ -69,53 +77,11 @@ export const authApi = {
     }
   },
 
-  setToken: (token: string) => {
-    OpenAPI.TOKEN = token;
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('token', token);
-    }
-  },
-
-  getToken: (): string | undefined => {
-    if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('token');
-      return token || undefined;
-    }
-    return typeof OpenAPI.TOKEN === 'string' ? OpenAPI.TOKEN : undefined;
-  },
-
-  setRefreshToken: (token: string) => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('refreshToken', token);
-    }
-  },
-
-  getRefreshToken: (): string | undefined => {
-    if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('refreshToken');
-      return token || undefined;
-    }
-    return undefined;
-  },
-
-  clearTokens: () => {
-    OpenAPI.TOKEN = undefined;
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('token');
-      localStorage.removeItem('refreshToken');
-    }
-  },
-
   logout: async (): Promise<void> => {
-    const refreshToken = authApi.getRefreshToken();
     try {
-      if (refreshToken) {
-        await AuthService.postApiAuthLogout({ refreshToken });
-      }
+      await AuthService.postApiAuthLogout();
     } catch (e) {
       console.error('Error during logout:', e);
-    } finally {
-      authApi.clearTokens();
     }
   },
 };

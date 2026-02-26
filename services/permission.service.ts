@@ -1,4 +1,3 @@
-import { authApi } from '@/lib/auth';
 import { API_BASE_URL } from '@/lib/constants';
 
 class PermissionService {
@@ -20,9 +19,9 @@ class PermissionService {
         try {
             const response = await fetch(`${this.baseUrl}`, {
                 headers: {
-                    'Authorization': `Bearer ${authApi.getToken()}`,
                     'Content-Type': 'application/json',
                 },
+                credentials: 'include',
             });
 
             if (!response.ok) {

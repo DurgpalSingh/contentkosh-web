@@ -132,13 +132,12 @@ export class ContentsService {
         // Use direct fetch because generated request utility does not expose responseType easily
         return new CancelablePromise(async (resolve, reject, onCancel) => {
             try {
-                const token = typeof OpenAPI.TOKEN === 'string' ? OpenAPI.TOKEN : undefined as any;
                 const controller = new AbortController();
                 onCancel(() => controller.abort());
                 const url = `${OpenAPI.BASE}/api/contents/${encodeURIComponent(String(contentId))}/file`;
                 const res = await fetch(url, {
                     method: 'GET',
-                    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+                    credentials: OpenAPI.CREDENTIALS,
                     signal: controller.signal,
                 });
                 if (!res.ok) {

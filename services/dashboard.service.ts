@@ -1,4 +1,3 @@
-import { authApi } from '@/lib/auth';
 import { API_BASE_URL } from '@/lib/constants';
 import { DashboardData } from '@/types/dashboard';
 
@@ -27,9 +26,9 @@ class DashboardService {
     const response = await fetch(this.baseUrl, {
       method: 'GET',
       headers: {
-        Authorization: `Bearer ${authApi.getToken()}`,
         'Content-Type': 'application/json',
       },
+      credentials: 'include',
       cache: 'no-store',
     });
 
