@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## Version [1.1.32] - Teacher professional field validation hardening
+**P.R Raised by** : shubh404-SE
+**Date** : 2026-02-27
+
+### Changed
+- **Teacher profile validation (Create/Edit modals)**:
+  - Updated `validateProfessionalStep` to use `validateEntityName` for:
+    - `qualification` with max length `100`
+    - `designation` with max length `100`
+  - Added realistic experience validation for `experienceYears`:
+    - required, whole number, min `0`, max `50` realstic
+
+---
+
 ## Version [1.1.31] - scroll positioning on Users Page
 **P.R Raised by** : shubh404-SE
 **Date** : 2026-02-25
