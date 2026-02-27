@@ -171,6 +171,8 @@ export interface ProfessionalStepErrors {
   designation?: string;
 }
 
+const MAX_TEACHER_EXPERIENCE_YEARS = 50;
+
 /**
  * Validates professional step fields for teacher profile.
  * 
@@ -186,18 +188,28 @@ export function validateProfessionalStep(
 ): ProfessionalStepErrors {
   const errors: ProfessionalStepErrors = {};
 
-  if (!qualification.trim()) {
-    errors.qualification = 'Qualification is required';
+  const qualificationError = validateEntityName(qualification, 'Qualification', 100);
+  if (qualificationError) {
+    errors.qualification = qualificationError;
   }
 
   if (experienceYears === '' || experienceYears === null) {
     errors.experienceYears = 'Experience is required';
-  } else if (typeof experienceYears === 'number' && experienceYears < 0) {
+  } else {
+    const parsedExperience = typeof experienceYears === 'number' ? experienceYears : Number(experienceYears);
+
+    if (!Number.isFinite(parsedExperience) || !Number.isInteger(parsedExperience)) {
+      errors.experienceYears = 'Experience must be a valid whole number';
+    } else if (parsedExperience < 0) {
     errors.experienceYears = 'Experience cannot be negative';
+    } else if (parsedExperience > MAX_TEACHER_EXPERIENCE_YEARS) {
+      errors.experienceYears = `Experience cannot be unrealistic`;
+    }
   }
 
-  if (!designation.trim()) {
-    errors.designation = 'Designation is required';
+  const designationError = validateEntityName(designation, 'Designation', 100);
+  if (designationError) {
+    errors.designation = designationError;
   }
 
   return errors;

@@ -79,14 +79,8 @@ export function CreateTeacherProfileModal({
   };
 
   const handleSubmit = async () => {
-    if (!qualification.trim()) {
-      setError('Qualification is required');
-      setStep('professional');
-      return;
-    }
-
-    if (!designation.trim()) {
-      setError('Designation is required');
+    if (!validateProfessionalFields()) {
+      setError('Please fix the highlighted professional details');
       setStep('professional');
       return;
     }
@@ -100,12 +94,16 @@ export function CreateTeacherProfileModal({
     setError(null);
 
     try {
+      const normalizedExperienceYears = typeof experienceYears === 'number'
+        ? experienceYears
+        : Number(experienceYears);
+
       const request: CreateTeacherRequest = {
         userId: user.id,
         businessId,
         professional: {
           qualification: qualification.trim(),
-          experienceYears: typeof experienceYears === 'number' ? experienceYears : parseInt(experienceYears.toString(), 10),
+          experienceYears: normalizedExperienceYears,
           designation: designation.trim(),
           ...(bio.trim() && { bio: bio.trim() }),
           ...(languages.length > 0 && { languages }),
@@ -249,6 +247,7 @@ export function CreateTeacherProfileModal({
                 <Input
                   type="number"
                   min="0"
+                  max="50"
                   value={experienceYears}
                   onChange={(e) => handleExperienceYearsChange(e.target.value)}
                   placeholder="0"

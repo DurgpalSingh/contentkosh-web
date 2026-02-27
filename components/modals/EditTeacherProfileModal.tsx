@@ -79,14 +79,8 @@ export function EditTeacherProfileModal({
   };
 
   const handleSubmit = async () => {
-    if (!qualification.trim()) {
-      setError('Qualification is required');
-      setStep('professional');
-      return;
-    }
-
-    if (!designation.trim()) {
-      setError('Designation is required');
+    if (!validateProfessionalFields()) {
+      setError('Please fix the highlighted professional details');
       setStep('professional');
       return;
     }
@@ -95,12 +89,16 @@ export function EditTeacherProfileModal({
     setError(null);
 
     try {
+      const normalizedExperienceYears = typeof experienceYears === 'number'
+        ? experienceYears
+        : Number(experienceYears);
+
       const request: UpdateTeacherRequest = {
         userId: teacher.userId || 0,
         businessId: teacher.businessId || 0,
         professional: {
           qualification: qualification.trim(),
-          experienceYears: typeof experienceYears === 'number' ? experienceYears : parseInt(experienceYears.toString(), 10),
+          experienceYears: normalizedExperienceYears,
           designation: designation.trim(),
           ...(bio.trim() && { bio: bio.trim() }),
           ...(languages.length > 0 && { languages }),
@@ -244,6 +242,7 @@ export function EditTeacherProfileModal({
                 <Input
                   type="number"
                   min="0"
+                  max="50"
                   value={experienceYears}
                   onChange={(e) => handleExperienceYearsChange(e.target.value)}
                   placeholder="0"
