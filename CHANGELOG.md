@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## Version [1.1.33] - add Batch Modal blocker
+**P.R Raised by** : shubh404-SE on **Date** : 2026-02-28
+
+### Changed
+- **AddBatchModal.tsx**:
+  - Updated Modal to open it even there is no course.
+  - Showing no course error at top of modal.
+- **Batch Card**
+  - showing All Members of a Batch not just Students.
+
+
+---
 ## Version [1.1.32] - Teacher professional field validation hardening
 **P.R Raised by** : shubh404-SE
 **Date** : 2026-02-27

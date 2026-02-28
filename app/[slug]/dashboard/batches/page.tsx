@@ -330,7 +330,7 @@ export default function BatchesPage() {
       />
 
       {/* Add Batch Modal */}
-      {selectedCourseForAdd && isAddBatchModalOpen && (
+      {isAddBatchModalOpen && (
         <AddBatchModal
           isOpen={isAddBatchModalOpen}
           courses={courses}
