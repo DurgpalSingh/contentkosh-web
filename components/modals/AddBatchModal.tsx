@@ -121,6 +121,7 @@ export function AddBatchModal({
     };
 
     if (!isOpen) return null;
+    const noCoursesAvailable = courses.length === 0;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -154,6 +155,12 @@ export function AddBatchModal({
                         </div>
                     )}
 
+                    {noCoursesAvailable && (
+                        <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg text-sm">
+                            You first need to create a course.
+                        </div>
+                    )}
+
                     <div className="space-y-1.5">
                         <Label htmlFor="batch-course">
                             Course <span className="text-red-500">*</span>
@@ -162,7 +169,7 @@ export function AddBatchModal({
                             id="batch-course"
                             value={selectedCourseId || ''}
                             onChange={(e) => setSelectedCourseId(Number(e.target.value))}
-                            disabled={loading || courses.length === 0}
+                            disabled={loading || noCoursesAvailable}
                             className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             {courses.length === 0 && <option value="">No courses available</option>}
@@ -253,7 +260,7 @@ export function AddBatchModal({
                         <Button
                             type="submit"
                             className="bg-purple-600 hover:bg-purple-700 text-white"
-                            disabled={loading}
+                            disabled={loading || noCoursesAvailable}
                         >
                             {loading ? (
                                 <>
