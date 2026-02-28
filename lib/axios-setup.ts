@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { AuthService } from '@/lib/api';
+import { ROUTES } from '@/lib/constants';
 
 let isRefreshing = false;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -55,7 +56,7 @@ export const setupAxiosInterceptors = () => {
                 } catch (err) {
                     processQueue(err);
                     // If refresh fails, redirect user to login
-                    window.location.href = '/login'; // Redirect to login
+                    window.location.href = ROUTES.LOGIN;
                     return Promise.reject(err);
                 } finally {
                     isRefreshing = false;

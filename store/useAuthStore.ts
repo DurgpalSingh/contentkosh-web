@@ -118,27 +118,41 @@ export const useAuthStore = create<AuthState>()(
           console.log('Successfully initialized auth from cookie session');
         };
 
+        const setUnauthenticatedState = () => {
+          console.log('No active cookie session found, setting not authenticated');
+          set({
+            isLoading: false,
+            isInitialized: true,
+            isAuthenticated: false,
+            user: null,
+            business: null,
+            permissions: []
+          });
+        };
+
         initializeAuthPromise = (async () => {
-          try {
-            console.log('Attempting to initialize auth from cookie session');
-            await hydrateSession();
-          } catch {
-            try {
-              console.log('Access session missing/expired. Attempting refresh.');
-              await AuthService.postApiAuthRefresh({} as { refreshToken: string });
-              await hydrateSession();
-            } catch {
-              console.log('No active cookie session found, setting not authenticated');
-              set({
-                isLoading: false,
-                isInitialized: true,
-                isAuthenticated: false,
-                user: null,
-                business: null,
-                permissions: []
-              });
-            }
+          console.log('Attempting to initialize auth from cookie session');
+          const hydratedWithoutRefresh = await hydrateSession()
+            .then(() => true)
+            .catch(() => false);
+
+          if (hydratedWithoutRefresh) {
+            return;
           }
+
+          console.log('Access session missing/expired. Attempting refresh.');
+          const refreshed = await AuthService.postApiAuthRefresh({} as { refreshToken: string })
+            .then(() => true)
+            .catch(() => false);
+
+          if (!refreshed) {
+            setUnauthenticatedState();
+            return;
+          }
+
+          await hydrateSession().catch(() => {
+            setUnauthenticatedState();
+          });
         })();
 
         try {
