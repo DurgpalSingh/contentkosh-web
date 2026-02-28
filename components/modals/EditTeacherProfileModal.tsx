@@ -22,6 +22,9 @@ export function EditTeacherProfileModal({
   teacher,
   onProfileUpdated,
 }: EditTeacherProfileModalProps) {
+  const MAX_TEXT_LENGTH = 100;
+  const MAX_EXPERIENCE_YEARS = 50;
+
   const [step, setStep] = useState<'professional' | 'personal'>('professional');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -220,6 +223,7 @@ export function EditTeacherProfileModal({
                   value={qualification}
                   onChange={(e) => handleQualificationChange(e.target.value)}
                   placeholder="e.g., B.Tech, M.Sc"
+                  maxLength={MAX_TEXT_LENGTH}
                   className={`w-full px-4 py-2 border rounded-lg transition-colors disabled:opacity-70 ${
                     validationErrors.qualification 
                       ? 'border-red-400 focus:ring-2 focus:ring-red-500 focus:border-red-500' 
@@ -227,6 +231,7 @@ export function EditTeacherProfileModal({
                   }`}
                   disabled={loading}
                 />
+                <p className="mt-1 text-xs text-gray-500">{qualification.length}/{MAX_TEXT_LENGTH} characters</p>
                 {validationErrors.qualification && (
                   <div className="flex items-center gap-1.5 mt-1.5 text-red-600 text-sm">
                     <AlertCircle className="h-3.5 w-3.5" />
@@ -242,7 +247,7 @@ export function EditTeacherProfileModal({
                 <Input
                   type="number"
                   min="0"
-                  max="50"
+                  max={MAX_EXPERIENCE_YEARS}
                   value={experienceYears}
                   onChange={(e) => handleExperienceYearsChange(e.target.value)}
                   placeholder="0"
@@ -253,6 +258,7 @@ export function EditTeacherProfileModal({
                   }`}
                   disabled={loading}
                 />
+                <p className="mt-1 text-xs text-gray-500">Allowed range: 0 to {MAX_EXPERIENCE_YEARS} years</p>
                 {validationErrors.experienceYears && (
                   <div className="flex items-center gap-1.5 mt-1.5 text-red-600 text-sm">
                     <AlertCircle className="h-3.5 w-3.5" />
@@ -270,6 +276,7 @@ export function EditTeacherProfileModal({
                   value={designation}
                   onChange={(e) => handleDesignationChange(e.target.value)}
                   placeholder="e.g., Senior Teacher, Lecturer"
+                  maxLength={MAX_TEXT_LENGTH}
                   className={`w-full px-4 py-2 border rounded-lg transition-colors disabled:opacity-70 ${
                     validationErrors.designation 
                       ? 'border-red-400 focus:ring-2 focus:ring-red-500 focus:border-red-500' 
@@ -277,6 +284,7 @@ export function EditTeacherProfileModal({
                   }`}
                   disabled={loading}
                 />
+                <p className="mt-1 text-xs text-gray-500">{designation.length}/{MAX_TEXT_LENGTH} characters</p>
                 {validationErrors.designation && (
                   <div className="flex items-center gap-1.5 mt-1.5 text-red-600 text-sm">
                     <AlertCircle className="h-3.5 w-3.5" />
