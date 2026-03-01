@@ -1,7 +1,15 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
-## Version [1.1.34] - add Batch Modal blocker
+## Version [1.1.35] - Bussiness logo 
+**P.R Raised by** : shubh404-SE on **Date** : 2026-03-01
+
+### Changed
+  - Updated `DashboardLayout.tsx` to show:
+    - business logo (if available), business name
+    - if business.logo is null/empty, shows a styled icon placeholder.
+
+## Version [1.1.34] - Doc format allowed for content upload
 **P.R Raised by** : shubh404-SE on **Date** : 2026-03-02
 
 ### Changed
@@ -9,6 +17,7 @@ All notable changes to this project will be documented in this file.
   - Centralizes: accepted MIME/extensions, accept file input, label and error message
   - Wired config into Add Content modal, upload-area validation and  content card.
 
+---
 ## Version [1.1.33] - add Batch Modal blocker
 **P.R Raised by** : shubh404-SE on **Date** : 2026-02-28
 
@@ -18,7 +27,6 @@ All notable changes to this project will be documented in this file.
   - Showing no course error at top of modal.
 - **Batch Card**
   - showing All Members of a Batch not just Students.
-
 
 ---
 ## Version [1.1.32] - Teacher professional field validation hardening

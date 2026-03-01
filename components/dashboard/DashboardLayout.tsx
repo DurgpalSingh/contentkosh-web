@@ -33,6 +33,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     if (!logoPath) return null;
 
     // Logo is stored as backend file path (for example: /uploads/content/file.jpg)
+    // TODO: Will change once backend ready.
     const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
     const backendBase = apiBase.replace(/\/api\/?$/, '');
     const normalized = logoPath.replace(/\\/g, '/');
@@ -87,9 +88,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
       <div className="min-w-0">
         <p className="truncate text-sm font-semibold text-slate-900">{displayName}</p>
-        <p className="truncate text-xs text-slate-500">
-          {business?.slug ? `/${business.slug}` : 'Dashboard'}
-        </p>
       </div>
     </div>
   );
