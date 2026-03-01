@@ -3,7 +3,7 @@
 import { BatchUser } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { UserCog, Users } from 'lucide-react';
-import { BatchMemberRole } from './BatchMemberCard';
+import { BatchMemberRole } from '../dashboard/batches/BatchMemberCard';
 
 interface BatchMemberDetailsModalProps {
   member: BatchUser | null;
@@ -17,7 +17,7 @@ export function BatchMemberDetailsModal({ member, role, onClose }: BatchMemberDe
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
       <div
-        className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden"
+        className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden max-h-[90vh] flex flex-col"
         onClick={(event) => event.stopPropagation()}
       >
         <div
@@ -34,7 +34,7 @@ export function BatchMemberDetailsModal({ member, role, onClose }: BatchMemberDe
           </button>
         </div>
 
-        <div className="p-6 space-y-4">
+        <div className="p-6 space-y-4 overflow-y-auto flex-1 min-h-0">
           <div className="flex items-center gap-4">
             <div
               className={`h-16 w-16 rounded-full flex items-center justify-center border-2 ${

@@ -96,7 +96,7 @@ export function AddSubjectModal({
 
             {/* Modal */}
             <div
-                className="relative bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
+                className="relative bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden max-h-[90vh] flex flex-col"
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="add-subject-title"
@@ -119,7 +119,7 @@ export function AddSubjectModal({
                 </div>
 
                 {/* Form */}
-                <form onSubmit={handleSubmit} className="p-6 space-y-5">
+                <form onSubmit={handleSubmit} className="p-6 space-y-5 overflow-y-auto flex-1 min-h-0">
                     {error && (
                         <div
                             role="alert"

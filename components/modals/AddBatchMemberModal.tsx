@@ -190,7 +190,7 @@ export function AddBatchMemberModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40" onClick={handleClose} />
 
-      <div className="relative w-full max-w-md rounded-xl bg-white shadow-lg">
+      <div className="relative w-full max-w-md rounded-xl bg-white shadow-lg max-h-[90vh] overflow-hidden flex flex-col">
         <div className="flex items-center justify-between px-6 py-4 border-b">
           <div>
             <h2 className="text-lg font-semibold">Add {roleLabel} to Batch</h2>
@@ -203,7 +203,7 @@ export function AddBatchMemberModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4 overflow-y-auto flex-1 min-h-0">
           {error && (
             <div className="text-sm text-red-600 bg-red-50 border border-red-200 px-3 py-2 rounded-md">
               {error}

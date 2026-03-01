@@ -1,7 +1,13 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.1.34] - add Batch Modal blocker
+**P.R Raised by** : shubh404-SE on **Date** : 2026-03-01
 
+### Changed
+  - Improved all modal components css to make it scrollable when height increase.
+  
+---
 ## Version [1.1.33] - add Batch Modal blocker
 **P.R Raised by** : shubh404-SE on **Date** : 2026-02-28
 
