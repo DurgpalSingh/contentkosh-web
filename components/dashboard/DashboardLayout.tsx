@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -12,11 +12,10 @@ import {
   User,
   LogOut,
   Bell,
-  ClipboardList,
-  GraduationCap,
-  FileText,
+  Building2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import Image from 'next/image';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -27,6 +26,20 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { user, business, logout, permissions } = useAuthStore();
   const router = useRouter();
   const pathname = usePathname();
+  const displayName = business?.instituteName || 'Contentkosh';
+
+  const logoUrl = useMemo(() => {
+    const logoPath = business?.logo?.trim();
+    if (!logoPath) return null;
+
+    // Logo is stored as backend file path (for example: /uploads/content/file.jpg)
+    // TODO: Will change once backend ready.
+    const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+    const backendBase = apiBase.replace(/\/api\/?$/, '');
+    const normalized = logoPath.replace(/\\/g, '/');
+    const normalizedPath = normalized.startsWith('/') ? normalized : `/${normalized}`;
+    return `${backendBase}${normalizedPath}`;
+  }, [business?.logo]);
 
   // Dynamically rewrite navigation URLs if business slug is present
   const navigation = getNavigationItems(user, permissions).map(item => {
@@ -46,10 +59,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     router.push('/login');
   };
 
-  const getDisplayName = () => {
-    return business?.instituteName || 'Contentkosh';
-  };
-
   const isActiveLink = (href: string) => {
     // If slug is present, href will be /slug/dashboard...
     if (href.endsWith('/dashboard') || href === `/${business?.slug}/dashboard`) {
@@ -59,6 +68,30 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     return pathname?.startsWith(href);
   };
 
+  const BusinessBrand = ({ mobileSidebar = false }: { mobileSidebar?: boolean }) => (
+    <div className="flex min-w-0 items-center gap-3">
+      <div className={`shrink-0 overflow-hidden rounded-xl border border-blue-100 bg-white ${mobileSidebar ? 'h-9 w-9' : 'h-10 w-10'}`}>
+        {logoUrl ? (
+          <Image
+            width={20}
+            height={20}
+            src={logoUrl}
+            alt={`${displayName} logo`}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-100 to-indigo-100">
+            <Building2 className={`${mobileSidebar ? 'h-4 w-4' : 'h-5 w-5'} text-blue-600`} />
+          </div>
+        )}
+      </div>
+
+      <div className="min-w-0">
+        <p className="truncate text-sm font-semibold text-slate-900">{displayName}</p>
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Mobile sidebar */}
@@ -66,7 +99,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         <div className="fixed inset-0 bg-slate-600 bg-opacity-75" onClick={() => setSidebarOpen(false)} />
         <div className="fixed inset-y-0 left-0 flex w-64 flex-col bg-blue-50">
           <div className="flex h-16 items-center justify-between px-4 border-b border-blue-100 bg-white">
-            <h1 className="text-xl font-bold text-slate-900">{getDisplayName()}</h1>
+            <BusinessBrand mobileSidebar />
             <Button
               variant="ghost"
               size="icon"
@@ -129,7 +162,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
         <div className="flex flex-col flex-grow bg-blue-50 border-r border-blue-100">
           <div className="flex h-16 items-center px-5 bg-white border-b border-blue-100 shadow-sm z-10">
-            <h1 className="text-xl font-bold text-slate-800 tracking-tight">{getDisplayName()}</h1>
+            <BusinessBrand />
           </div>
 
           <nav className="flex-1 space-y-1 px-3 py-6">
