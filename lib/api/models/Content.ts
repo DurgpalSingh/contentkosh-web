@@ -32,5 +32,6 @@ export namespace Content {
     export enum type {
         PDF = 'PDF',
         IMAGE = 'IMAGE',
+        DOC = 'DOC',
     }
 }
