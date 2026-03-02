@@ -1,6 +1,14 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.1.36] - Content title validation
+**P.R Raised by** : shubh404-SE on **Date** : 2026-03-02
+
+### Changed
+  - Validated Content title using `validateEntityName`.
+  - Allowed max length of 100
+
+---
 ## Version [1.1.35] - Bussiness logo 
 **P.R Raised by** : shubh404-SE on **Date** : 2026-03-01
 

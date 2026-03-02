@@ -3,7 +3,10 @@
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ContentsService, Content } from '@/lib/api';
+import { ContentsService, Content, UpdateContentRequest } from '@/lib/api';
+import { validateEntityName } from '@/lib/validation';
+import { Input } from '../ui/input';
+import { updateContent } from '../../../contentkosh-backend/src/repositories/content.repo';
 
 interface EditContentModalProps {
   isOpen: boolean;
@@ -33,10 +36,19 @@ export function EditContentModal({ isOpen, onClose, content, onUpdated }: EditCo
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const validationError = validateEntityName(title, 'Content title', 100);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
-      await ContentsService.putApiContents({ contentId: content.id!, requestBody: { title, status } });
+      const body: UpdateContentRequest = {
+        title: title.trim(),
+        status,
+      };
+      await ContentsService.putApiContents({ contentId: content.id!, requestBody: body });
       onUpdated?.();
       onClose();
     } catch (err: unknown) {
@@ -82,7 +94,8 @@ export function EditContentModal({ isOpen, onClose, content, onUpdated }: EditCo
 
           <div>
             <label className="block text-sm font-medium text-slate-700">Title</label>
-            <input value={title} onChange={(e) => setTitle(e.target.value)} className="mt-1 w-full border rounded px-3 py-2" required />
+            <Input value={title} onChange={(e) => setTitle(e.target.value)} className="mt-1 w-full border rounded px-3 py-2" maxLength={100} />
+            <p className="mt-1 text-xs text-gray-500">{title.length}/100 characters</p>
           </div>
 
           <div className="flex justify-end space-x-3 pt-4">
