@@ -38,7 +38,7 @@ export default function ContentsPage() {
 
   const filteredContents = useMemo(() => {
     if (!searchQuery.trim()) return contents;
-    const q = searchQuery.toLowerCase();
+    const q = searchQuery.trim().toLowerCase();
     return contents.filter(c => c.title?.toLowerCase().includes(q));
   }, [contents, searchQuery]);
 
