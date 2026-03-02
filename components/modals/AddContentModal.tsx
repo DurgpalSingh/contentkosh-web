@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { ContentsService, CreateContentRequest } from '@/lib/api';
 import { FileUploadArea } from '../dashboard/contents/FileUploadArea';
 import { CONTENT_UPLOAD_ACCEPT, CONTENT_UPLOAD_LABEL } from '@/lib/content-upload.config';
+import { validateEntityName } from '@/lib/validation';
+import { Input } from '../ui/input';
 
 interface AddContentModalProps {
   isOpen: boolean;
@@ -56,6 +58,15 @@ export function AddContentModal({
       setError('Please select a batch');
       return;
     }
+    if (title.trim().length < 3) {
+      setError('Title must be at least 3 characters long');
+      return;
+    }
+    const validationError = validateEntityName(title, 'Content title', 100);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
     if (!file) {
       setError('Please select a file');
       return;
@@ -66,7 +77,7 @@ export function AddContentModal({
     try {
       const form = new FormData();
       form.append('file', file);
-      form.append('title', title);
+      form.append('title', title.trim());
       if (status) form.append('status', status);
 
       await ContentsService.postApiBatchesContents({
@@ -143,7 +154,8 @@ export function AddContentModal({
 
           <div>
             <label className="block text-sm font-medium text-slate-700">Title <span className="text-red-500">*</span></label>
-            <input value={title} onChange={(e) => setTitle(e.target.value)} className="mt-1 w-full border rounded px-3 py-2" required />
+            <Input value={title} onChange={(e) => setTitle(e.target.value)} className="mt-1 w-full border rounded px-3 py-2" maxLength={100} />
+            <p className="mt-1 text-xs text-gray-500">{title.length}/100 characters</p>
           </div>
 
           <div>
