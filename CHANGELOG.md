@@ -1,6 +1,13 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.1.34] - add Batch Modal blocker
+**P.R Raised by** : shubh404-SE on **Date** : 2026-03-02
+
+### Changed
+  - Added shared upload format config: `content-upload.config.ts`
+  - Centralizes: accepted MIME/extensions, accept file input, label and error message
+  - Wired config into Add Content modal, upload-area validation and  content card.
 
 ## Version [1.1.33] - add Batch Modal blocker
 **P.R Raised by** : shubh404-SE on **Date** : 2026-02-28

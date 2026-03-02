@@ -36,6 +36,7 @@ export function ContentGridCard({ content, onView, onEdit, onDelete }: ContentGr
     const raw = content.type?.toLowerCase() ?? 'file';
     if (raw.includes('pdf')) return { label: 'PDF', Icon: FileText, badge: 'bg-rose-50 text-rose-700 border-rose-200', icon: 'bg-rose-50 text-rose-600' };
     if (raw.includes('image') || raw.includes('jpg') || raw.includes('png')) return { label: 'Image', Icon: FileImage, badge: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: 'bg-emerald-50 text-emerald-600' };
+    if (raw.includes('doc')) return { label: 'DOC', Icon: FileText, badge: 'bg-amber-50 text-amber-700 border-amber-200', icon: 'bg-amber-50 text-amber-600' };
     return { label: content.type || 'File', Icon: FileText, badge: 'bg-blue-50 text-blue-700 border-blue-200', icon: 'bg-blue-50 text-blue-600' };
   })();
 

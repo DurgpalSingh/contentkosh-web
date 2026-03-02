@@ -2,6 +2,11 @@
 
 import { useRef, useState } from 'react';
 import { Upload, FileText, Image as ImageIcon, X } from 'lucide-react';
+import {
+  CONTENT_UPLOAD_ALLOWED_EXTENSIONS,
+  CONTENT_UPLOAD_ERROR_MESSAGE,
+  CONTENT_UPLOAD_LABEL,
+} from '@/lib/content-upload.config';
 
 /**
  * Props for the FileUploadArea component
@@ -33,15 +38,23 @@ export interface FileUploadAreaProps {
  */
 export function validateFileType(file: File, accept: string): boolean {
   const acceptedTypes = accept.split(',').map(t => t.trim());
+  const fileExtension = (() => {
+    const parts = file.name.toLowerCase().split('.');
+    return parts.length > 1 ? `.${parts.pop()}` : '';
+  })();
   
   return acceptedTypes.some(type => {
+    if (type.startsWith('.')) {
+      return fileExtension === type.toLowerCase();
+    }
+
     if (type.endsWith('/*')) {
       // Handle wildcard types like "image/*"
       const prefix = type.slice(0, -2);
       return file.type.startsWith(prefix);
     }
     return file.type === type;
-  });
+  }) || CONTENT_UPLOAD_ALLOWED_EXTENSIONS.includes(fileExtension);
 }
 
 /**
@@ -150,7 +163,7 @@ export function FileUploadArea({
     // Validate file type using validateFileType helper
     if (!validateFileType(file, accept)) {
       // For invalid files: call onError with error message and onChange with null
-      onError?.('Please upload a PDF or Image file');
+      onError?.(CONTENT_UPLOAD_ERROR_MESSAGE);
       onChange(null);
       return;
     }
@@ -286,7 +299,7 @@ export function FileUploadArea({
       >
         {/* Hidden span with instructions for screen readers */}
         <span id="file-upload-instructions" className="sr-only">
-          Accepted file types: PDF and images
+          Accepted file types: {CONTENT_UPLOAD_LABEL}
         </span>
         {/* Empty state - shown when no file is selected */}
         {!value && (
@@ -301,7 +314,7 @@ export function FileUploadArea({
             
             {/* Secondary text indicating accepted file types */}
             <p className="text-sm text-slate-500">
-              PDF or Image files
+              {CONTENT_UPLOAD_LABEL} files
             </p>
           </div>
         )}

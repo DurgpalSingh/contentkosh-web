@@ -5,6 +5,7 @@ import { X, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ContentsService, CreateContentRequest } from '@/lib/api';
 import { FileUploadArea } from '../dashboard/contents/FileUploadArea';
+import { CONTENT_UPLOAD_ACCEPT, CONTENT_UPLOAD_LABEL } from '@/lib/content-upload.config';
 
 interface AddContentModalProps {
   isOpen: boolean;
@@ -146,9 +147,9 @@ export function AddContentModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700">File (PDF or Image) <span className="text-red-500">*</span></label>
+            <label className="block text-sm font-medium text-slate-700">File ({CONTENT_UPLOAD_LABEL}) <span className="text-red-500">*</span></label>
             <FileUploadArea
-              accept="application/pdf,image/*"
+              accept={CONTENT_UPLOAD_ACCEPT}
               value={file}
               onChange={setFile}
               onError={setError}
