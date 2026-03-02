@@ -87,7 +87,7 @@ export function AddSubjectModal({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-4">
             {/* Backdrop */}
             <div
                 className="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -96,7 +96,7 @@ export function AddSubjectModal({
 
             {/* Modal */}
             <div
-                className="relative bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
+                className="relative bg-white rounded-xl shadow-2xl w-full max-w-md overflow-y-auto max-h-[90vh]"
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="add-subject-title"

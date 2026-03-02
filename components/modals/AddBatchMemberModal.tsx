@@ -187,10 +187,10 @@ export function AddBatchMemberModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-4">
       <div className="absolute inset-0 bg-black/40" onClick={handleClose} />
 
-      <div className="relative w-full max-w-md rounded-xl bg-white shadow-lg">
+      <div className="relative w-full max-w-md max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-lg">
         <div className="flex items-center justify-between px-6 py-4 border-b">
           <div>
             <h2 className="text-lg font-semibold">Add {roleLabel} to Batch</h2>

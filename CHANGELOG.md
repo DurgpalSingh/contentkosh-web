@@ -1,6 +1,16 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.1.37] - Side bar and modal css fixed at zoom
+**P.R Raised by** : shubh404-SE on **Date** : 2026-03-02
+
+### Changed
+  - Made dashboard sections flexible made sidebars scroll-safe at high zoom:
+  - Updated modal behavior across your modal components:
+    - Overlay now supports overflow-y-auto + padding.
+    - Modal panels now use max-h-[90vh] + vertical scrolling.
+
+---
 ## Version [1.1.36] - Content title validation
 **P.R Raised by** : shubh404-SE on **Date** : 2026-03-02
 
