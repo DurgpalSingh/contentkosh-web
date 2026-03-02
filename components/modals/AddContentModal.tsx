@@ -58,6 +58,10 @@ export function AddContentModal({
       setError('Please select a batch');
       return;
     }
+    if (title.trim().length < 3) {
+      setError('Title must be at least 3 characters long');
+      return;
+    }
     const validationError = validateEntityName(title, 'Content title', 100);
     if (validationError) {
       setError(validationError);

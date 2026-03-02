@@ -36,6 +36,10 @@ export function EditContentModal({ isOpen, onClose, content, onUpdated }: EditCo
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (title.trim().length < 3) {
+      setError('Title must be at least 3 characters long');
+      return;
+    }
     const validationError = validateEntityName(title, 'Content title', 100);
     if (validationError) {
       setError(validationError);
