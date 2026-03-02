@@ -97,7 +97,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* Mobile sidebar */}
       <div className={`fixed inset-0 z-50 lg:hidden ${sidebarOpen ? 'block' : 'hidden'}`}>
         <div className="fixed inset-0 bg-slate-600 bg-opacity-75" onClick={() => setSidebarOpen(false)} />
-        <div className="fixed inset-y-0 left-0 flex w-64 flex-col bg-blue-50">
+        <div className="fixed inset-y-0 left-0 flex w-64 flex-col overflow-y-auto bg-blue-50">
           <div className="flex h-16 items-center justify-between px-4 border-b border-blue-100 bg-white">
             <BusinessBrand mobileSidebar />
             <Button
@@ -160,7 +160,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
       {/* Desktop sidebar */}
       <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
-        <div className="flex flex-col flex-grow bg-blue-50 border-r border-blue-100">
+        <div className="flex flex-col flex-grow overflow-y-auto bg-blue-50 border-r border-blue-100">
           <div className="flex h-16 items-center px-5 bg-white border-b border-blue-100 shadow-sm z-10">
             <BusinessBrand />
           </div>
