@@ -8,6 +8,7 @@ All notable changes to this project will be documented in this file.
   - Added format metadata in config.
   - Added hover info icon in Add Content modal label.
     - Info icon next to File (...)
+  - Added filter algorithm to rank items according to the query
 
 ---
 ## Version [1.1.37] - Protect Routes & Cookie Session Refresh
