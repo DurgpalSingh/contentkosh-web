@@ -1,6 +1,15 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.1.38] - file upload icon
+**P.R Raised by** : shubh404-SE on **Date** : 2026-03-04
+
+### Changed
+  - Added format metadata in config.
+  - Added hover info icon in Add Content modal label.
+    - Info icon next to File (...)
+
+---
 ## Version [1.1.37] - Side bar and modal css fixed at zoom
 **P.R Raised by** : shubh404-SE on **Date** : 2026-03-02
 
