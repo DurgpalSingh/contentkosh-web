@@ -37,9 +37,54 @@ export default function ContentsPage() {
   const isStudent = user?.role === USER_ROLES.STUDENT;
 
   const filteredContents = useMemo(() => {
-    if (!searchQuery.trim()) return contents;
     const q = searchQuery.trim().toLowerCase();
-    return contents.filter(c => c.title?.toLowerCase().includes(q));
+    if (!q) return contents;
+
+    const now = Date.now();
+    const results: { content: Content; score: number }[] = [];
+
+    for (let i = 0; i < contents.length; i++) {
+      const c = contents[i];
+      const title = c.title?.toLowerCase();
+      if (!title) continue;
+
+      const index = title.indexOf(q);
+      if (index === -1) continue; // skip early if no match
+
+      let score = 0;
+
+      // Exact match
+      if (title.length === q.length) {
+        score = 100;
+      }
+      // Starts with
+      else if (index === 0) {
+        score = 80;
+      }
+      // Word boundary match 
+      else if (title[index - 1] === ' ') {
+        score = 60;
+      }
+      // Contains
+      else {
+        score = 40;
+      }
+
+      // Recency boost (small weight)
+      if (c.createdAt) {
+        const ageDays =
+          (now - new Date(c.createdAt).getTime()) / 86400000;
+        score += Math.max(0, 15 - ageDays);
+      }
+
+      results.push({ content: c, score });
+    }
+
+    // Single sort
+    results.sort((a, b) => b.score - a.score);
+    console.log("calling filter");
+    return results.map(r => r.content);
+
   }, [contents, searchQuery]);
 
   const getCreatedAtTime = useCallback((date?: string) => {
