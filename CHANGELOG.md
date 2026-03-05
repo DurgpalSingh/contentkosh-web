@@ -1,6 +1,19 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.1.37] - Protect Routes & Cookie Session Refresh
+**P.R Raised by** : shubh404-SE on **Date** : 2026-02-27
+### Changed
+- **Route Protection Middleware**:
+  - Refactored `middleware.ts` to cookie-based route gating only.
+  - Protected routes now continue when session cookies exist (`ck_access_token` or `ck_refresh_token`).
+- **Refresh Flow Stability**:
+  - Improved auth initialization to try profile first, then refresh, then rehydrate session data.
+- **Cookie-Only Auth Cleanup**:
+  - Removed legacy token helper methods from frontend auth API
+  - Updated auth store/interceptor code to align with HttpOnly cookie-based session flow.
+
+---
 ## Version [1.1.37] - Side bar and modal css fixed at zoom
 **P.R Raised by** : shubh404-SE on **Date** : 2026-03-02
 
@@ -58,7 +71,6 @@ All notable changes to this project will be documented in this file.
     - `designation` with max length `100`
   - Added realistic experience validation for `experienceYears`:
     - required, whole number, min `0`, max `50` realstic
-
 ---
 
 ## Version [1.1.31] - scroll positioning on Users Page

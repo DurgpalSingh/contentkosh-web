@@ -2,7 +2,7 @@
 
 import { ReactNode, useEffect, useState } from 'react';
 import { Bell, BookOpen, GraduationCap, Users } from 'lucide-react';
-import { dashboardService } from '@/services/dashboard.service';
+import { DashboardService } from '@/lib/api';
 import { isTeacherDashboardData, TeacherDashboardData } from '@/types/dashboard';
 
 const formatDate = (value: string) => new Date(value).toLocaleDateString();
@@ -17,11 +17,11 @@ export function TeacherDashboard() {
       try {
         setLoading(true);
         setError(null);
-        const response = await dashboardService.getDashboard();
-        if (!isTeacherDashboardData(response)) {
+        const response = await DashboardService.getApiDashboard();
+        if (!response.data || !isTeacherDashboardData(response.data)) {
           throw new Error('Invalid dashboard response for teacher');
         }
-        setData(response);
+        setData(response.data);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load dashboard');
       } finally {

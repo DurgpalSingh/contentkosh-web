@@ -2,17 +2,19 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { User, Business } from '@/lib/api';
 import { authApi } from '@/lib/auth';
+import { AuthService } from '@/lib/api';
 import { permissionService } from '@/services/permission.service';
+
+let initializeAuthPromise: Promise<void> | null = null;
 
 interface AuthState {
   user: User | null;
   business: Business | null;
-  token: string | null;
   permissions: string[];
   isAuthenticated: boolean;
   isLoading: boolean;
   isInitialized: boolean;
-  login: (user: User, business: Business | null, token: string) => void;
+  login: (user: User, business: Business | null) => void;
   setProfile: (profile: User) => void;
 
   logout: () => void;
@@ -26,7 +28,6 @@ export const useAuthStore = create<AuthState>()(
     (set, get) => ({
       user: null,
       business: null,
-      token: null,
       permissions: [],
       isAuthenticated: false,
       isLoading: true,
@@ -49,13 +50,11 @@ export const useAuthStore = create<AuthState>()(
         });
         console.log('Auth store updated with business:', businessData);
       },
-      login: (user: User, business: Business | null, token: string) => {
-        console.log('Auth store login called with:', { user, business, token });
-        authApi.setToken(token);
+      login: (user: User, business: Business | null) => {
+        console.log('Auth store login called with:', { user, business });
         set({
           user,
           business,
-          token,
           isAuthenticated: true,
           isLoading: false,
           isInitialized: true,
@@ -71,7 +70,6 @@ export const useAuthStore = create<AuthState>()(
         set({
           user: null,
           business: null,
-          token: null,
           permissions: [],
           isAuthenticated: false,
           isLoading: false,
@@ -97,88 +95,70 @@ export const useAuthStore = create<AuthState>()(
         }
       },
       initializeAuth: async () => {
-        const token = authApi.getToken();
+        if (initializeAuthPromise) {
+          return initializeAuthPromise;
+        }
 
-        if (token) {
-          // Set token in OpenAPI for future requests
-          authApi.setToken(token);
+        set({ isLoading: true });
 
-          // Get the current state from persist
-          const currentState = get();
-          console.log('Current state from persist:', currentState);
+        const hydrateSession = async (): Promise<void> => {
+          const userProfile = await authApi.getProfile();
+          if (!userProfile) throw new Error('User profile missing');
+          const businessInfo = await authApi.getBusiness();
 
-          // If we already have user data from persist, use it but refresh permissions AND profile
-          if (currentState.user && currentState.isAuthenticated) {
-            console.log('Using persisted user data');
-            set({
-              token,
-              isAuthenticated: true,
-              user: currentState.user,
-              business: currentState.business,
-              isLoading: false,
-              isInitialized: true
-            });
+          set({
+            isAuthenticated: true,
+            user: userProfile,
+            business: businessInfo,
+            isLoading: false,
+            isInitialized: true
+          });
 
-            // Refresh permissions
-            get().fetchPermissions();
+          get().fetchPermissions();
+          console.log('Successfully initialized auth from cookie session');
+        };
 
-            // Refresh profile to ensure we have latest role/data
-            try {
-              const userProfile = await authApi.getProfile();
-              if (userProfile) {
-                // Update business info if available from profile
-                const businessInfo = userProfile.business || currentState.business;
-                set({ user: userProfile, business: businessInfo });
-              }
-            } catch (error) {
-              console.warn('Failed to refresh profile on init:', error);
-            }
-            return;
-          }
-
-          // Try to fetch user profile from API
-          try {
-            console.log('Attempting to fetch user profile from API');
-            const userProfile = await authApi.getProfile();
-            const businessInfo = await authApi.getBusiness();
-
-            set({
-              token,
-              isAuthenticated: true,
-              user: userProfile,
-              business: businessInfo,
-              isLoading: false,
-              isInitialized: true
-            });
-
-            // Fetch permissions after profile load
-            get().fetchPermissions();
-
-            console.log('Successfully fetched user profile and business info from API');
-          } catch (error) {
-            set({
-              isLoading: false,
-              isInitialized: true,
-              isAuthenticated: false,
-              user: null,
-              business: null,
-              token: null,
-              permissions: []
-            });
-            // Force logout to clean up anything stale
-            get().logout();
-          }
-        } else {
-          console.log('No token found, setting not authenticated');
+        const setUnauthenticatedState = () => {
+          console.log('No active cookie session found, setting not authenticated');
           set({
             isLoading: false,
             isInitialized: true,
             isAuthenticated: false,
             user: null,
             business: null,
-            token: null,
             permissions: []
           });
+        };
+
+        initializeAuthPromise = (async () => {
+          console.log('Attempting to initialize auth from cookie session');
+          const hydratedWithoutRefresh = await hydrateSession()
+            .then(() => true)
+            .catch(() => false);
+
+          if (hydratedWithoutRefresh) {
+            return;
+          }
+
+          console.log('Access session missing/expired. Attempting refresh.');
+          const refreshed = await AuthService.postApiAuthRefresh({} as { refreshToken: string })
+            .then(() => true)
+            .catch(() => false);
+
+          if (!refreshed) {
+            setUnauthenticatedState();
+            return;
+          }
+
+          await hydrateSession().catch(() => {
+            setUnauthenticatedState();
+          });
+        })();
+
+        try {
+          await initializeAuthPromise;
+        } finally {
+          initializeAuthPromise = null;
         }
       },
     }),
@@ -187,7 +167,6 @@ export const useAuthStore = create<AuthState>()(
       partialize: (state) => ({
         user: state.user,
         business: state.business,
-        token: state.token,
         isAuthenticated: state.isAuthenticated,
         isInitialized: state.isInitialized,
         // We can persist permissions too

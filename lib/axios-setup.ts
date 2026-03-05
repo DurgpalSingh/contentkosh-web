@@ -1,19 +1,18 @@
 import axios from 'axios';
-import { OpenAPI } from '@/lib/api';
-import { authApi } from '@/lib/auth';
 import { AuthService } from '@/lib/api';
+import { ROUTES } from '@/lib/constants';
 
 let isRefreshing = false;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let failedQueue: any[] = [];
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const processQueue = (error: any, token: string | null = null) => {
+const processQueue = (error: any) => {
     failedQueue.forEach(prom => {
         if (error) {
             prom.reject(error);
         } else {
-            prom.resolve(token);
+            prom.resolve();
         }
     });
 
@@ -29,8 +28,8 @@ export const setupAxiosInterceptors = () => {
         async (error) => {
             const originalRequest = error.config;
 
-            // If error is 401 and we haven't tried to refresh yet
-            if (error.response?.status === 401 && !originalRequest._retry) {
+            // If auth fails and we haven't tried to refresh yet
+            if ((error.response?.status === 401 || error.response?.status === 403) && !originalRequest._retry) {
 
                 // If it's a login or refresh request that failed, don't retry - just fail
                 if (originalRequest.url?.includes('auth/login') || originalRequest.url?.includes('auth/refresh')) {
@@ -40,8 +39,7 @@ export const setupAxiosInterceptors = () => {
                 if (isRefreshing) {
                     return new Promise(function (resolve, reject) {
                         failedQueue.push({ resolve, reject });
-                    }).then(token => {
-                        originalRequest.headers['Authorization'] = 'Bearer ' + token;
+                    }).then(() => {
                         return axios(originalRequest);
                     }).catch(err => {
                         return Promise.reject(err);
@@ -52,40 +50,13 @@ export const setupAxiosInterceptors = () => {
                 isRefreshing = true;
 
                 try {
-                    const refreshToken = authApi.getRefreshToken();
-
-                    if (!refreshToken) {
-                        throw new Error('No refresh token available');
-                    }
-
-                    const response = await AuthService.postApiAuthRefresh({ refreshToken });
-
-                    if (response.data?.accessToken) {
-                        const newToken = response.data.accessToken;
-                        const newRefreshToken = response.data.refreshToken;
-
-                        authApi.setToken(newToken);
-                        if (newRefreshToken) {
-                            authApi.setRefreshToken(newRefreshToken);
-                        }
-
-                        // Update OpenAPI config as well
-                        OpenAPI.TOKEN = newToken;
-
-                        // Update authorization header
-                        axios.defaults.headers.common['Authorization'] = 'Bearer ' + newToken;
-                        originalRequest.headers['Authorization'] = 'Bearer ' + newToken;
-
-                        processQueue(null, newToken);
-                        return axios(originalRequest);
-                    } else {
-                        throw new Error('Refresh failed - no access token returned');
-                    }
+                    await AuthService.postApiAuthRefresh({} as { refreshToken: string });
+                    processQueue(null);
+                    return axios(originalRequest);
                 } catch (err) {
-                    processQueue(err, null);
-                    // If refresh fails, logout user
-                    authApi.clearTokens();
-                    window.location.href = '/auth/login'; // Redirect to login
+                    processQueue(err);
+                    // If refresh fails, redirect user to login
+                    window.location.href = ROUTES.LOGIN;
                     return Promise.reject(err);
                 } finally {
                     isRefreshing = false;
