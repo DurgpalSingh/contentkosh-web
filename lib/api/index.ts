@@ -62,3 +62,4 @@ export { SubjectsService } from './services/SubjectsService';
 export { ContentsService } from './services/ContentsService';
 export { UsersService } from './services/UsersService';
 export { TeachersService } from './services/TeachersService';
+export { DashboardService } from './services/DashboardService';

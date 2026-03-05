@@ -2,7 +2,7 @@
 
 import { ReactNode, useEffect, useState } from 'react';
 import { Bell, BookOpen, GraduationCap, Users } from 'lucide-react';
-import { dashboardService } from '@/services/dashboard.service';
+import { DashboardService } from '@/lib/api';
 import { AdminDashboardData, isAdminDashboardData } from '@/types/dashboard';
 
 const formatDate = (value: string) => new Date(value).toLocaleDateString();
@@ -17,11 +17,11 @@ export function AdminDashboard() {
       try {
         setLoading(true);
         setError(null);
-        const response = await dashboardService.getDashboard();
-        if (!isAdminDashboardData(response)) {
+        const response = await DashboardService.getApiDashboard();
+        if (!response.data || !isAdminDashboardData(response.data)) {
           throw new Error('Invalid dashboard response for admin');
         }
-        setData(response);
+        setData(response.data);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load dashboard');
       } finally {
