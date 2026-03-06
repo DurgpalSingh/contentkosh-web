@@ -1,7 +1,7 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
-## Version [1.1.40] - Unauthorized access
+## Version [1.1.41] - Unauthorized access
 **P.R Raised by** : shubh404-SE on **Date** : 2026-03-06
 ### Changed
   - Updated middleware.ts to:
