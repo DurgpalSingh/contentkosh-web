@@ -1,6 +1,12 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.1.40] - ui-layout dashboard
+**P.R Raised by** : shubh404-SE on **Date** : 2026-03-06
+### Changes
+  - updated all  dashboard for mobile UI
+  - fixed content card long title issue in teacher dashboard
+---
 ## Version [1.1.39] - file upload icon
 **P.R Raised by** : shubh404-SE on **Date** : 2026-03-04
 
