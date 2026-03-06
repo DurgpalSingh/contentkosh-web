@@ -34,11 +34,11 @@ export function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="space-y-4">
-        <div className="h-28 rounded-2xl bg-slate-100 animate-pulse" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="space-y-4 sm:space-y-6">
+        <div className="h-24 sm:h-28 rounded-2xl bg-slate-100 animate-pulse" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {Array.from({ length: 8 }).map((_, index) => (
-            <div key={index} className="h-28 rounded-2xl bg-slate-100 animate-pulse" />
+            <div key={index} className="h-24 sm:h-28 rounded-2xl bg-slate-100 animate-pulse" />
           ))}
         </div>
       </div>
@@ -54,37 +54,37 @@ export function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-6">
-      <header className="rounded-2xl border border-slate-200 bg-gradient-to-r from-slate-50 via-white to-blue-50 p-6">
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900">Admin Dashboard</h1>
+    <div className="space-y-4 sm:space-y-6">
+      <header className="rounded-2xl border border-slate-200 bg-gradient-to-r from-slate-50 via-white to-blue-50 p-4 sm:p-6">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">Admin Dashboard</h1>
         <p className="mt-1 text-sm text-slate-600">Live institute overview with users, courses, and announcements.</p>
       </header>
 
-      <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        <StatCard title="Total Users" value={data.stats.totalUsers} tone="blue" icon={<Users className="h-8 w-8" />} />
-        <StatCard title="Teachers" value={data.stats.totalTeachers} tone="green" icon={<Users className="h-8 w-8" />} />
-        <StatCard title="Students" value={data.stats.totalStudents} tone="indigo" icon={<GraduationCap className="h-8 w-8" />} />
-        <StatCard title="Announcements" value={data.stats.activeAnnouncements} tone="amber" icon={<Bell className="h-8 w-8" />} />
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <StatCard title="Total Users" value={data.stats.totalUsers} tone="blue" icon={<Users className="h-5 w-5 sm:h-8 sm:w-8" />} />
+        <StatCard title="Teachers" value={data.stats.totalTeachers} tone="green" icon={<Users className="h-5 w-5 sm:h-8 sm:w-8" />} />
+        <StatCard title="Students" value={data.stats.totalStudents} tone="indigo" icon={<GraduationCap className="h-5 w-5 sm:h-8 sm:w-8" />} />
+        <StatCard title="Announcements" value={data.stats.activeAnnouncements} tone="amber" icon={<Bell className="h-5 w-5 sm:h-8 sm:w-8" />} />
       </section>
 
-      <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        <StatCard title="Exams" value={data.stats.totalExams} tone="slate" icon={<BookOpen className="h-8 w-8" />} />
-        <StatCard title="Courses" value={data.stats.totalCourses} tone="slate" icon={<BookOpen className="h-8 w-8" />} />
-        <StatCard title="Batches" value={data.stats.totalBatches} tone="slate" icon={<GraduationCap className="h-8 w-8" />} />
-        <StatCard title="Content" value={data.stats.totalContent} tone="slate" icon={<BookOpen className="h-8 w-8" />} />
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <StatCard title="Exams" value={data.stats.totalExams} tone="slate" icon={<BookOpen className="h-5 w-5 sm:h-8 sm:w-8" />} />
+        <StatCard title="Courses" value={data.stats.totalCourses} tone="slate" icon={<BookOpen className="h-5 w-5 sm:h-8 sm:w-8" />} />
+        <StatCard title="Batches" value={data.stats.totalBatches} tone="slate" icon={<GraduationCap className="h-5 w-5 sm:h-8 sm:w-8" />} />
+        <StatCard title="Content" value={data.stats.totalContent} tone="slate" icon={<BookOpen className="h-5 w-5 sm:h-8 sm:w-8" />} />
       </section>
 
-      <section className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
         <Panel title="Recent Users" subtitle="Latest active users in your business">
           {data.recentUsers.length === 0 && <EmptyState message="No users found." />}
           {data.recentUsers.map((user) => (
-            <div key={user.id} className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3">
-              <div>
-                <p className="font-semibold text-slate-900">{user.name}</p>
-                <p className="text-sm text-slate-500">{user.email}</p>
+            <div key={user.id} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 sm:px-4 sm:py-3">
+              <div className="min-w-0">
+                <p className="font-semibold text-slate-900 truncate" title={user.name}>{user.name}</p>
+                <p className="text-sm text-slate-500 truncate" title={user.email}>{user.email}</p>
               </div>
-              <div className="text-right">
-                <p className="inline-flex rounded-full bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-700">{user.role}</p>
+              <div className="text-right shrink-0">
+                <p className="inline-flex rounded-full bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-700 max-w-24 truncate">{user.role}</p>
                 <p className="mt-1 text-xs text-slate-500">{formatDate(user.createdAt)}</p>
               </div>
             </div>
@@ -94,8 +94,8 @@ export function AdminDashboard() {
         <Panel title="Recent Announcements" subtitle="Active announcements visible to admins">
           {data.recentAnnouncements.length === 0 && <EmptyState message="No announcements found." />}
           {data.recentAnnouncements.map((announcement) => (
-            <div key={announcement.id} className="rounded-xl border border-slate-200 bg-white px-4 py-3">
-              <p className="font-semibold text-slate-900">{announcement.heading}</p>
+            <div key={announcement.id} className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 sm:px-4 sm:py-3">
+              <p className="font-semibold text-slate-900 truncate" title={announcement.heading}>{announcement.heading}</p>
               <p className="mt-1 text-xs text-slate-500">
                 {formatDate(announcement.startDate)} - {formatDate(announcement.endDate)}
               </p>
@@ -109,7 +109,7 @@ export function AdminDashboard() {
 
 function Panel({ title, subtitle, children }: { title: string; subtitle: string; children: ReactNode }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5">
+    <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 sm:p-5">
       <h3 className="text-base font-semibold text-slate-900">{title}</h3>
       <p className="mb-4 text-sm text-slate-500">{subtitle}</p>
       <div className="space-y-3">{children}</div>
@@ -141,13 +141,13 @@ function StatCard({
   };
 
   return (
-    <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
+    <article className="rounded-xl sm:rounded-2xl border border-slate-200 bg-white p-3 sm:p-5 shadow-sm transition hover:shadow-md">
       <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm font-medium text-slate-500">{title}</p>
-          <p className="mt-1 text-3xl font-semibold tracking-tight text-slate-900">{value}</p>
+        <div className="min-w-0">
+          <p className="text-xs sm:text-sm font-medium text-slate-500 truncate" title={title}>{title}</p>
+          <p className="mt-1 text-xl sm:text-3xl font-semibold tracking-tight text-slate-900">{value}</p>
         </div>
-        <div className={`rounded-xl border p-2 ${toneMap[tone]}`}>{icon}</div>
+        <div className={`rounded-lg sm:rounded-xl border p-1.5 sm:p-2 shrink-0 ${toneMap[tone]}`}>{icon}</div>
       </div>
     </article>
   );

@@ -79,17 +79,19 @@ export function ContentGridCard({ content, onView, onEdit, onDelete }: ContentGr
       }
     >
       <div className="space-y-3 text-sm text-slate-600">
-        <div className="flex items-center">
-          <HardDrive className="h-4 w-4 mr-2 text-slate-400" />
-          <span>{formatBytes(content.fileSize)}</span>
+        <div className="flex min-w-0 items-center">
+          <HardDrive className="h-4 w-4 mr-2 shrink-0 text-slate-400" />
+          <span className="truncate">{formatBytes(content.fileSize)}</span>
         </div>
-        <div className="flex items-center">
-          <User className="h-4 w-4 mr-2 text-slate-400" />
-          <span>Upload By: {content.uploader?.name || 'Unknown User'}</span>
+        <div className="flex min-w-0 items-center">
+          <User className="h-4 w-4 mr-2 shrink-0 text-slate-400" />
+          <span className="truncate" title={content.uploader?.name || 'Unknown User'}>
+            Upload By: {content.uploader?.name || 'Unknown User'}
+          </span>
         </div>
-        <div className="flex items-center">
-          <Calendar className="h-4 w-4 mr-2 text-slate-400" />
-          <span>{uploadedAt}</span>
+        <div className="flex min-w-0 items-center">
+          <Calendar className="h-4 w-4 mr-2 shrink-0 text-slate-400" />
+          <span className="truncate" title={uploadedAt}>{uploadedAt}</span>
         </div>
       </div>
     </OverviewCard>
