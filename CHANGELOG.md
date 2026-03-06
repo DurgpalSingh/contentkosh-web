@@ -1,7 +1,17 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
-## Version [1.1.37] - Protect Routes & Cookie Session Refresh
+## Version [1.1.39] - file upload icon
+**P.R Raised by** : shubh404-SE on **Date** : 2026-03-04
+
+### Changed
+  - Added format metadata in config.
+  - Added hover info icon in Add Content modal label.
+    - Info icon next to File (...)
+  - Added filter algorithm to rank items according to the query
+
+---
+## Version [1.1.38] - Protect Routes & Cookie Session Refresh
 **P.R Raised by** : shubh404-SE on **Date** : 2026-02-27
 ### Changed
 - **Route Protection Middleware**:

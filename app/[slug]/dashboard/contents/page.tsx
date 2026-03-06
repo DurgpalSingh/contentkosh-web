@@ -14,6 +14,7 @@ import { ContentGridCard } from '@/components/dashboard/contents/ContentGridCard
 import { ContentsFilterModal } from '@/components/dashboard/contents/ContentsFilterModal';
 import { USER_ROLES } from '@/lib/constants';
 import { EmptyState } from '@/components/common/EmptyState';
+import { Input } from '@/components/ui/input';
 
 export default function ContentsPage() {
   const { user, business, isAuthenticated, isLoading, isInitialized } = useAuthStore();
@@ -36,15 +37,39 @@ export default function ContentsPage() {
   const isAdmin = user?.role === USER_ROLES.ADMIN;
   const isStudent = user?.role === USER_ROLES.STUDENT;
 
-  const filteredContents = useMemo(() => {
-    if (!searchQuery.trim()) return contents;
-    const q = searchQuery.trim().toLowerCase();
-    return contents.filter(c => c.title?.toLowerCase().includes(q));
-  }, [contents, searchQuery]);
-
   const getCreatedAtTime = useCallback((date?: string) => {
     return date ? new Date(date).getTime() : 0;
   }, []);
+
+
+  const getMatchPriority = useCallback((title: string, query: string) => {
+    if (title === query) return 0;
+    if (title.startsWith(query)) return 1;
+    if (title.split(/\s+/).some((word) => word.startsWith(query))) return 2;
+    if (title.includes(query)) return 3;
+    return 4;
+  }, []);
+
+  const filteredContents = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return contents;
+
+    return contents
+      .filter((content) => content.title?.toLowerCase().includes(q))
+      .sort((a, b) => {
+        const aTitle = (a.title ?? '').toLowerCase().trim();
+        const bTitle = (b.title ?? '').toLowerCase().trim();
+
+        const aPriority = getMatchPriority(aTitle, q);
+        const bPriority = getMatchPriority(bTitle, q);
+        if (aPriority !== bPriority) return aPriority - bPriority;
+
+        const titleCompare = aTitle.localeCompare(bTitle);
+        if (titleCompare !== 0) return titleCompare;
+
+        return getCreatedAtTime(b.createdAt) - getCreatedAtTime(a.createdAt);
+      });
+  }, [contents, searchQuery, getMatchPriority, getCreatedAtTime]);
 
   const sortByCreatedAtDesc = useCallback(<T extends { createdAt?: string }>(items: T[]) => {
     return [...items].sort((a, b) => getCreatedAtTime(b.createdAt) - getCreatedAtTime(a.createdAt));
@@ -189,9 +214,9 @@ export default function ContentsPage() {
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Search className="h-5 w-5 text-gray-400" />
             </div>
-            <input
-              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg"
-              placeholder="Search contents..."
+            <Input
+              className="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg"
+              placeholder="Search by title..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />

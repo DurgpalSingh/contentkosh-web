@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, AlertCircle } from 'lucide-react';
+import { X, AlertCircle, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ContentsService, CreateContentRequest } from '@/lib/api';
 import { FileUploadArea } from '../dashboard/contents/FileUploadArea';
-import { CONTENT_UPLOAD_ACCEPT, CONTENT_UPLOAD_LABEL } from '@/lib/content-upload.config';
+import { CONTENT_UPLOAD_ACCEPT, CONTENT_UPLOAD_INFO_ITEMS, CONTENT_UPLOAD_LABEL } from '@/lib/content-upload.config';
 import { validateEntityName } from '@/lib/validation';
 import { Input } from '../ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 
 interface AddContentModalProps {
   isOpen: boolean;
@@ -36,6 +37,7 @@ export function AddContentModal({
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isUploadInfoOpen, setIsUploadInfoOpen] = useState(false);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -159,7 +161,42 @@ export function AddContentModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700">File ({CONTENT_UPLOAD_LABEL}) <span className="text-red-500">*</span></label>
+            <label className="block text-sm font-medium text-slate-700">
+              <span className="inline-flex items-center gap-1.5">
+                File ({CONTENT_UPLOAD_LABEL}) <span className="text-red-500">*</span>
+                <Popover open={isUploadInfoOpen} onOpenChange={setIsUploadInfoOpen}>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label="Upload format and size info"
+                      className="inline-flex h-4 w-4 items-center justify-center rounded-full text-slate-500 hover:text-slate-700"
+                      onMouseEnter={() => setIsUploadInfoOpen(true)}
+                      onMouseLeave={() => setIsUploadInfoOpen(false)}
+                      onFocus={() => setIsUploadInfoOpen(true)}
+                      onBlur={() => setIsUploadInfoOpen(false)}
+                    >
+                      <Info className="h-4 w-4" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    className="w-80 p-3 text-xs"
+                    align="start"
+                    sideOffset={8}
+                    onMouseEnter={() => setIsUploadInfoOpen(true)}
+                    onMouseLeave={() => setIsUploadInfoOpen(false)}
+                  >
+                    <p className="mb-2 font-semibold text-slate-800">Upload Rules</p>
+                    <ul className="space-y-1 text-slate-600">
+                      {CONTENT_UPLOAD_INFO_ITEMS.map((item) => (
+                        <li key={item.label}>
+                          {item.label}: {item.extensions} (Max {item.maxSizeLabel})
+                        </li>
+                      ))}
+                    </ul>
+                  </PopoverContent>
+                </Popover>
+              </span>
+            </label>
             <FileUploadArea
               accept={CONTENT_UPLOAD_ACCEPT}
               value={file}
