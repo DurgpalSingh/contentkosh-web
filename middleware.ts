@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { decodeJwt } from 'jose';
 import {
   getNormalizedDashboardPath,
   getUnauthorizedRedirect,
@@ -28,12 +29,7 @@ function decodeRoleFromToken(token: string | undefined): JwtClaims['role'] | nul
   if (!token) return null;
 
   try {
-    const parts = token.split('.');
-    if (parts.length < 2) return null;
-
-    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
-    const padding = '='.repeat((4 - (base64.length % 4)) % 4);
-    const payload = JSON.parse(atob(base64 + padding)) as Partial<JwtClaims>;
+    const payload = decodeJwt(token) as Partial<JwtClaims>;
     const role = payload.role?.toString().toUpperCase() as JwtClaims['role'] | undefined;
 
     if (!role || !VALID_ROLES.has(role)) return null;
