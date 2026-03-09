@@ -5,6 +5,7 @@ import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { UsersService, UpdateUserRequest, BusinessUser } from '@/lib/api';
 import { validateEntityName, validateMobile } from '@/lib/validation';
+import { toast } from 'sonner';
 
 interface EditUserModalProps {
     isOpen: boolean;
@@ -71,6 +72,7 @@ export function EditUserModal({
                 await UsersService.putApiUsers(user.user.id, request);
                 onUserUpdated();
                 onClose();
+                toast.success('User updated successfully');
             } else {
                 setError("User ID missing");
             }

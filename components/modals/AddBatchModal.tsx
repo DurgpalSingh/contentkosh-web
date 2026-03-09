@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { BatchesService, Course, CreateBatchRequest } from '@/lib/api';
 import { DatePicker } from '@/components/ui/date-picker';
 import { batchSchema } from '@/lib/schemas';
+import { toast } from 'sonner';
 
 interface AddBatchModalProps {
     isOpen: boolean;
@@ -105,6 +106,7 @@ export function AddBatchModal({
 
             resetForm();
             onBatchCreated();
+            toast.success('Batch created successfully');
             onClose();
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {

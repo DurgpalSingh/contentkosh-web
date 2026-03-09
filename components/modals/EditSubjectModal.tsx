@@ -5,6 +5,7 @@ import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SubjectsService, UpdateSubjectRequest, Subject } from '@/lib/api';
 import { validateEntityName } from '@/lib/validation';
+import { toast } from 'sonner';
 
 interface EditSubjectModalProps {
     isOpen: boolean;
@@ -81,6 +82,7 @@ export function EditSubjectModal({
 
             onSubjectUpdated();
             onClose();
+            toast.success('Subject updated successfully');
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             console.error('Error updating subject:', err);

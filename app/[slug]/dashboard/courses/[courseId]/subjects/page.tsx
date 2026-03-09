@@ -13,6 +13,7 @@ import { Plus, ArrowLeft } from 'lucide-react';
 import { SubjectGridCard } from '@/components/dashboard/courses/subjects/SubjectGridCard';
 import { USER_ROLES } from '@/lib/constants';
 import { EmptyState } from '@/components/common/EmptyState';
+import { toast } from 'sonner';
 
 export default function CourseSubjectsPage() {
   const params = useParams();
@@ -91,8 +92,10 @@ export default function CourseSubjectsPage() {
       setIsDeleteOpen(false);
       setSelectedSubject(null);
       await fetchData();
+      toast.success('Subject deleted successfully');
     } catch (err) {
       console.error('Failed to delete subject', err);
+      toast.error('Failed to delete subject. Please try again.');
     }
   };
 

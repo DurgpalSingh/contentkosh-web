@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { TeachersService, CreateTeacherRequest, Gender, User } from '@/lib/api';
 import { validateProfessionalStep, ProfessionalStepErrors } from '@/lib/validation';
 import { LanguageInputChips } from './LanguageInputChips';
+import { toast } from 'sonner';
 
 interface CreateTeacherProfileModalProps {
   isOpen: boolean;
@@ -124,6 +125,7 @@ export function CreateTeacherProfileModal({
       resetForm();
       onProfileCreated();
       onClose();
+      toast.success('Teacher profile created successfully');
 
     } catch (err: any) {
       setError(err.body?.message || 'Failed to create teacher profile');

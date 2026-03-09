@@ -1,6 +1,13 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.1.43] - Success Toast message
+**P.R Raised by** : shubh404-SE on **Date** : 2026-03-09
+
+### Addded
+  - added toast message for all modals.(add/edit/delete)
+
+---
 ## Version [1.1.42] - ui-layout login & validation
 **P.R Raised by** : shubh404-SE on **Date** : 2026-03-08
 

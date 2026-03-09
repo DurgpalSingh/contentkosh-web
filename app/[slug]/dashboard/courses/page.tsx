@@ -15,6 +15,7 @@ import { CourseGridCard } from '@/components/dashboard/courses/CourseGridCard';
 import { CourseFilter } from '@/components/dashboard/courses/CourseFilter';
 import { USER_ROLES } from '@/lib/constants';
 import { EmptyState } from '@/components/common/EmptyState';
+import { toast } from 'sonner';
 
 interface ExtendedCourse extends Course {
   examName?: string;
@@ -221,8 +222,10 @@ export default function CoursesPage() {
       );
       // Refresh current exam's courses
       if (selectedExamId) fetchCourses(selectedExamId);
+      toast.success('Course deleted successfully');
     } catch (err) {
       console.error('Error deleting course:', err);
+      toast.error('Failed to delete course. Please try again.');
     } finally {
       setIsDeleteCourseModalOpen(false);
       setSelectedCourse(null);

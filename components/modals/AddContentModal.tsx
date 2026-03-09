@@ -9,6 +9,7 @@ import { CONTENT_UPLOAD_ACCEPT, CONTENT_UPLOAD_INFO_ITEMS, CONTENT_UPLOAD_LABEL 
 import { validateEntityName } from '@/lib/validation';
 import { Input } from '../ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { toast } from 'sonner';
 
 interface AddContentModalProps {
   isOpen: boolean;
@@ -88,6 +89,7 @@ export function AddContentModal({
       });
       onCreated?.();
       reset();
+      toast.success('Content uploaded successfully');
       onClose();
     } catch (err: unknown) {
       console.error('Create content failed:', err);

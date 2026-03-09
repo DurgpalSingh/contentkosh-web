@@ -15,6 +15,7 @@ import { ContentsFilterModal } from '@/components/dashboard/contents/ContentsFil
 import { USER_ROLES } from '@/lib/constants';
 import { EmptyState } from '@/components/common/EmptyState';
 import { Input } from '@/components/ui/input';
+import { toast } from 'sonner';
 
 export default function ContentsPage() {
   const { user, business, isAuthenticated, isLoading, isInitialized } = useAuthStore();
@@ -166,9 +167,10 @@ export default function ContentsPage() {
     try {
       await ContentsService.deleteApiContents({ contentId: selectedContent.id });
       if (selectedBatchId) await fetchContents(selectedBatchId);
+      toast.success('Content deleted successfully');
     } catch (err) {
       console.error('Delete failed:', err);
-      alert('Delete failed');
+      toast.error('Failed to delete content. Please try again.');
     } finally {
       setIsDeleteOpen(false);
       setSelectedContent(null);

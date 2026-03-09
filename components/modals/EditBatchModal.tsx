@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { BatchesService, UpdateBatchRequest, Batch } from '@/lib/api';
 import { validateRequired, validateDateRange } from '@/lib/validation';
 import { toISODateTime } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface EditBatchModalProps {
     isOpen: boolean;
@@ -83,6 +84,7 @@ export function EditBatchModal({
 
             onBatchUpdated();
             onClose();
+            toast.success('Batch updated successfully');
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             console.error('Error updating batch:', err);

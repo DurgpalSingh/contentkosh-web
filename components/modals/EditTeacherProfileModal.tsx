@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { TeachersService, UpdateTeacherRequest, Gender, TeacherWithUser } from '@/lib/api';
 import { validateProfessionalStep, ProfessionalStepErrors } from '@/lib/validation';
 import { LanguageInputChips } from './LanguageInputChips';
+import { toast } from 'sonner';
 
 interface EditTeacherProfileModalProps {
   isOpen: boolean;
@@ -118,6 +119,7 @@ export function EditTeacherProfileModal({
       await TeachersService.putApiTeachers(teacher.id, request);
       onProfileUpdated();
       onClose();
+      toast.success('Teacher profile updated successfully');
 
     } catch (err: any) {
       setError(err.body?.message || 'Failed to update teacher profile');

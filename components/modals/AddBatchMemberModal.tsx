@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { BatchMemberRole } from '../dashboard/batches/BatchMemberCard';
 import { USER_ROLES } from '@/lib/constants';
 import { TAB_ROLES } from '@/app/[slug]/dashboard/batches/[batchId]/page';
+import { toast } from 'sonner';
 
 interface AddBatchMemberModalProps {
   isOpen: boolean;
@@ -172,6 +173,7 @@ export function AddBatchMemberModal({
       });
       onAdded(targetBatchId);
       onClose();
+      toast.success(`${roleLabel} added to batch successfully`);
     } catch (requestError) {
       setError(getErrorMessage(requestError, `Failed to add ${roleLabel.toLowerCase()} to batch`));
     } finally {
