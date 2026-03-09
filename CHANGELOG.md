@@ -1,6 +1,15 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.1.42] - ui-layout login & validation
+**P.R Raised by** : shubh404-SE on **Date** : 2026-03-08
+
+### Changes
+  - costom validation message for email.
+  - Added show hide toggle button for Password.
+  - login page ui inhanced
+
+---
 ## Version [1.1.41] - Unauthorized access
 **P.R Raised by** : shubh404-SE on **Date** : 2026-03-06
 ### Changed
@@ -8,6 +17,7 @@ All notable changes to this project will be documented in this file.
     - Decode user role from ck_access_token / ck_refresh_token (JWT payload).
     - Check permission using existing lib/route-guard.ts.
     - If role is not allowed for that URL, redirect to dashboard base or login
+
 ---
 ## Version [1.1.40] - ui-layout dashboard
 **P.R Raised by** : shubh404-SE on **Date** : 2026-03-06
