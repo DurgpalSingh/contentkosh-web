@@ -111,7 +111,7 @@ export default function LoginPage() {
             <p className="mt-1 text-sm text-slate-600">
               New here?{' '}
               <Link href={ROUTES.REGISTER} className="font-semibold text-cyan-700 hover:text-cyan-800">
-                Create an account
+                Register Your Coaching Institute
               </Link>
             </p>
           </div>

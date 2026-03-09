@@ -1,6 +1,13 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.1.44] - Login page Misleading text
+**P.R Raised by** : shubh404-SE on **Date** : 2026-03-10
+
+### Changed
+  - `login page` register lable changed from "Create an account" to "Register Your Coaching Institute".
+
+---
 ## Version [1.1.43] - Success Toast message
 **P.R Raised by** : shubh404-SE on **Date** : 2026-03-09
 
