@@ -1,7 +1,7 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
-## Version [1.1.41] - ui-layout login & validation
+## Version [1.1.42] - ui-layout login & validation
 **P.R Raised by** : shubh404-SE on **Date** : 2026-03-08
 
 ### Changes
