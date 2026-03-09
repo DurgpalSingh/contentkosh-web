@@ -15,6 +15,7 @@ import { DeleteConfirmModal } from '@/components/modals/DeleteConfirmModal';
 import { BatchMemberRole } from '@/components/dashboard/batches/BatchMemberCard';
 import { Input } from '@/components/ui/input';
 import { AddBatchMemberModal } from '@/components/modals/AddBatchMemberModal';
+import { toast } from 'sonner';
 
 export const TAB_ROLES = {
   TEACHER: 'Teacher',
@@ -231,6 +232,7 @@ export default function BatchDetailsPage() {
       });
       const role = getRoleFromTab(activeTab);
       await loadBatchMembers(batch.id, role);
+      toast.success(`${memberToDelete.role === USER_ROLES.TEACHER ? 'Teacher' : 'Student'} removed from batch`);
 
       if (selectedMember?.member && getMemberUserId(selectedMember.member) === userId) {
         setSelectedMember(null);
@@ -238,6 +240,7 @@ export default function BatchDetailsPage() {
       setMemberToDelete(null);
     } catch (requestError) {
       console.error('Failed to remove member from batch:', requestError);
+      toast.error('Failed to remove member. Please try again.');
       throw requestError;
     } finally {
       setDeletingUserId(null);

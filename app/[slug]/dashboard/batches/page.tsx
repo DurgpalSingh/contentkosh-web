@@ -14,6 +14,7 @@ import { EditBatchModal } from '@/components/modals/EditBatchModal';
 import { DeleteConfirmModal } from '@/components/modals/DeleteConfirmModal';
 import { USER_ROLES } from '@/lib/constants';
 import { EmptyState } from '@/components/common/EmptyState';
+import { toast } from 'sonner';
 
 interface ExtendedBatch extends Batch {
   courseId?: number;
@@ -201,8 +202,10 @@ export default function BatchesPage() {
     try {
       await BatchesService.deleteApiBatches(selectedBatch.id);
       if (selectedCourseId) fetchBatches(selectedCourseId);
+      toast.success('Batch deleted successfully');
     } catch (err) {
       console.error('Delete failed:', err);
+      toast.error('Failed to delete batch. Please try again.');
     } finally {
       setIsDeleteBatchModalOpen(false);
       setSelectedBatch(null);

@@ -15,6 +15,7 @@ import { DeleteConfirmModal } from '@/components/modals/DeleteConfirmModal';
 import { EditUserModal } from '@/components/modals/EditUserModal';
 import { AddUserModal } from '@/components/modals/AddUserModal';
 import { CreateUserRequest } from '@/lib/api';
+import { toast } from 'sonner';
 
 type UserIndex = {
   usersByKey: Map<string, BusinessUser>;
@@ -189,8 +190,10 @@ const restoreScrollPosition = () => {
     try {
       await UsersService.deleteApiUsers(selectedUser.user.id);
       handleUserAction();
+      toast.success('User removed successfully');
     } catch (error) {
       console.error("Failed to delete user", error);
+      toast.error('Failed to remove user. Please try again.');
       throw error;
     }
   };

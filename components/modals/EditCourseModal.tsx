@@ -10,6 +10,7 @@ import { CoursesService, UpdateCourseRequest, Course } from '@/lib/api';
 import { validateDateRange, validateEntityName } from '@/lib/validation';
 import { DatePicker } from '@/components/ui/date-picker';
 import { toISODateTime } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface EditCourseModalProps {
     isOpen: boolean;
@@ -97,6 +98,7 @@ export function EditCourseModal({
 
             onCourseUpdated();
             onClose();
+            toast.success('Course updated successfully');
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             console.error('Error updating course:', err);

@@ -13,6 +13,7 @@ import { Plus } from 'lucide-react';
 import { ExamGridCard } from '@/components/dashboard/exams/ExamGridCard';
 import { USER_ROLES } from '@/lib/constants';
 import { EmptyState } from '@/components/common/EmptyState';
+import { toast } from 'sonner';
 
 export default function ExamsPage() {
     const { user, business, isAuthenticated, isLoading, isInitialized } = useAuthStore();
@@ -76,11 +77,13 @@ export default function ExamsPage() {
         try {
             await ExamsService.deleteApiBusinessExams(business.id, selectedExam.id);
             await fetchExams();
+            toast.success('Exam deleted successfully');
             setIsDeleteModalOpen(false);
             setSelectedExam(null);
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             console.error('Error deleting exam:', err);
+            toast.error(err.body?.message || 'Failed to delete exam');
         }
     };
 

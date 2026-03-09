@@ -7,6 +7,7 @@ import { CoursesService, CreateCourseRequest, Exam } from '@/lib/api';
 import { validateEntityName, validateDateRange } from '@/lib/validation';
 import { toISODateTime } from '@/lib/utils';
 import { DatePicker } from '../ui/date-picker';
+import { toast } from 'sonner';
 
 interface AddCourseModalProps {
     isOpen: boolean;
@@ -103,6 +104,7 @@ export function AddCourseModal({
 
             handleClose();
             onCourseCreated();
+            toast.success('Course created successfully');
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             console.error('Error creating course:', err);

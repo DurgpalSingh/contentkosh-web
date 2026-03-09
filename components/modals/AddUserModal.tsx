@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { UsersService, CreateUserRequest } from '@/lib/api';
 import { validateEntityName, validateEmail, validateMobile, validatePassword } from '@/lib/validation';
 import { USER_ROLES } from '@/lib/constants';
+import { toast } from 'sonner';
 
 interface AddUserModalProps {
     isOpen: boolean;
@@ -104,6 +105,7 @@ export function AddUserModal({
 
             resetForm();
             onUserCreated();
+            toast.success('User created successfully');
             onClose();
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {

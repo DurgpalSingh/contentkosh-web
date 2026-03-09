@@ -5,6 +5,7 @@ import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SubjectsService, CreateSubjectRequest } from '@/lib/api';
 import { validateEntityName } from '@/lib/validation';
+import { toast } from 'sonner';
 
 interface AddSubjectModalProps {
     isOpen: boolean;
@@ -69,6 +70,7 @@ export function AddSubjectModal({
 
             resetForm();
             onSubjectCreated();
+            toast.success('Subject created successfully');
             onClose();
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {

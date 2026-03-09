@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ContentsService, Content, UpdateContentRequest } from '@/lib/api';
 import { validateEntityName } from '@/lib/validation';
 import { Input } from '../ui/input';
-import { updateContent } from '../../../contentkosh-backend/src/repositories/content.repo';
+import { toast } from 'sonner';
 
 interface EditContentModalProps {
   isOpen: boolean;
@@ -55,6 +55,7 @@ export function EditContentModal({ isOpen, onClose, content, onUpdated }: EditCo
       await ContentsService.putApiContents({ contentId: content.id!, requestBody: body });
       onUpdated?.();
       onClose();
+      toast.success('Content updated successfully');
     } catch (err: unknown) {
       console.error('Update content failed:', err);
       let message = 'Failed to update content.';
