@@ -165,22 +165,22 @@ export default function TeacherProfilePage() {
       )}
 
       {targetUser && (
-        <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+        <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-6 overflow-hidden">
+          <div className="grid grid-cols-1 sm:grid-cols-[auto,1fr] items-start sm:items-center gap-4 sm:gap-6 min-w-0">
             <div className="h-16 w-16 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center flex-shrink-0">
               <UserIcon className="h-8 w-8 text-blue-600" />
             </div>
-            <div className="flex-1 min-w-0">
+            <div className="min-w-0">
               <h2 className="text-2xl font-bold text-gray-900 truncate max-w-full">{targetUser.name}</h2>
-              <div className="flex items-center gap-4 mt-3 flex-wrap min-w-0">
-                <div className="flex items-center text-gray-600 min-w-0 flex-1">
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 min-w-0">
+                <div className="flex items-center text-gray-600 min-w-0">
                   <Mail className="h-4 w-4 mr-2 flex-shrink-0" />
                   <span className="truncate max-w-full">{targetUser.email}</span>
                 </div>
                 {targetUser.mobile && (
-                  <div className="flex items-center text-gray-600">
+                  <div className="flex items-center text-gray-600 min-w-0">
                     <Phone className="h-4 w-4 mr-2 flex-shrink-0" />
-                    <span>{targetUser.mobile}</span>
+                    <span className="truncate max-w-full">{targetUser.mobile}</span>
                   </div>
                 )}
               </div>
