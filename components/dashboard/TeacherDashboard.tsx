@@ -21,6 +21,7 @@ export function TeacherDashboard() {
         if (!response.data || !isTeacherDashboardData(response.data)) {
           throw new Error('Invalid dashboard response for teacher');
         }
+        console.log(response.data);
         setData(response.data);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load dashboard');
@@ -74,7 +75,7 @@ export function TeacherDashboard() {
             <div key={batch.id} className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 sm:px-4 sm:py-3">
               <div className="flex items-center justify-between">
                 <p className="font-semibold text-slate-900 truncate" title={batch.displayName}>{batch.displayName}</p>
-                {/* <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-700 shrink-0">{batch.studentCount} students</span> */}
+                <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-700 shrink-0">{batch.studentCount} students</span>
               </div>
               <p className="mt-1 text-sm text-slate-500 truncate" title={batch.courseName}>{batch.courseName}</p>
             </div>
