@@ -31,7 +31,6 @@ export default function TeacherProfilePage() {
     try {
       setLoading(true);
       setError(null);
-      setTargetUser(null);
       setTeacher(null);
 
       if (!Number.isFinite(userId)) {
@@ -42,6 +41,9 @@ export default function TeacherProfilePage() {
       const profile = await TeachersService.getApiTeachersByUserId(userId);
       if (profile?.data) {
         setTeacher(profile.data as TeacherWithUser);
+        if (profile.data.user) {
+          setTargetUser(profile.data.user as TeacherWithUser['user']);
+        }
       }
     } catch (err: unknown) {
       if (err instanceof ApiError && err.status === 404) {
@@ -141,14 +143,14 @@ export default function TeacherProfilePage() {
       {!teacher && !error && targetUser && (
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
+            <div className="min-w-0">
               <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-blue-100 text-blue-800 text-xs font-semibold mb-3">
                 <Sparkles className="h-3.5 w-3.5" />
                 Profile setup required
               </div>
               <h3 className="text-lg font-semibold text-blue-900 mb-2">Teacher profile not created yet</h3>
               <p className="text-sm text-blue-700 leading-relaxed">
-                The profile for <strong>{targetUser.name}</strong> has not been created yet. Click the button below to create it now.
+                The profile for <strong className="inline-block max-w-full truncate align-bottom">{targetUser.name}</strong> has not been created yet. Click the button below to create it now.
               </p>
             </div>
             <Button
@@ -163,22 +165,22 @@ export default function TeacherProfilePage() {
       )}
 
       {targetUser && (
-        <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+        <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-6 overflow-hidden">
+          <div className="grid grid-cols-1 sm:grid-cols-[auto,1fr] items-start sm:items-center gap-4 sm:gap-6 min-w-0">
             <div className="h-16 w-16 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center flex-shrink-0">
               <UserIcon className="h-8 w-8 text-blue-600" />
             </div>
-            <div className="flex-1 min-w-0">
-              <h2 className="text-2xl font-bold text-gray-900 truncate">{targetUser.name}</h2>
-              <div className="flex items-center gap-4 mt-3 flex-wrap">
+            <div className="min-w-0">
+              <h2 className="text-2xl font-bold text-gray-900 truncate max-w-full">{targetUser.name}</h2>
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 min-w-0">
                 <div className="flex items-center text-gray-600 min-w-0">
                   <Mail className="h-4 w-4 mr-2 flex-shrink-0" />
-                  <span className="truncate">{targetUser.email}</span>
+                  <span className="truncate max-w-full">{targetUser.email}</span>
                 </div>
                 {targetUser.mobile && (
-                  <div className="flex items-center text-gray-600">
+                  <div className="flex items-center text-gray-600 min-w-0">
                     <Phone className="h-4 w-4 mr-2 flex-shrink-0" />
-                    <span>{targetUser.mobile}</span>
+                    <span className="truncate max-w-full">{targetUser.mobile}</span>
                   </div>
                 )}
               </div>
