@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, UserCircle2, Briefcase, MapPin, Save, AlertCircle } from 'lucide-react';
+import { X, UserCircle2, Briefcase, MapPin, Save, AlertCircle, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { TeachersService, UpdateTeacherRequest, Gender, TeacherWithUser } from '@/lib/api';
 import { validateProfessionalStep, ProfessionalStepErrors } from '@/lib/validation';
 import { LanguageInputChips } from './LanguageInputChips';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { toast } from 'sonner';
 
 interface EditTeacherProfileModalProps {
@@ -30,9 +31,10 @@ export function EditTeacherProfileModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<ProfessionalStepErrors>({});
+  const [isExperienceInfoOpen, setIsExperienceInfoOpen] = useState(false);
 
   const [qualification, setQualification] = useState('');
-  const [experienceYears, setExperienceYears] = useState<number | ''>('');
+  const [experienceYears, setExperienceYears] = useState<number | ''>(0);
   const [designation, setDesignation] = useState('');
   const [bio, setBio] = useState('');
   const [languages, setLanguages] = useState<string[]>([]);
@@ -44,7 +46,7 @@ export function EditTeacherProfileModal({
   useEffect(() => {
     if (isOpen && teacher) {
       setQualification(teacher.qualification || '');
-      setExperienceYears(teacher.experienceYears || '');
+      setExperienceYears(teacher.experienceYears ?? 0);
       setDesignation(teacher.designation || '');
       setBio(teacher.bio || '');
       setLanguages(teacher.languages || []);
@@ -192,8 +194,8 @@ export function EditTeacherProfileModal({
           <div className="rounded-lg border border-blue-100 bg-blue-50/70 p-3 flex items-start gap-3">
             <UserCircle2 className="h-5 w-5 text-blue-700 mt-0.5" />
             <div className="min-w-0">
-              <p className="text-sm font-medium text-blue-900">{teacher.user?.name || 'Teacher user'}</p>
-              <p className="text-xs text-blue-700 truncate">{teacher.user?.email || '-'}</p>
+              <p className="text-sm font-medium text-blue-900 truncate max-w-full">{teacher.user?.name || 'Teacher user'}</p>
+              <p className="text-xs text-blue-700 truncate max-w-full">{teacher.user?.email || '-'}</p>
             </div>
           </div>
 
@@ -244,7 +246,34 @@ export function EditTeacherProfileModal({
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Experience (Years) <span className="text-red-500">*</span>
+                  <span className="inline-flex items-center gap-1.5">
+                    Experience (Years) <span className="text-red-500">*</span>
+                    <Popover open={isExperienceInfoOpen} onOpenChange={setIsExperienceInfoOpen}>
+                      <PopoverTrigger asChild>
+                        <button
+                          type="button"
+                          aria-label="Experience range info"
+                          className="inline-flex h-4 w-4 items-center justify-center rounded-full text-gray-500 hover:text-gray-700"
+                          onMouseEnter={() => setIsExperienceInfoOpen(true)}
+                          onMouseLeave={() => setIsExperienceInfoOpen(false)}
+                          onFocus={() => setIsExperienceInfoOpen(true)}
+                          onBlur={() => setIsExperienceInfoOpen(false)}
+                        >
+                          <Info className="h-4 w-4" />
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent
+                        className="w-56 p-3 text-xs"
+                        align="start"
+                        sideOffset={8}
+                        onMouseEnter={() => setIsExperienceInfoOpen(true)}
+                        onMouseLeave={() => setIsExperienceInfoOpen(false)}
+                      >
+                        <p className="font-semibold text-gray-900">Experience range</p>
+                        <p className="mt-1 text-gray-600">Allowed: 0 to {MAX_EXPERIENCE_YEARS} years</p>
+                      </PopoverContent>
+                    </Popover>
+                  </span>
                 </label>
                 <Input
                   type="number"
@@ -260,7 +289,6 @@ export function EditTeacherProfileModal({
                   }`}
                   disabled={loading}
                 />
-                <p className="mt-1 text-xs text-gray-500">Allowed range: 0 to {MAX_EXPERIENCE_YEARS} years</p>
                 {validationErrors.experienceYears && (
                   <div className="flex items-center gap-1.5 mt-1.5 text-red-600 text-sm">
                     <AlertCircle className="h-3.5 w-3.5" />

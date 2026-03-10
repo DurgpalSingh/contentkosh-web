@@ -22,6 +22,13 @@ export const hasMaxLength = (max: number, label: string): Validator => (value) =
     return null;
 };
 
+export const hasMinLength = (min: number, label: string): Validator => (value) => {
+    if (value.trim().length < min) {
+        return `${label} must be at least ${min} characters long`;
+    }
+    return null;
+};
+
 export const containsAlphabet = (label: string): Validator => (value) => {
     if (!/[a-zA-Z]/.test(value)) {
         return `${label} must contain at least one alphabet`;
@@ -33,6 +40,14 @@ export const hasValidCharacters = (label: string): Validator => (value) => {
     // Allows letters, numbers, spaces, underscores, and hyphens
     if (!/^[a-zA-Z0-9\s_-]+$/.test(value)) {
         return `${label} can only contain letters, numbers, spaces, hyphens (-), and underscores (_)`;
+    }
+    return null;
+};
+
+export const hasValidQualificationCharacters = (label: string): Validator => (value) => {
+    // Allows letters, numbers, spaces, dots, hyphens, and underscores
+    if (!/^[a-zA-Z0-9._-\s]+$/.test(value)) {
+        return `${label} can only contain letters, numbers, spaces, dots (.), hyphens (-), and underscores (_)`;
     }
     return null;
 };
@@ -63,6 +78,25 @@ export function validateEntityName(name: string, entityLabel: string = 'Name', m
         hasMaxLength(maxLength, entityLabel),
         containsAlphabet(entityLabel),
         hasValidCharacters(entityLabel),
+    ]);
+}
+
+/**
+ * Validates a teacher qualification.
+ *
+ * @param qualification The qualification to validate.
+ * @param maxLength The maximum allowed length (default: 100).
+ * @returns An error message string if invalid, or null if valid.
+ */
+export function validateQualification(qualification: string, maxLength: number = 100): string | null {
+    const trimmedQualification = qualification ? qualification.trim() : '';
+
+    return validate(trimmedQualification, [
+        isRequired('Qualification'),
+        hasMinLength(3, 'Qualification'),
+        hasMaxLength(maxLength, 'Qualification'),
+        containsAlphabet('Qualification'),
+        hasValidQualificationCharacters('Qualification'),
     ]);
 }
 
@@ -188,7 +222,7 @@ export function validateProfessionalStep(
 ): ProfessionalStepErrors {
   const errors: ProfessionalStepErrors = {};
 
-  const qualificationError = validateEntityName(qualification, 'Qualification', 100);
+  const qualificationError = validateQualification(qualification, 100);
   if (qualificationError) {
     errors.qualification = qualificationError;
   }

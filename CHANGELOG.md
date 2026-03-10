@@ -1,6 +1,16 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.1.45] - Teacher Profile validation improved
+**P.R Raised by** : shubh404-SE on **Date** : 2026-03-10
+
+### Changes
+  - Fixed overflow and truncation for teacher name/email in the profile, 
+  - Ensured targetUser is set from the fetched profile so the edit modal can open immediately after creation.
+  - Set default experience to 0 and added a popover info button for the allowed experience range.
+  - Added dedicated qualification validation with min length 3.
+
+---
 ## Version [1.1.44] - Login page Misleading text
 **P.R Raised by** : shubh404-SE on **Date** : 2026-03-10
 
