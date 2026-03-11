@@ -1,6 +1,13 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.1.47] - Resistration page ui & validation
+**P.R Raised by** : shubh404-SE on **Date** : 2026-03-11
+
+### Changed
+  - updated `register.ts` page ui.
+  - changed validation for institute name.
+---
 ## Version [1.1.46] - Teacher dashboard batches student count
 **P.R Raised by** : shubh404-SE on **Date** : 2026-03-10
 

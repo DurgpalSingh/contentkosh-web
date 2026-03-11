@@ -6,6 +6,7 @@ import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/store/useAuthStore';
 import { authApi } from '@/lib/auth';
@@ -13,10 +14,19 @@ import { ROUTES } from '@/lib/constants';
 import { RegisterRequest, BusinessService, CreateBusinessRequest } from '@/lib/api';
 
 const signupSchema = z.object({
-  instituteName: z.string().min(2, 'Institute Name must be at least 2 characters'),
+  instituteName: z
+    .string()
+    .trim()
+    .min(3, 'Institute Name must be at least 3 characters')
+    .max(100, 'Institute Name cannot exceed 100 characters')
+    .regex(
+      /^[a-zA-Z0-9 _-]+$/,
+      'Institute Name can only contain letters, numbers, spaces, hyphens (-), and underscores (_)'
+    )
+    .refine((value) => /[a-zA-Z]/.test(value), 'Institute Name must include at least one letter'),
   slug: z.string().min(3, 'Slug must be at least 3 characters')
     .regex(/^[a-z0-9-]+$/, 'Slug must only contain lowercase letters, numbers, and hyphens'),
-  name: z.string().min(2, 'Name must be at least 2 characters'),
+  name: z.string().trim().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Please enter a valid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   confirmPassword: z.string(),
@@ -141,159 +151,166 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Create your institute
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Start your journey with ContentKosh
+    <div className="min-h-screen bg-slate-50 px-4 py-10 sm:px-6 lg:px-8 flex items-center">
+      <div className="mx-auto grid w-full max-w-5xl gap-8 lg:grid-cols-2 lg:items-center">
+        <section className="hidden lg:block">
+          <Image
+            src="/logo.png"
+            alt="Logo"
+            width={180}
+            height={100}
+            className="h-16 w-auto"
+            priority
+          />
+          <h1 className="mt-4 text-4xl font-bold leading-tight text-slate-900">
+            Create your institute and start organizing everything in one place.
+          </h1>
+          <p className="mt-3 text-sm text-slate-600">
+            We will set up your institute space and the admin account in one step.
           </p>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Or{' '}
-            <Link
-              href={ROUTES.LOGIN}
-              className="font-medium text-indigo-600 hover:text-indigo-500"
-            >
-              sign in to your existing account
-            </Link>
-          </p>
-        </div>
+        </section>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm">
-              {error}
-            </div>
-          )}
-
-          <div className="space-y-4">
-
-            {/* Institute Name */}
-            <div>
-              <label htmlFor="instituteName" className="block text-sm font-medium text-gray-700">
-                Institute Name
-              </label>
-              <input
-                {...register('instituteName')}
-                type="text"
-                id="instituteName"
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="e.g. Acme Academy"
-              />
-              {errors.instituteName && (
-                <p className="mt-1 text-sm text-red-600">{errors.instituteName.message}</p>
-              )}
-            </div>
-
-            {/* Slug */}
-            <div>
-              <label htmlFor="slug" className="block text-sm font-medium text-gray-700">
-                Institute URL Slug
-              </label>
-              <div className="mt-1 flex rounded-md shadow-sm">
-                <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 sm:text-sm">
-                  app.contentkosh.com/
-                </span>
-                <input
-                  {...register('slug')}
-                  type="text"
-                  id="slug"
-                  className="flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-r-md border border-gray-300 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  placeholder="acme-academy"
-                />
-              </div>
-              {errors.slug && (
-                <p className="mt-1 text-sm text-red-600">{errors.slug.message}</p>
-              )}
-            </div>
-
-            <div className="relative flex py-2 items-center">
-              <div className="flex-grow border-t border-gray-300"></div>
-              <span className="flex-shrink-0 mx-4 text-gray-400 text-xs uppercase">Admin Details</span>
-              <div className="flex-grow border-t border-gray-300"></div>
-            </div>
-
-            {/* Full Name */}
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                Full Name
-              </label>
-              <input
-                {...register('name')}
-                type="text"
-                autoComplete="name"
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Enter your full name"
-              />
-              {errors.name && (
-                <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
-              )}
-            </div>
-
-            {/* Email */}
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email address
-              </label>
-              <input
-                {...register('email')}
-                type="email"
-                autoComplete="email"
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Enter your email"
-              />
-              {errors.email && (
-                <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
-              )}
-            </div>
-
-            {/* Password */}
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <input
-                {...register('password')}
-                type="password"
-                autoComplete="new-password"
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Create a password"
-              />
-              {errors.password && (
-                <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
-              )}
-            </div>
-
-            {/* Confirm Password */}
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                Confirm Password
-              </label>
-              <input
-                {...register('confirmPassword')}
-                type="password"
-                autoComplete="new-password"
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Confirm your password"
-              />
-              {errors.confirmPassword && (
-                <p className="mt-1 text-sm text-red-600">{errors.confirmPassword.message}</p>
-              )}
-            </div>
+        <div className="w-full rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+          <div className="mb-6">
+            <h2 className="text-2xl font-semibold text-slate-900">Create your institute</h2>
+            <p className="mt-1 text-sm text-slate-600">
+              Already have an account?{' '}
+              <Link href={ROUTES.LOGIN} className="font-semibold text-cyan-700 hover:text-cyan-800">
+                Sign in here
+              </Link>
+            </p>
           </div>
 
-          <div>
+          <form className="space-y-5" onSubmit={handleSubmit(onSubmit)} noValidate>
+            {error && (
+              <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {error}
+              </div>
+            )}
+
+            <div className="space-y-4">
+              {/* Institute Name */}
+              <div>
+                <label htmlFor="instituteName" className="mb-1.5 block text-sm font-medium text-slate-700">
+                  Institute Name
+                </label>
+                <input
+                  {...register('instituteName')}
+                  type="text"
+                  id="instituteName"
+                  className="block w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-slate-900 shadow-sm outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100"
+                  placeholder="e.g. Acme Academy"
+                />
+                <p className="mt-1 text-xs text-slate-500">
+                  {(instituteName || '').length}/100 characters
+                </p>
+                {errors.instituteName && (
+                  <p className="mt-1 text-sm text-red-600">{errors.instituteName.message}</p>
+                )}
+              </div>
+
+              {/* Slug */}
+              <div>
+                <label htmlFor="slug" className="mb-1.5 block text-sm font-medium text-slate-700">
+                  Institute URL Slug
+                </label>
+                <div className="mt-1 flex rounded-xl shadow-sm">
+                  <span className="inline-flex items-center rounded-l-xl border border-r-0 border-slate-300 bg-slate-50 px-3 text-sm text-slate-500">
+                    app.contentkosh.com/
+                  </span>
+                  <input
+                    {...register('slug')}
+                    type="text"
+                    id="slug"
+                    className="block w-full rounded-none rounded-r-xl border border-slate-300 px-3 py-2.5 text-slate-900 shadow-sm outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100"
+                    placeholder="acme-academy"
+                  />
+                </div>
+                {errors.slug && <p className="mt-1 text-sm text-red-600">{errors.slug.message}</p>}
+              </div>
+
+              <div className="relative flex items-center py-2">
+                <div className="flex-grow border-t border-slate-200"></div>
+                <span className="mx-4 flex-shrink-0 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  Admin Details
+                </span>
+                <div className="flex-grow border-t border-slate-200"></div>
+              </div>
+
+              {/* Full Name */}
+              <div>
+                <label htmlFor="name" className="mb-1.5 block text-sm font-medium text-slate-700">
+                  Full Name
+                </label>
+                <input
+                  {...register('name')}
+                  type="text"
+                  autoComplete="name"
+                  className="block w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-slate-900 shadow-sm outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100"
+                  placeholder="Enter your full name"
+                />
+                {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>}
+              </div>
+
+              {/* Email */}
+              <div>
+                <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-slate-700">
+                  Email address
+                </label>
+                <input
+                  {...register('email')}
+                  type="email"
+                  autoComplete="email"
+                  className="block w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-slate-900 shadow-sm outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100"
+                  placeholder="Enter your email"
+                />
+                {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>}
+              </div>
+
+              {/* Password */}
+              <div>
+                <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-slate-700">
+                  Password
+                </label>
+                <input
+                  {...register('password')}
+                  type="password"
+                  autoComplete="new-password"
+                  className="block w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-slate-900 shadow-sm outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100"
+                  placeholder="Create a password"
+                />
+                {errors.password && (
+                  <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+                )}
+              </div>
+
+              {/* Confirm Password */}
+              <div>
+                <label htmlFor="confirmPassword" className="mb-1.5 block text-sm font-medium text-slate-700">
+                  Confirm Password
+                </label>
+                <input
+                  {...register('confirmPassword')}
+                  type="password"
+                  autoComplete="new-password"
+                  className="block w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-slate-900 shadow-sm outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100"
+                  placeholder="Confirm your password"
+                />
+                {errors.confirmPassword && (
+                  <p className="mt-1 text-sm text-red-600">{errors.confirmPassword.message}</p>
+                )}
+              </div>
+            </div>
+
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full rounded-xl bg-slate-900 py-2.5 text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isLoading ? 'Creating account...' : 'Create Account & Institute'}
             </Button>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
     </div>
   );
