@@ -1,6 +1,12 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.1.46] - Teacher dashboard batches student count
+**P.R Raised by** : shubh404-SE on **Date** : 2026-03-10
+
+### Changed
+  - `TeacherDashboard.ts` getting student count for batches. 
+---
 ## Version [1.1.45] - Teacher Profile validation improved
 **P.R Raised by** : shubh404-SE on **Date** : 2026-03-10
 
