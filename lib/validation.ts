@@ -70,11 +70,17 @@ export function validate(value: string, validators: Validator[]): string | null 
  * @param maxLength The maximum allowed length (default: 50).
  * @returns An error message string if invalid, or null if valid.
  */
-export function validateEntityName(name: string, entityLabel: string = 'Name', maxLength: number = 50): string | null {
+export function validateEntityName(
+    name: string,
+    entityLabel: string = 'Name',
+    maxLength: number = 50,
+    minLength?: number
+): string | null {
     const trimmedName = name ? name.trim() : '';
 
     return validate(trimmedName, [
         isRequired(entityLabel),
+        ...(typeof minLength === 'number' ? [hasMinLength(minLength, entityLabel)] : []),
         hasMaxLength(maxLength, entityLabel),
         containsAlphabet(entityLabel),
         hasValidCharacters(entityLabel),
@@ -241,7 +247,7 @@ export function validateProfessionalStep(
     }
   }
 
-  const designationError = validateEntityName(designation, 'Designation', 100);
+  const designationError = validateEntityName(designation, 'Designation', 100, 3);
   if (designationError) {
     errors.designation = designationError;
   }
