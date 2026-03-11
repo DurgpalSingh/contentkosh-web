@@ -24,7 +24,7 @@ export const hasMaxLength = (max: number, label: string): Validator => (value) =
 
 export const hasMinLength = (min: number, label: string): Validator => (value) => {
     if (value.trim().length < min) {
-        return `${label} must be at least ${min} characters long`;
+        return `${label} must be at least ${min} alphabets.`;
     }
     return null;
 };
