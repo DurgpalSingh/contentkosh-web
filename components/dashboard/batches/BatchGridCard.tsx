@@ -106,7 +106,7 @@ export function BatchGridCard({
                 {/* Members */}
                 <div className="flex items-center text-sm text-slate-500">
                     <Users className="h-4 w-4 mr-2 text-slate-400" />
-                    <span>{memberCount} Members</span>
+                    <span>{memberCount} Students</span>
                 </div>
             </div>
         </OverviewCard>
