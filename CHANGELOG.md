@@ -1,6 +1,11 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.1.48] - Show Student count in batch card
+**P.R Raised by** : shubh404-SE on **Date** : 2026-03-11
+### Changed
+  - Renamed "Members" to "Students".
+---
 ## Version [1.1.47] - Resistration page ui & validation
 **P.R Raised by** : shubh404-SE on **Date** : 2026-03-11
 
