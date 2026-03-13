@@ -153,7 +153,7 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-10 sm:px-6 lg:px-8 flex items-center">
       <div className="mx-auto grid w-full max-w-5xl gap-8 lg:grid-cols-2 lg:items-center">
-        <section className="hidden lg:block">
+        <section className="mb-8 lg:mb-0">
           <Image
             src="/logo.png"
             alt="Logo"

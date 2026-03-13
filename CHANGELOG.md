@@ -1,6 +1,12 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.1.49] - Show logo in all devices
+**P.R Raised by** : shubh404-SE on **Date** : 2026-03-13
+
+#### changed
+  - Updated `login page` and `register page` css to show logo for all devices
+---
 ## Version [1.1.48] - Show Student count in batch card
 **P.R Raised by** : shubh404-SE on **Date** : 2026-03-11
 ### Changed
