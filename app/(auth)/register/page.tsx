@@ -92,19 +92,17 @@ export default function RegisterPage() {
     }
   }, [instituteName, setValue]);
 
-  const slugField = register('slug');
-
   const handleSlugChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const nextSlug = slugify(event.target.value);
     event.target.value = nextSlug;
-    slugField.onChange(event);
+    register('slug').onChange(event);
   };
 
   const handleSlugBlur = (event: React.FocusEvent<HTMLInputElement>) => {
     const nextSlug = slugify(event.target.value, true);
     event.target.value = nextSlug;
-    slugField.onChange(event);
-    slugField.onBlur(event);
+    register('slug').onChange(event);
+    register('slug').onBlur(event);
   };
 
   const onSubmit = async (data: SignupFormData) => {
@@ -250,7 +248,7 @@ export default function RegisterPage() {
                     app.contentkosh.com/
                   </span>
                   <input
-                    {...slugField}
+                    {...register('slug')}
                     type="text"
                     id="slug"
                     onChange={handleSlugChange}
