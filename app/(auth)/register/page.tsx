@@ -24,7 +24,10 @@ const signupSchema = z.object({
       'Institute Name can only contain letters, numbers, spaces, hyphens (-), and underscores (_)'
     )
     .refine((value) => /[a-zA-Z]/.test(value), 'Institute Name must include at least one letter'),
-  slug: z.string().min(3, 'Slug must be at least 3 characters')
+  slug: z
+    .string()
+    .min(3, 'Slug must be at least 3 characters')
+    .max(100, 'Slug cannot exceed 100 characters')
     .regex(/^[a-z0-9-]+$/, 'Slug must only contain lowercase letters, numbers, and hyphens'),
   name: z.string().trim().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Please enter a valid email address'),
@@ -36,6 +39,16 @@ const signupSchema = z.object({
 });
 
 type SignupFormData = z.infer<typeof signupSchema>;
+
+const slugify = (value: string, trimEnd = false) => {
+  const normalized = value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+/, '');
+
+  return trimEnd ? normalized.replace(/-+$/, '') : normalized;
+};
 
 export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -66,16 +79,31 @@ export default function RegisterPage() {
     name: 'instituteName',
   });
 
+  const slug = useWatch({
+    control,
+    name: 'slug',
+  });
+
   // Auto-generate slug from institute name
   useEffect(() => {
     if (instituteName) {
-      const generatedSlug = instituteName
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)+/g, '');
+      const generatedSlug = slugify(instituteName, true);
       setValue('slug', generatedSlug, { shouldValidate: true });
     }
   }, [instituteName, setValue]);
+
+  const handleSlugChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const nextSlug = slugify(event.target.value);
+    event.target.value = nextSlug;
+    register('slug').onChange(event);
+  };
+
+  const handleSlugBlur = (event: React.FocusEvent<HTMLInputElement>) => {
+    const nextSlug = slugify(event.target.value, true);
+    event.target.value = nextSlug;
+    register('slug').onChange(event);
+    register('slug').onBlur(event);
+  };
 
   const onSubmit = async (data: SignupFormData) => {
     setIsLoading(true);
@@ -200,6 +228,7 @@ export default function RegisterPage() {
                   id="instituteName"
                   className="block w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-slate-900 shadow-sm outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100"
                   placeholder="e.g. Acme Academy"
+                  maxLength={100}
                 />
                 <p className="mt-1 text-xs text-slate-500">
                   {(instituteName || '').length}/100 characters
@@ -222,10 +251,16 @@ export default function RegisterPage() {
                     {...register('slug')}
                     type="text"
                     id="slug"
+                    onChange={handleSlugChange}
+                    onBlur={handleSlugBlur}
                     className="block w-full rounded-none rounded-r-xl border border-slate-300 px-3 py-2.5 text-slate-900 shadow-sm outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100"
                     placeholder="acme-academy"
+                    maxLength={100}
                   />
                 </div>
+                <p className="mt-1 text-xs text-slate-500">
+                  {(slug || '').length}/100 characters
+                </p>
                 {errors.slug && <p className="mt-1 text-sm text-red-600">{errors.slug.message}</p>}
               </div>
 
