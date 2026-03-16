@@ -1,6 +1,12 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.1.50] - institute slug  field validation
+**P.R Raised by** : shubh404-SE on **Date** : 2026-03-16
+
+### Changed
+  - fixed slug input field validation.(Max length to 100, no space allowed, space convert in hyphens, only lowercase letters)
+---
 ## Version [1.1.49] - Show logo in all devices
 **P.R Raised by** : shubh404-SE on **Date** : 2026-03-13
 
