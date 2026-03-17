@@ -90,12 +90,10 @@ export default function RegisterPage() {
     name: 'slug',
   });
 
-<<<<<<< HEAD
   const name = useWatch({
     control,
     name: 'name',
   });
-=======
   useEffect(() => {
     const currentSlug = (slug || '').trim();
 
@@ -108,10 +106,10 @@ export default function RegisterPage() {
     const timeoutId = setTimeout(async () => {
       try {
         setSlugStatus('checking');
-        const request = BusinessService.getApiBusinessSlugExists(currentSlug);
-        const onAbort = () => request.cancel();
+        const slugRequest = BusinessService.getApiBusinessSlugExists(currentSlug);
+        const onAbort = () => slugRequest.cancel();
         controller.signal.addEventListener('abort', onAbort, { once: true });
-        const response = await request;
+        const response = await slugRequest;
         controller.signal.removeEventListener('abort', onAbort);
         if (controller.signal.aborted) return;
         const exists = Boolean(response.data?.exists);
@@ -128,7 +126,6 @@ export default function RegisterPage() {
       clearTimeout(timeoutId);
     };
   }, [slug]);
->>>>>>> 8724022 (slug check api intigrated)
 
   // Auto-generate slug from institute name
   useEffect(() => {
