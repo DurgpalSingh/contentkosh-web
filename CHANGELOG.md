@@ -1,6 +1,12 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.1.51] - name field validation
+**P.R Raised by** : shubh404-SE on **Date** : 2026-03-17
+
+### Changes
+  - name field validation in `register page`.
+---
 ## Version [1.1.50] - institute slug  field validation
 **P.R Raised by** : shubh404-SE on **Date** : 2026-03-16
 

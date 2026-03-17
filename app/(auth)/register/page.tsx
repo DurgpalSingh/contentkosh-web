@@ -29,7 +29,12 @@ const signupSchema = z.object({
     .min(3, 'Slug must be at least 3 characters')
     .max(100, 'Slug cannot exceed 100 characters')
     .regex(/^[a-z0-9-]+$/, 'Slug must only contain lowercase letters, numbers, and hyphens'),
-  name: z.string().trim().min(2, 'Name must be at least 2 characters'),
+  name: z
+    .string()
+    .trim()
+    .min(3, 'Name must be at least 3 characters')
+    .max(100, 'Name cannot exceed 100 characters')
+    .regex(/^[A-Za-z]+(?: [A-Za-z]+)*$/, 'Name can only contain letters and single space (in between words)'),
   email: z.string().email('Please enter a valid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   confirmPassword: z.string(),
@@ -82,6 +87,11 @@ export default function RegisterPage() {
   const slug = useWatch({
     control,
     name: 'slug',
+  });
+
+  const name = useWatch({
+    control,
+    name: 'name',
   });
 
   // Auto-generate slug from institute name
@@ -283,7 +293,11 @@ export default function RegisterPage() {
                   autoComplete="name"
                   className="block w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-slate-900 shadow-sm outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100"
                   placeholder="Enter your full name"
+                  maxLength={100}
                 />
+                <p className="mt-1 text-xs text-slate-500">
+                  {(name || '').length}/100 characters
+                </p>
                 {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>}
               </div>
 
