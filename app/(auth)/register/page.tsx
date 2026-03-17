@@ -58,6 +58,7 @@ const slugify = (value: string, trimEnd = false) => {
 export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [slugStatus, setSlugStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'error'>('idle');
   const router = useRouter();
   const { login } = useAuthStore();
 
@@ -89,10 +90,45 @@ export default function RegisterPage() {
     name: 'slug',
   });
 
+<<<<<<< HEAD
   const name = useWatch({
     control,
     name: 'name',
   });
+=======
+  useEffect(() => {
+    const currentSlug = (slug || '').trim();
+
+    if (!currentSlug || currentSlug.length < 3) {
+      setSlugStatus('idle');
+      return;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(async () => {
+      try {
+        setSlugStatus('checking');
+        const request = BusinessService.getApiBusinessSlugExists(currentSlug);
+        const onAbort = () => request.cancel();
+        controller.signal.addEventListener('abort', onAbort, { once: true });
+        const response = await request;
+        controller.signal.removeEventListener('abort', onAbort);
+        if (controller.signal.aborted) return;
+        const exists = Boolean(response.data?.exists);
+        setSlugStatus(exists ? 'taken' : 'available');
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        console.error('Slug check failed:', err);
+        setSlugStatus('error');
+      }
+    }, 500);
+
+    return () => {
+      controller.abort();
+      clearTimeout(timeoutId);
+    };
+  }, [slug]);
+>>>>>>> 8724022 (slug check api intigrated)
 
   // Auto-generate slug from institute name
   useEffect(() => {
@@ -271,6 +307,20 @@ export default function RegisterPage() {
                 <p className="mt-1 text-xs text-slate-500">
                   {(slug || '').length}/100 characters
                 </p>
+                {slugStatus === 'checking' && (
+                  <p className="mt-1 text-xs text-slate-500">Checking availability...</p>
+                )}
+                {slugStatus === 'available' && (
+                  <p className="mt-1 text-sm text-emerald-600">Slug is available.</p>
+                )}
+                {slugStatus === 'taken' && (
+                  <p className="mt-1 text-sm text-red-600">Slug is already taken.</p>
+                )}
+                {slugStatus === 'error' && (
+                  <p className="mt-1 text-sm text-amber-600">
+                    Could not check slug availability. Try again.
+                  </p>
+                )}
                 {errors.slug && <p className="mt-1 text-sm text-red-600">{errors.slug.message}</p>}
               </div>
 
@@ -353,7 +403,7 @@ export default function RegisterPage() {
 
             <Button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || slugStatus === 'taken' || slugStatus === 'checking'}
               className="w-full rounded-xl bg-slate-900 py-2.5 text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isLoading ? 'Creating account...' : 'Create Account & Institute'}
