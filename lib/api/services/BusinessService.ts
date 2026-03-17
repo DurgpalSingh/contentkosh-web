@@ -14,6 +14,30 @@ import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
 export class BusinessService {
     /**
+     * Check if business slug exists
+     * @param slug Business slug to check
+     * @returns any Slug check successful
+     * @throws ApiError
+     */
+    public static getApiBusinessSlugExists(
+        slug: string,
+    ): CancelablePromise<(ApiResponse & {
+        data?: {
+            exists?: boolean;
+        };
+    })> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/business/slug/{slug}/exists',
+            path: {
+                'slug': slug,
+            },
+            errors: {
+                400: `Invalid slug`,
+            },
+        });
+    }
+    /**
      * Create exam under business
      * @param businessId Business ID
      * @param requestBody

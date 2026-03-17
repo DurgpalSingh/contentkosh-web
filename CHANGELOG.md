@@ -1,6 +1,12 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.1.52] - institute slug  field validation
+**P.R Raised by** : shubh404-SE on **Date** : 2026-03-16
+
+### Changed
+  - Used `slug/{slug}/exists` API to check if slug already exist.
+---
 ## Version [1.1.51] - name field validation
 **P.R Raised by** : shubh404-SE on **Date** : 2026-03-17
 
