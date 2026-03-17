@@ -121,7 +121,7 @@ export function EditCourseModal({
             {/* Modal */}
             <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md overflow-y-auto max-h-[90vh]">
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-green-500 to-green-600">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-700">
                     <h2 className="text-xl font-semibold text-white">Edit Course</h2>
                     <Button
                         variant="ghost"
@@ -152,7 +152,7 @@ export function EditCourseModal({
                             placeholder="e.g., Civil Services Foundation Course"
                             maxLength={100}
                             disabled={loading}
-                            className="focus-visible:ring-green-500 focus-visible:ring-offset-1"
+                            className="focus-visible:ring-blue-500 focus-visible:ring-offset-1"
                         />
                         <p className="text-xs text-gray-500">{name.length}/100 characters</p>
                     </div>
@@ -165,7 +165,7 @@ export function EditCourseModal({
                             onChange={(e) => setDescription(e.target.value)}
                             placeholder="Brief description of the course..."
                             rows={3}
-                            className="resize-none focus-visible:ring-green-500 focus-visible:ring-offset-1"
+                            className="resize-none focus-visible:ring-blue-500 focus-visible:ring-offset-1"
                             disabled={loading}
                         />
                     </div>
@@ -195,7 +195,7 @@ export function EditCourseModal({
                             type="checkbox"
                             checked={isActive}
                             onChange={(e) => setIsActive(e.target.checked)}
-                            className="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                            className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                             disabled={loading}
                         />
                         <Label htmlFor="edit-course-active" className="font-normal">
@@ -216,7 +216,7 @@ export function EditCourseModal({
 
                         <Button
                             type="submit"
-                            className="bg-green-600 hover:bg-green-700 text-white"
+                            className="bg-blue-600 hover:bg-blue-700 text-white"
                             disabled={loading}
                         >
                             {loading ? (

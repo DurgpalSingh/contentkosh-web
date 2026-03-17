@@ -20,11 +20,7 @@ export function BatchMemberDetailsModal({ member, role, onClose }: BatchMemberDe
         className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto"
         onClick={(event) => event.stopPropagation()}
       >
-        <div
-          className={`px-6 py-4 border-b border-slate-100 flex justify-between items-center ${
-            role === 'TEACHER' ? 'bg-purple-50' : 'bg-blue-50'
-          }`}
-        >
+        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-blue-50">
           <h3 className="text-lg font-bold text-slate-800">Member Details</h3>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
             <span className="sr-only">Close</span>
@@ -36,13 +32,7 @@ export function BatchMemberDetailsModal({ member, role, onClose }: BatchMemberDe
 
         <div className="p-6 space-y-4">
           <div className="flex items-center gap-4">
-            <div
-              className={`h-16 w-16 rounded-full flex items-center justify-center border-2 ${
-                role === 'TEACHER'
-                  ? 'bg-purple-100 text-purple-600 border-purple-200'
-                  : 'bg-blue-100 text-blue-600 border-blue-200'
-              }`}
-            >
+            <div className="h-16 w-16 rounded-full flex items-center justify-center border-2 bg-blue-100 text-blue-600 border-blue-200">
               {role === 'TEACHER' ? <UserCog className="h-8 w-8" /> : <Users className="h-8 w-8" />}
             </div>
             <div>

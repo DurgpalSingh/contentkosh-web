@@ -125,14 +125,14 @@ export function AddExamModal({
             {/* Modal */}
             <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md overflow-y-auto max-h-[90vh]">
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-                    <h2 className="text-xl font-semibold text-gray-900">Add New Exam</h2>
+                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-700">
+                    <h2 className="text-xl font-semibold text-white">Add New Exam</h2>
 
                     <Button
                         variant="ghost"
                         size="icon"
                         onClick={handleClose}
-                        className="text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                        className="text-white/80 hover:text-white hover:bg-white/20"
                     >
                         <X className="h-5 w-5" />
                     </Button>

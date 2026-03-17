@@ -89,9 +89,11 @@ export function EditContentModal({ isOpen, onClose, content, onUpdated }: EditCo
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={handleClose} />
 
       <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md overflow-y-auto max-h-[90vh]">
-        <div className="flex items-center justify-between px-6 py-4 border-b">
-          <h2 className="text-lg font-semibold">Edit Content</h2>
-          <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-600"><X className="h-5 w-5" /></Button>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-700">
+          <h2 className="text-lg font-semibold text-white">Edit Content</h2>
+          <Button variant="ghost" size="icon" onClick={handleClose} className="text-white/80 hover:text-white hover:bg-white/20">
+            <X className="h-5 w-5" />
+          </Button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
@@ -99,13 +101,20 @@ export function EditContentModal({ isOpen, onClose, content, onUpdated }: EditCo
 
           <div>
             <label className="block text-sm font-medium text-slate-700">Title</label>
-            <Input value={title} onChange={(e) => setTitle(e.target.value)} className="mt-1 w-full border rounded px-3 py-2" maxLength={100} />
+            <Input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              maxLength={100}
+            />
             <p className="mt-1 text-xs text-gray-500">{title.length}/100 characters</p>
           </div>
 
           <div className="flex justify-end space-x-3 pt-4">
             <Button variant="outline" onClick={handleClose}>Cancel</Button>
-            <Button type="submit" className="bg-blue-600" disabled={loading}>{loading ? 'Saving...' : 'Save'}</Button>
+            <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white" disabled={loading}>
+              {loading ? 'Saving...' : 'Save'}
+            </Button>
           </div>
         </form>
       </div>

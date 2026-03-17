@@ -104,7 +104,7 @@ export function AddSubjectModal({
                 aria-labelledby="add-subject-title"
             >
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-indigo-500 to-indigo-600">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-700">
                     <h2 id="add-subject-title" className="text-xl font-semibold text-white">
                         Add New Subject
                     </h2>
@@ -149,7 +149,7 @@ export function AddSubjectModal({
                             required
                             aria-required="true"
                             aria-describedby="subject-name-help"
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors focus-visible:ring-indigo-500 focus-visible:ring-offset-1"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors focus-visible:ring-blue-500 focus-visible:ring-offset-1"
                             disabled={loading}
                         />
                         <p id="subject-name-help" className="mt-1 text-xs text-gray-500">
@@ -170,7 +170,7 @@ export function AddSubjectModal({
                             onChange={(e) => setDescription(e.target.value)}
                             placeholder="Brief description of the subject..."
                             rows={3}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none focus-visible:ring-indigo-500 focus-visible:ring-offset-1"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none focus-visible:ring-blue-500 focus-visible:ring-offset-1"
                             disabled={loading}
                         />
                     </div>
@@ -181,7 +181,7 @@ export function AddSubjectModal({
                             type="checkbox"
                             checked={isActive}
                             onChange={(e) => setIsActive(e.target.checked)}
-                            className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                            className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                             disabled={loading}
                         />
                         <label htmlFor="subject-active" className="text-sm text-gray-700">
@@ -202,7 +202,7 @@ export function AddSubjectModal({
 
                         <Button
                             type="submit"
-                            className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                            className="bg-blue-600 hover:bg-blue-700 text-white"
                             disabled={loading}
                         >
                             {loading ? (

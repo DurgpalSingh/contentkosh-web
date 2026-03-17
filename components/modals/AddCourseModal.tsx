@@ -134,7 +134,7 @@ export function AddCourseModal({
             {/* Modal */}
             <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md overflow-y-auto max-h-[90vh]">
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-green-500 to-green-600">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-700">
                     <h2 className="text-xl font-semibold text-white">Add New Course</h2>
 
                     <Button
@@ -172,7 +172,7 @@ export function AddCourseModal({
                             id="exam-select"
                             value={selectedExamId || ''}
                             onChange={(e) => setSelectedExamId(Number(e.target.value))}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors focus-visible:ring-green-500 focus-visible:ring-offset-1 bg-white"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors focus-visible:ring-blue-500 focus-visible:ring-offset-1 bg-white"
                             disabled={loading || noExamsAvailable}
                         >
                             <option value="" disabled>Select an exam</option>
@@ -198,7 +198,7 @@ export function AddCourseModal({
                             onChange={(e) => setName(e.target.value)}
                             placeholder="e.g., Civil Services Foundation Course"
                             maxLength={100}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors focus-visible:ring-green-500 focus-visible:ring-offset-1"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors focus-visible:ring-blue-500 focus-visible:ring-offset-1"
                             disabled={loading || noExamsAvailable}
                         />
                         <p className="mt-1 text-xs text-gray-500">{name.length}/100 characters</p>
@@ -217,7 +217,7 @@ export function AddCourseModal({
                             onChange={(e) => setDescription(e.target.value)}
                             placeholder="Brief description of the course..."
                             rows={3}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors resize-none focus-visible:ring-green-500 focus-visible:ring-offset-1"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none focus-visible:ring-blue-500 focus-visible:ring-offset-1"
                             disabled={loading || noExamsAvailable}
                         />
                     </div>
@@ -251,7 +251,7 @@ export function AddCourseModal({
                             type="checkbox"
                             checked={isActive}
                             onChange={(e) => setIsActive(e.target.checked)}
-                            className="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                            className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                             disabled={loading || noExamsAvailable}
                         />
                         <label htmlFor="course-active" className="text-sm text-gray-700">
@@ -272,7 +272,7 @@ export function AddCourseModal({
 
                         <Button
                             type="submit"
-                            className="bg-green-600 hover:bg-green-700 text-white"
+                            className="bg-blue-600 hover:bg-blue-700 text-white"
                             disabled={loading || noExamsAvailable}
                         >
                             {loading ? (

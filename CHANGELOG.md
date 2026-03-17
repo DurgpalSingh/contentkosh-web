@@ -1,6 +1,13 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.1.53] - consistent ui theme
+**P.R Raised by** : shubh404-SE on **Date** : 2026-03-17
+
+### Changed
+  - changes all modals ui them to a consist theme.
+  
+---
 ## Version [1.1.52] - institute slug  field validation
 **P.R Raised by** : shubh404-SE on **Date** : 2026-03-16
 
