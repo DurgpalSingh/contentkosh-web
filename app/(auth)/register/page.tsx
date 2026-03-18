@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm, useWatch } from 'react-hook-form';
+import { useForm, useWatch, type UseFormRegisterReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Link from 'next/link';
@@ -12,6 +12,25 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { authApi } from '@/lib/auth';
 import { ROUTES } from '@/lib/constants';
 import { RegisterRequest, BusinessService, CreateBusinessRequest } from '@/lib/api';
+import { toast } from 'sonner';
+
+const passwordSchema = z.string()
+  .min(8, 'Password must be at least 8 characters')
+  .max(20, 'Password cannot exceed 20 characters')
+  .superRefine((value, ctx) => {
+    if (!/[A-Z]/.test(value)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Password must include an uppercase letter' });
+    }
+    if (!/[a-z]/.test(value)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Password must include a lowercase letter' });
+    }
+    if (!/[0-9]/.test(value)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Password must include a number' });
+    }
+    if (!/[!@#$%^&*]/.test(value)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Password must include a special character' });
+    }
+  });
 
 const signupSchema = z.object({
   instituteName: z
@@ -35,9 +54,16 @@ const signupSchema = z.object({
     .min(3, 'Name must be at least 3 characters')
     .max(100, 'Name cannot exceed 100 characters')
     .regex(/^[A-Za-z]+(?: [A-Za-z]+)*$/, 'Name can only contain letters and single space (in between words)'),
-  email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  email: z
+    .string()
+    .trim()
+    .email('Please enter your email address')
+    .refine((value) => !/\+{2,}/.test(value), 'Email cannot contain multiple consecutive "+" characters'),
+  password: passwordSchema,
   confirmPassword: z.string(),
+  termsAccepted: z
+    .boolean()
+    .refine((value) => value === true, { message: 'Please accept term & condition' }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -55,10 +81,24 @@ const slugify = (value: string, trimEnd = false) => {
   return trimEnd ? normalized.replace(/-+$/, '') : normalized;
 };
 
+const capitalizeNameInput = (value: string) => {
+  if (!value) return value;
+  const hasTrailingSpace = /\s$/.test(value);
+  const normalized = value.replace(/\s+/g, ' ').trim();
+  const capitalized = normalized
+    .split(' ')
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+  return hasTrailingSpace ? `${capitalized} ` : capitalized;
+};
+
 export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [slugStatus, setSlugStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'error'>('idle');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const router = useRouter();
   const { login } = useAuthStore();
 
@@ -77,6 +117,7 @@ export default function RegisterPage() {
       email: '',
       password: '',
       confirmPassword: '',
+      termsAccepted: false,
     }
   });
 
@@ -94,6 +135,23 @@ export default function RegisterPage() {
     control,
     name: 'name',
   });
+  const password = useWatch({
+    control,
+    name: 'password',
+  });
+
+  const passwordChecks = useMemo(() => {
+    const value = password || '';
+    return {
+      minLength: value.length >= 8,
+      maxLength: value.length > 0 && value.length <= 20,
+      uppercase: /[A-Z]/.test(value),
+      lowercase: /[a-z]/.test(value),
+      number: /[0-9]/.test(value),
+      special: /[!@#$%^&*]/.test(value),
+    };
+  }, [password]);
+  
   useEffect(() => {
     const currentSlug = (slug || '').trim();
 
@@ -149,6 +207,7 @@ export default function RegisterPage() {
   };
 
   const onSubmit = async (data: SignupFormData) => {
+    if (isLoading) return;
     setIsLoading(true);
     setError(null);
 
@@ -186,6 +245,7 @@ export default function RegisterPage() {
           if (loginResponse.user) {
             const businessResponse = await authApi.getBusiness();
             login(loginResponse.user, businessResponse);
+            toast.success('Login successful');
 
             // 5. Redirect
             // User requested "recieve their slugs in url". 
@@ -318,8 +378,8 @@ export default function RegisterPage() {
                     Could not check slug availability. Try again.
                   </p>
                 )}
-                {errors.slug && <p className="mt-1 text-sm text-red-600">{errors.slug.message}</p>}
-              </div>
+        {errors.slug && <p className="mt-1 text-sm text-red-600">{errors.slug.message}</p>}
+      </div>
 
               <div className="relative flex items-center py-2">
                 <div className="flex-grow border-t border-slate-200"></div>
@@ -335,7 +395,13 @@ export default function RegisterPage() {
                   Full Name
                 </label>
                 <input
-                  {...register('name')}
+                  {...register('name', {
+                    onChange: (event) => {
+                      const nextValue = capitalizeNameInput(event.target.value);
+                      event.target.value = nextValue;
+                      register('name').onChange(event);
+                    },
+                  })}
                   type="text"
                   autoComplete="name"
                   className="block w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-slate-900 shadow-sm outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100"
@@ -354,7 +420,13 @@ export default function RegisterPage() {
                   Email address
                 </label>
                 <input
-                  {...register('email')}
+                  {...register('email', {
+                    onChange: (event) => {
+                      const nextValue = event.target.value.replace(/\+{2,}/g, '+');
+                      event.target.value = nextValue;
+                      register('email').onChange(event);
+                    },
+                  })}
                   type="email"
                   autoComplete="email"
                   className="block w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-slate-900 shadow-sm outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100"
@@ -364,36 +436,46 @@ export default function RegisterPage() {
               </div>
 
               {/* Password */}
-              <div>
-                <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-slate-700">
-                  Password
-                </label>
-                <input
-                  {...register('password')}
-                  type="password"
-                  autoComplete="new-password"
-                  className="block w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-slate-900 shadow-sm outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100"
-                  placeholder="Create a password"
-                />
-                {errors.password && (
-                  <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
-                )}
-              </div>
+              <PasswordField
+                label="Password"
+                id="password"
+                placeholder="Create a password"
+                inputProps={register('password')}
+                error={errors.password?.message}
+                show={showPassword}
+                onToggle={() => setShowPassword((prev) => !prev)}
+                maxLength={20}
+                autoComplete="new-password"
+                strengthChecks={passwordChecks}
+              />
 
               {/* Confirm Password */}
+              <PasswordField
+                label="Confirm Password"
+                id="confirmPassword"
+                placeholder="Confirm your password"
+                inputProps={register('confirmPassword')}
+                error={errors.confirmPassword?.message}
+                show={showConfirmPassword}
+                onToggle={() => setShowConfirmPassword((prev) => !prev)}
+                maxLength={20}
+                autoComplete="new-password"
+              />
+
+              {/* Terms & Conditions */}
               <div>
-                <label htmlFor="confirmPassword" className="mb-1.5 block text-sm font-medium text-slate-700">
-                  Confirm Password
+                <label className="flex items-start gap-2 text-sm text-slate-700">
+                  <input
+                    {...register('termsAccepted')}
+                    type="checkbox"
+                    className="mt-1 h-4 w-4 rounded border-slate-300 text-cyan-700 focus:ring-cyan-200"
+                  />
+                  <span>
+                    I agree to the Terms and Conditions
+                  </span>
                 </label>
-                <input
-                  {...register('confirmPassword')}
-                  type="password"
-                  autoComplete="new-password"
-                  className="block w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-slate-900 shadow-sm outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100"
-                  placeholder="Confirm your password"
-                />
-                {errors.confirmPassword && (
-                  <p className="mt-1 text-sm text-red-600">{errors.confirmPassword.message}</p>
+                {errors.termsAccepted && (
+                  <p className="mt-1 text-sm text-red-600">{errors.termsAccepted.message}</p>
                 )}
               </div>
             </div>
@@ -411,3 +493,99 @@ export default function RegisterPage() {
     </div>
   );
 }
+
+
+type PasswordChecks = {
+  minLength: boolean;
+  maxLength: boolean;
+  uppercase: boolean;
+  lowercase: boolean;
+  number: boolean;
+  special: boolean;
+};
+
+type PasswordFieldProps = {
+  label: string;
+  id: string;
+  placeholder: string;
+  inputProps: UseFormRegisterReturn;
+  error?: string;
+  show: boolean;
+  onToggle: () => void;
+  maxLength?: number;
+  autoComplete?: string;
+  strengthChecks?: PasswordChecks;
+};
+
+const PasswordField = ({
+  label,
+  id,
+  placeholder,
+  inputProps,
+  error,
+  show,
+  onToggle,
+  maxLength,
+  autoComplete,
+  strengthChecks,
+}: PasswordFieldProps) => (
+  <div>
+    <label htmlFor={id} className="mb-1.5 block text-sm font-medium text-slate-700">
+      {label}
+    </label>
+    <div className="relative">
+      <input
+        {...inputProps}
+        id={id}
+        type={show ? 'text' : 'password'}
+        autoComplete={autoComplete}
+        className="block w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 pr-11 text-slate-900 shadow-sm outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100"
+        placeholder={placeholder}
+        maxLength={maxLength}
+      />
+      <button
+        type="button"
+        onClick={onToggle}
+        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-2 text-slate-500 transition hover:text-slate-700"
+        aria-label={show ? 'Hide password' : 'Show password'}
+      >
+        {show ? (
+          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M3 3l18 18" />
+            <path d="M10.58 10.58a2 2 0 0 0 2.83 2.83" />
+            <path d="M9.88 5.09A9.77 9.77 0 0 1 12 5c5 0 9.27 3.11 11 7-0.53 1.18-1.33 2.31-2.35 3.28" />
+            <path d="M6.61 6.61C4.6 7.69 2.95 9.36 2 12c1.73 3.89 6 7 10 7 1.04 0 2.05-0.19 3-.54" />
+          </svg>
+        ) : (
+          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+        )}
+      </button>
+    </div>
+    {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+    {strengthChecks && (
+      <div className="mt-2 grid gap-1 text-xs text-slate-500">
+        <p className={strengthChecks.uppercase ? 'text-emerald-600' : undefined}>
+          At least one uppercase letter (A–Z)
+        </p>
+        <p className={strengthChecks.lowercase ? 'text-emerald-600' : undefined}>
+          At least one lowercase letter (a–z)
+        </p>
+        <p className={strengthChecks.special ? 'text-emerald-600' : undefined}>
+          At least one special character (e.g., !@#$%^&*)
+        </p>
+        <p className={strengthChecks.number ? 'text-emerald-600' : undefined}>
+          At least one number (0–9)
+        </p>
+        <p className={strengthChecks.minLength ? 'text-emerald-600' : undefined}>
+          Minimum length: 8 characters
+        </p>
+        <p className={strengthChecks.maxLength ? 'text-emerald-600' : undefined}>
+          Maximum length: 20 characters
+        </p>
+      </div>
+    )}
+  </div>
+);
