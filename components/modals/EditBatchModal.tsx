@@ -107,7 +107,7 @@ export function EditBatchModal({
             {/* Modal */}
             <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md overflow-y-auto max-h-[90vh]">
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-purple-500 to-purple-600">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-700">
                     <h2 className="text-xl font-semibold text-white">Edit Batch</h2>
                     <Button
                         variant="ghost"
@@ -140,7 +140,7 @@ export function EditBatchModal({
                             value={codeName}
                             onChange={(e) => setCodeName(e.target.value)}
                             placeholder="e.g., BATCH-2024-A"
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors focus-visible:ring-purple-500 focus-visible:ring-offset-1"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors focus-visible:ring-blue-500 focus-visible:ring-offset-1"
                             disabled={loading}
                         />
                     </div>
@@ -158,7 +158,7 @@ export function EditBatchModal({
                             value={displayName}
                             onChange={(e) => setDisplayName(e.target.value)}
                             placeholder="e.g., January 2024 Batch"
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors focus-visible:ring-purple-500 focus-visible:ring-offset-1"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors focus-visible:ring-blue-500 focus-visible:ring-offset-1"
                             disabled={loading}
                         />
                     </div>
@@ -176,7 +176,7 @@ export function EditBatchModal({
                                 type="date"
                                 value={startDate}
                                 onChange={(e) => setStartDate(e.target.value)}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors focus-visible:ring-purple-500 focus-visible:ring-offset-1"
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors focus-visible:ring-blue-500 focus-visible:ring-offset-1"
                                 disabled={loading}
                             />
                         </div>
@@ -193,7 +193,7 @@ export function EditBatchModal({
                                 type="date"
                                 value={endDate}
                                 onChange={(e) => setEndDate(e.target.value)}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors focus-visible:ring-purple-500 focus-visible:ring-offset-1"
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors focus-visible:ring-blue-500 focus-visible:ring-offset-1"
                                 disabled={loading}
                             />
                         </div>
@@ -205,7 +205,7 @@ export function EditBatchModal({
                             type="checkbox"
                             checked={isActive}
                             onChange={(e) => setIsActive(e.target.checked)}
-                            className="h-4 w-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                            className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                             disabled={loading}
                         />
                         <label htmlFor="edit-batch-active" className="text-sm text-gray-700">
@@ -226,7 +226,7 @@ export function EditBatchModal({
 
                         <Button
                             type="submit"
-                            className="bg-purple-600 hover:bg-purple-700 text-white"
+                            className="bg-blue-600 hover:bg-blue-700 text-white"
                             disabled={loading}
                         >
                             {loading ? (

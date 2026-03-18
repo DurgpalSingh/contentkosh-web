@@ -38,10 +38,10 @@ export function SubjectsListModal({
             {/* Modal */}
             <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto flex flex-col">
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-blue-600 to-blue-700">
                     <div>
-                        <h2 className="text-xl font-bold text-slate-900">Manage Subjects</h2>
-                        <p className="text-sm text-slate-500 mt-1">
+                        <h2 className="text-xl font-bold text-white">Manage Subjects</h2>
+                        <p className="text-sm text-white/80 mt-1">
                             {course.name} ({subjects.length} subjects)
                         </p>
                     </div>
@@ -49,7 +49,7 @@ export function SubjectsListModal({
                         variant="ghost"
                         size="icon"
                         onClick={onClose}
-                        className="text-slate-400 hover:text-slate-600"
+                        className="text-white/80 hover:text-white hover:bg-white/20"
                     >
                         <X className="h-5 w-5" />
                     </Button>
@@ -103,7 +103,7 @@ export function SubjectsListModal({
                                                 <div className="flex items-center mt-1 space-x-3 text-xs text-slate-400">
                                                     <span
                                                         className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${subject.status === 'ACTIVE'
-                                                            ? 'bg-green-50 text-green-700'
+                                                            ? 'bg-blue-50 text-blue-700'
                                                             : 'bg-slate-100 text-slate-600'
                                                             }`}
                                                     >

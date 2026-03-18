@@ -193,15 +193,15 @@ export function AddBatchMemberModal({
       <div className="absolute inset-0 bg-black/40" onClick={handleClose} />
 
       <div className="relative w-full max-w-md max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-lg">
-        <div className="flex items-center justify-between px-6 py-4 border-b">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-700">
           <div>
-            <h2 className="text-lg font-semibold">Add {roleLabel} to Batch</h2>
-            <p className="text-sm text-muted-foreground">
+            <h2 className="text-lg font-semibold text-white">Add {roleLabel} to Batch</h2>
+            <p className="text-sm text-white/80">
               Search and add an existing {roleLabel.toLowerCase()} to a batch.
             </p>
           </div>
           <button onClick={handleClose} type="button">
-            <X className="h-5 w-5 text-muted-foreground" />
+            <X className="h-5 w-5 text-white/80" />
           </button>
         </div>
 

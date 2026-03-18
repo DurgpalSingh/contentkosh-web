@@ -110,7 +110,7 @@ export function EditSubjectModal({
                 aria-labelledby="edit-subject-title"
             >
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-indigo-500 to-indigo-600">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-700">
                     <h2 id="edit-subject-title" className="text-xl font-semibold text-white">
                         Edit Subject
                     </h2>
@@ -154,7 +154,7 @@ export function EditSubjectModal({
                             required
                             aria-required="true"
                             aria-describedby="subject-name-help"
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                             disabled={loading}
                         />
                         <p id="subject-name-help" className="mt-1 text-xs text-gray-500">
@@ -175,7 +175,7 @@ export function EditSubjectModal({
                             onChange={(e) => setDescription(e.target.value)}
                             placeholder="Brief description of the subject..."
                             rows={3}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
                             disabled={loading}
                         />
                     </div>
@@ -186,7 +186,7 @@ export function EditSubjectModal({
                             type="checkbox"
                             checked={isActive}
                             onChange={(e) => setIsActive(e.target.checked)}
-                            className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                            className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                             disabled={loading}
                         />
                         <label htmlFor="subject-active" className="ml-2 text-sm text-gray-700">
@@ -207,7 +207,7 @@ export function EditSubjectModal({
 
                         <Button
                             type="submit"
-                            className='text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+                            className='text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
                             disabled={loading}
                         >
                             {loading ? (
