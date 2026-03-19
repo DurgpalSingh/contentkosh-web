@@ -1,6 +1,13 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.1.54] - Register fields validations.
+**P.R Raised by** : shubh404-SE on **Date** : 2026-03-19
+
+### Changed
+  - Enforced password length 8–20 and full strength rules with real-time UI feedback.
+  - Implemented password visibility toggles (eye button) for password and confirm fields.
+  - Implemented password visibility toggles (eye button) for password and confirm fields.
 ## Version [1.1.53] - consistent ui theme
 **P.R Raised by** : shubh404-SE on **Date** : 2026-03-17
 
