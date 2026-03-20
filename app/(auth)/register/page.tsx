@@ -18,6 +18,9 @@ const passwordSchema = z.string()
   .min(8, 'Password must be at least 8 characters')
   .max(20, 'Password cannot exceed 20 characters')
   .superRefine((value, ctx) => {
+    if (/\s/.test(value)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Password must not contain spaces' });
+    }
     if (!/[A-Z]/.test(value)) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Password must include an uppercase letter' });
     }
@@ -145,6 +148,7 @@ export default function RegisterPage() {
     return {
       minLength: value.length >= 8,
       maxLength: value.length > 0 && value.length <= 20,
+      noSpaces: !/\s/.test(value),
       uppercase: /[A-Z]/.test(value),
       lowercase: /[a-z]/.test(value),
       number: /[0-9]/.test(value),
@@ -495,6 +499,7 @@ export default function RegisterPage() {
 type PasswordChecks = {
   minLength: boolean;
   maxLength: boolean;
+  noSpaces: boolean;
   uppercase: boolean;
   lowercase: boolean;
   number: boolean;
@@ -564,6 +569,9 @@ const PasswordField = ({
     {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
     {strengthChecks && (
       <div className="mt-2 grid gap-1 text-xs text-slate-500">
+        <p className={strengthChecks.noSpaces ? 'text-emerald-600' : undefined}>
+          No spaces allowed
+        </p>
         <p className={strengthChecks.uppercase ? 'text-emerald-600' : undefined}>
           At least one uppercase letter (A–Z)
         </p>
