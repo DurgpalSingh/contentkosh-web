@@ -1,6 +1,13 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.1.55] - Register Page ui and error fix
+**P.R Raised by** : shubh404-SE on **Date** : 2026-03-19
+
+### Changed
+  - `register page` UI, error message statment and success message changed
+  - onChange recirsive call removed which caused call stack exceed issue.
+---
 ## Version [1.1.54] - Register fields validations.
 **P.R Raised by** : shubh404-SE on **Date** : 2026-03-19
 

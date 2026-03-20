@@ -57,7 +57,7 @@ const signupSchema = z.object({
   email: z
     .string()
     .trim()
-    .email('Please enter your email address')
+    .email('Please enter valid email address')
     .refine((value) => !/\+{2,}/.test(value), 'Email cannot contain multiple consecutive "+" characters'),
   password: passwordSchema,
   confirmPassword: z.string(),
@@ -195,15 +195,12 @@ export default function RegisterPage() {
 
   const handleSlugChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const nextSlug = slugify(event.target.value);
-    event.target.value = nextSlug;
-    register('slug').onChange(event);
+    setValue('slug', nextSlug, { shouldValidate: true });
   };
 
   const handleSlugBlur = (event: React.FocusEvent<HTMLInputElement>) => {
     const nextSlug = slugify(event.target.value, true);
-    event.target.value = nextSlug;
-    register('slug').onChange(event);
-    register('slug').onBlur(event);
+    setValue('slug', nextSlug, { shouldValidate: true });
   };
 
   const onSubmit = async (data: SignupFormData) => {
@@ -245,7 +242,7 @@ export default function RegisterPage() {
           if (loginResponse.user) {
             const businessResponse = await authApi.getBusiness();
             login(loginResponse.user, businessResponse);
-            toast.success('Login successful');
+            toast.success('Account created successfully');
 
             // 5. Redirect
             // User requested "recieve their slugs in url". 
@@ -282,9 +279,9 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 px-4 py-10 sm:px-6 lg:px-8 flex items-center">
-      <div className="mx-auto grid w-full max-w-5xl gap-8 lg:grid-cols-2 lg:items-center">
-        <section className="mb-8 lg:mb-0">
+    <div className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6 lg:px-8 lg:py-10 flex items-center lg:h-screen lg:overflow-hidden">
+      <div className="mx-auto grid w-full max-w-5xl gap-8 lg:h-full lg:grid-cols-2 lg:items-center">
+        <section className="mb-4 lg:mb-0">
           <Image
             src="/logo.png"
             alt="Logo"
@@ -301,8 +298,8 @@ export default function RegisterPage() {
           </p>
         </section>
 
-        <div className="w-full rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-          <div className="mb-6">
+        <div className="w-full rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8 flex flex-col lg:max-h-[calc(100vh-8rem)]">
+          <div className="mb-6 shrink-0">
             <h2 className="text-2xl font-semibold text-slate-900">Create your institute</h2>
             <p className="mt-1 text-sm text-slate-600">
               Already have an account?{' '}
@@ -312,7 +309,8 @@ export default function RegisterPage() {
             </p>
           </div>
 
-          <form className="space-y-5" onSubmit={handleSubmit(onSubmit)} noValidate>
+          <div className="flex-1 lg:overflow-y-auto lg:pr-1">
+            <form className="space-y-5" onSubmit={handleSubmit(onSubmit)} noValidate>
             {error && (
               <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                 {error}
@@ -398,8 +396,7 @@ export default function RegisterPage() {
                   {...register('name', {
                     onChange: (event) => {
                       const nextValue = capitalizeNameInput(event.target.value);
-                      event.target.value = nextValue;
-                      register('name').onChange(event);
+                      setValue('name', nextValue, { shouldValidate: true });
                     },
                   })}
                   type="text"
@@ -423,8 +420,7 @@ export default function RegisterPage() {
                   {...register('email', {
                     onChange: (event) => {
                       const nextValue = event.target.value.replace(/\+{2,}/g, '+');
-                      event.target.value = nextValue;
-                      register('email').onChange(event);
+                      setValue('email', nextValue, { shouldValidate: true });
                     },
                   })}
                   type="email"
@@ -487,7 +483,8 @@ export default function RegisterPage() {
             >
               {isLoading ? 'Creating account...' : 'Create Account & Institute'}
             </Button>
-          </form>
+            </form>
+          </div>
         </div>
       </div>
     </div>
