@@ -8,6 +8,7 @@ import { z } from 'zod';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useAuthStore } from '@/store/useAuthStore';
 import { authApi } from '@/lib/auth';
 import { ROUTES } from '@/lib/constants';
@@ -282,6 +283,15 @@ export default function RegisterPage() {
     }
   };
 
+  if(isLoading){
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6 lg:px-8 lg:py-10 flex items-center lg:h-screen lg:overflow-hidden">
       <div className="mx-auto grid w-full max-w-5xl gap-8 lg:h-full lg:grid-cols-2 lg:items-center">
@@ -483,7 +493,8 @@ export default function RegisterPage() {
             <Button
               type="submit"
               disabled={isLoading || slugStatus === 'taken' || slugStatus === 'checking'}
-              className="w-full rounded-xl bg-slate-900 py-2.5 text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+              className="w-full cursor-pointer rounded-xl bg-slate-900 py-2.5 text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+              aria-busy={isLoading}
             >
               {isLoading ? 'Creating account...' : 'Create Account & Institute'}
             </Button>
