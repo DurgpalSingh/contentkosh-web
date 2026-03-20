@@ -8,6 +8,7 @@ import { z } from 'zod';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useAuthStore } from '@/store/useAuthStore';
 import { authApi } from '@/lib/auth';
 import { ROUTES } from '@/lib/constants';
@@ -18,6 +19,9 @@ const passwordSchema = z.string()
   .min(8, 'Password must be at least 8 characters')
   .max(20, 'Password cannot exceed 20 characters')
   .superRefine((value, ctx) => {
+    if (/\s/.test(value)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Password must not contain spaces' });
+    }
     if (!/[A-Z]/.test(value)) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Password must include an uppercase letter' });
     }
@@ -57,7 +61,7 @@ const signupSchema = z.object({
   email: z
     .string()
     .trim()
-    .email('Please enter your email address')
+    .email('Please enter valid email address')
     .refine((value) => !/\+{2,}/.test(value), 'Email cannot contain multiple consecutive "+" characters'),
   password: passwordSchema,
   confirmPassword: z.string(),
@@ -145,6 +149,7 @@ export default function RegisterPage() {
     return {
       minLength: value.length >= 8,
       maxLength: value.length > 0 && value.length <= 20,
+      noSpaces: !/\s/.test(value),
       uppercase: /[A-Z]/.test(value),
       lowercase: /[a-z]/.test(value),
       number: /[0-9]/.test(value),
@@ -195,15 +200,12 @@ export default function RegisterPage() {
 
   const handleSlugChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const nextSlug = slugify(event.target.value);
-    event.target.value = nextSlug;
-    register('slug').onChange(event);
+    setValue('slug', nextSlug, { shouldValidate: true });
   };
 
   const handleSlugBlur = (event: React.FocusEvent<HTMLInputElement>) => {
     const nextSlug = slugify(event.target.value, true);
-    event.target.value = nextSlug;
-    register('slug').onChange(event);
-    register('slug').onBlur(event);
+    setValue('slug', nextSlug, { shouldValidate: true });
   };
 
   const onSubmit = async (data: SignupFormData) => {
@@ -245,7 +247,7 @@ export default function RegisterPage() {
           if (loginResponse.user) {
             const businessResponse = await authApi.getBusiness();
             login(loginResponse.user, businessResponse);
-            toast.success('Login successful');
+            toast.success('Account created successfully');
 
             // 5. Redirect
             // User requested "recieve their slugs in url". 
@@ -281,10 +283,19 @@ export default function RegisterPage() {
     }
   };
 
+  if(isLoading){
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+
   return (
-    <div className="min-h-screen bg-slate-50 px-4 py-10 sm:px-6 lg:px-8 flex items-center">
-      <div className="mx-auto grid w-full max-w-5xl gap-8 lg:grid-cols-2 lg:items-center">
-        <section className="mb-8 lg:mb-0">
+    <div className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6 lg:px-8 lg:py-10 flex items-center lg:h-screen lg:overflow-hidden">
+      <div className="mx-auto grid w-full max-w-5xl gap-8 lg:h-full lg:grid-cols-2 lg:items-center">
+        <section className="mb-4 lg:mb-0">
           <Image
             src="/logo.png"
             alt="Logo"
@@ -301,8 +312,8 @@ export default function RegisterPage() {
           </p>
         </section>
 
-        <div className="w-full rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-          <div className="mb-6">
+        <div className="w-full rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8 flex flex-col lg:max-h-[calc(100vh-8rem)]">
+          <div className="mb-6 shrink-0">
             <h2 className="text-2xl font-semibold text-slate-900">Create your institute</h2>
             <p className="mt-1 text-sm text-slate-600">
               Already have an account?{' '}
@@ -312,7 +323,8 @@ export default function RegisterPage() {
             </p>
           </div>
 
-          <form className="space-y-5" onSubmit={handleSubmit(onSubmit)} noValidate>
+          <div className="flex-1 lg:overflow-y-auto lg:pr-1">
+            <form className="space-y-5" onSubmit={handleSubmit(onSubmit)} noValidate>
             {error && (
               <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                 {error}
@@ -398,8 +410,7 @@ export default function RegisterPage() {
                   {...register('name', {
                     onChange: (event) => {
                       const nextValue = capitalizeNameInput(event.target.value);
-                      event.target.value = nextValue;
-                      register('name').onChange(event);
+                      setValue('name', nextValue, { shouldValidate: true });
                     },
                   })}
                   type="text"
@@ -423,8 +434,7 @@ export default function RegisterPage() {
                   {...register('email', {
                     onChange: (event) => {
                       const nextValue = event.target.value.replace(/\+{2,}/g, '+');
-                      event.target.value = nextValue;
-                      register('email').onChange(event);
+                      setValue('email', nextValue, { shouldValidate: true });
                     },
                   })}
                   type="email"
@@ -483,11 +493,13 @@ export default function RegisterPage() {
             <Button
               type="submit"
               disabled={isLoading || slugStatus === 'taken' || slugStatus === 'checking'}
-              className="w-full rounded-xl bg-slate-900 py-2.5 text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+              className="w-full cursor-pointer rounded-xl bg-slate-900 py-2.5 text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+              aria-busy={isLoading}
             >
               {isLoading ? 'Creating account...' : 'Create Account & Institute'}
             </Button>
-          </form>
+            </form>
+          </div>
         </div>
       </div>
     </div>
@@ -498,6 +510,7 @@ export default function RegisterPage() {
 type PasswordChecks = {
   minLength: boolean;
   maxLength: boolean;
+  noSpaces: boolean;
   uppercase: boolean;
   lowercase: boolean;
   number: boolean;
@@ -567,6 +580,9 @@ const PasswordField = ({
     {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
     {strengthChecks && (
       <div className="mt-2 grid gap-1 text-xs text-slate-500">
+        <p className={strengthChecks.noSpaces ? 'text-emerald-600' : undefined}>
+          No spaces allowed
+        </p>
         <p className={strengthChecks.uppercase ? 'text-emerald-600' : undefined}>
           At least one uppercase letter (A–Z)
         </p>
