@@ -12,6 +12,14 @@ export type CreateContentRequest = {
 };
 export namespace CreateContentRequest {
     /**
+     * Type of the content file (required)
+     */
+    export enum type {
+        PDF = 'PDF',
+        IMAGE = 'IMAGE',
+        DOC = 'DOC',
+    }
+    /**
      * Status of the content
      */
     export enum status {

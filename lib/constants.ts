@@ -4,6 +4,7 @@ export const ROUTES = {
   LOGIN: '/login',
   REGISTER: '/register',
   DASHBOARD: '/dashboard',
+  TESTS: '/dashboard/tests',
   ADMIN: {
     USERS: '/dashboard/admin/users',
     ANNOUNCEMENTS: '/dashboard/admin/announcements',
@@ -15,6 +16,7 @@ export const ROUTES = {
   STUDENT: {
     CLASSES: '/dashboard/student/classes',
     ANNOUNCEMENTS: '/dashboard/student/announcements',
+    TESTS: '/dashboard/student/tests',
   },
 } as const;
 

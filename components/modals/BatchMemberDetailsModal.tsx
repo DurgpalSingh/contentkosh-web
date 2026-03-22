@@ -3,7 +3,7 @@
 import { BatchUser } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { UserCog, Users } from 'lucide-react';
-import { BatchMemberRole } from './BatchMemberCard';
+import { BatchMemberRole } from '@/components/dashboard/batches/BatchMemberCard';
 
 interface BatchMemberDetailsModalProps {
   member: BatchUser | null;

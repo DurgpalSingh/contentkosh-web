@@ -38,6 +38,26 @@ export class BusinessService {
         });
     }
     /**
+     * Get business by slug
+     * @param slug Business Slug
+     * @returns any Business fetched successfully
+     * @throws ApiError
+     */
+    public static getApiBusinessSlug(
+        slug: string,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/business/slug/{slug}',
+            path: {
+                'slug': slug,
+            },
+            errors: {
+                404: `Business not found`,
+            },
+        });
+    }
+    /**
      * Create exam under business
      * @param businessId Business ID
      * @param requestBody
