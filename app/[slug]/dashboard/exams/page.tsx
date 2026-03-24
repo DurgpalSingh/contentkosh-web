@@ -140,7 +140,7 @@ export default function ExamsPage() {
                             isAdmin ? (
                                 <Button
                                     onClick={() => setIsAddExamModalOpen(true)}
-                                    className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium"
+                                    className="inline-flex items-center bg-blue-600 hover:bg-blue-700 font-medium"
                                 >
                                     <Plus className="h-4 w-4 mr-2" />
                                     Create Exam

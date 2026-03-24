@@ -165,7 +165,7 @@ export default function CourseSubjectsPage() {
               isAdmin ? (
                 <Button
                   onClick={handleAdd}
-                  className="mt-6 inline-flex items-center gap-2 rounded-lg border border-blue-600 bg-white px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50"
+                  className="mt-6 inline-flex items-center gap-2 rounded-lg border border-blue-600 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 text-sm font-medium transition-colors"
                 >
                   <Plus className="h-4 w-4" />
                   Add Subject

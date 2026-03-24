@@ -1,12 +1,12 @@
 'use client';
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { redirect, useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Button } from '@/components/ui/button';
 import { BatchesService, ExamsService, Batch, BatchWithUsers, Course, Exam } from '@/lib/api';
-import { Plus, Calendar, Search, Filter } from 'lucide-react';
+import { Plus, Calendar, Search, Filter, ArrowLeftCircle } from 'lucide-react';
 import { BatchGridCard } from '@/components/dashboard/batches/BatchGridCard';
 import { BatchesFilterModal } from '@/components/dashboard/batches/BatchesFilterModal';
 import { AddBatchModal } from '@/components/modals/AddBatchModal';
@@ -281,6 +281,14 @@ export default function BatchesPage() {
                 ? 'Create a course first to manage batches.'
                 : 'You are not assigned to any batch. Please contact the administrator.'
             }
+            action={
+              isAdmin ? (
+                <Button onClick={()=>redirect(`/${business?.slug}/dashboard/courses`)} className='bg-blue-600 hover:bg-blue-500'>  
+                  <ArrowLeftCircle className="h-4 w-4 mr-2" />
+                  Create Course
+                </Button>
+              ) : undefined
+            }
           />
         ) : filteredBatches.length === 0 ? (
           searchQuery ? (
@@ -297,6 +305,14 @@ export default function BatchesPage() {
                   ? 'This course has no batches yet.'
                   : 'You are not assigned to any batch. Please contact the administrator.'
               }
+              action={
+              isAdmin ? (
+                <Button onClick={handleAddBatchClick} className='bg-blue-600 hover:bg-blue-500'>  
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Batch
+                </Button>
+              ) : undefined
+            }
             />
           )
         ) : (
