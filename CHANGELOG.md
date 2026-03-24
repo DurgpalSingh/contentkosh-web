@@ -1,6 +1,13 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.1.56] - Sidebar scroll hide + UI Fixes
+**P.R Raised by** : shubh404-SE on **Date** : 2026-03-24
+
+### Changed
+  - Scrollbar hide in sidebar using `scrollbar-hide` custom css class.
+  - add button added in batches empty state.
+---
 ## Version [1.1.55] - Register Page ui and error fix
 **P.R Raised by** : shubh404-SE on **Date** : 2026-03-19
 

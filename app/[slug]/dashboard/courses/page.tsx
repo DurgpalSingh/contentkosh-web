@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { redirect, useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,7 @@ import { EditCourseModal } from '@/components/modals/EditCourseModal';
 import { DeleteConfirmModal } from '@/components/modals/DeleteConfirmModal';
 
 import { ExamsService, CoursesService, Exam, Course, Subject } from '@/lib/api';
-import { Plus, BookOpen, Search } from 'lucide-react';
+import { Plus, BookOpen, Search, ArrowLeftCircle } from 'lucide-react';
 import { CourseGridCard } from '@/components/dashboard/courses/CourseGridCard';
 import { CourseFilter } from '@/components/dashboard/courses/CourseFilter';
 import { USER_ROLES } from '@/lib/constants';
@@ -304,12 +304,12 @@ export default function CoursesPage() {
             action={
               isAdmin ? (
                 <Button
-                  onClick={handleAddCourseClick}
-                  variant="outline"
-                  className="mt-4"
+                  onClick={()=>redirect(`/${business?.slug}/dashboard/exams`)}
+                  variant="secondary"
+                  className="mt-4 bg-blue-500 hover:bg-blue-600 text-white"
                 >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Course
+                  <ArrowLeftCircle className="h-4 w-4 mr-2" />
+                  Add Exam
                 </Button>
               ) : undefined
             }
@@ -335,8 +335,8 @@ export default function CoursesPage() {
                 isAdmin ? (
                   <Button
                     onClick={handleAddCourseClick}
-                    variant="outline"
-                    className="mt-4"
+                    variant="secondary"
+                    className="bg-blue-500 hover:bg-blue-600 text-white"
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Add Course

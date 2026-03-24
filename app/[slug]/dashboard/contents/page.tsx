@@ -251,6 +251,14 @@ export default function ContentsPage() {
                     : 'Select a batch to view contents.')
                   : 'You are not assigned to any batch. Please contact the administrator.'
               }
+              action={
+              isAdmin ? (
+                <Button onClick={handleAdd} className='bg-blue-600 hover:bg-blue-500'>  
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create content
+                </Button>
+              ) : undefined
+            }
             />
           )
         ) : (
@@ -284,7 +292,6 @@ export default function ContentsPage() {
           isOpen={isEditOpen}
           onClose={() => { setIsEditOpen(false); setSelectedContent(null); }}
           content={selectedContent}
-          batches={rawBatches}
           onUpdated={() => selectedBatchId && fetchContents(selectedBatchId)}
         />
       )}
