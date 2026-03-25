@@ -1,6 +1,14 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.2.2] - Subject linked with content
+**P.R Raised by** : shubh404-SE on **Date** : 2026-03-25
+
+### Changed
+  - Now add/edit content modal need subject to add in content.
+  - implimented a generic filter function in /lib/indexedFiltering.ts to filter content based on selected subject in filter modal.
+
+---
 ## Version [1.2.1] - Batch details tab remove + datepicker ui
 **P.R Raised by** : shubh404-SE on **Date** : 2026-03-30
 

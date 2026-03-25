@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 
 import { useAuthStore } from '@/store/useAuthStore';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -16,7 +16,7 @@ import { USER_ROLES } from '@/lib/constants';
 import { EmptyState } from '@/components/common/EmptyState';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { buildTitleTrigramSearchIndex, filterTitleTrigramSearchIndex } from '@/lib/trigramTitleSearch';
+import { createIndexedTextFilter } from '@/lib/indexedFiltering';
 
 export default function ContentsPage() {
   const { user, business, isAuthenticated, isLoading, isInitialized } = useAuthStore();
@@ -29,6 +29,7 @@ export default function ContentsPage() {
   const [selectedSubjectId, setSelectedSubjectId] = useState<number | undefined>(undefined);
 
   const [contents, setContents] = useState<Content[]>([]);
+  const contentsByBatchIdRef = useRef<Map<number, Content[]>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -58,29 +59,37 @@ export default function ContentsPage() {
     return map;
   }, [rawSubjects]);
 
-  const contentTitleSearchIndex = useMemo(() => {
-    return buildTitleTrigramSearchIndex(contents, {
-      getId: (c) => c.id,
+  const subjectIdsByCourseId = useMemo(() => {
+    const map = new Map<number, Set<number>>();
+    for (const subject of rawSubjects) {
+      if (typeof subject.courseId !== 'number') continue;
+      if (typeof subject.id !== 'number') continue;
+      const existing = map.get(subject.courseId) ?? new Set<number>();
+      existing.add(subject.id);
+      map.set(subject.courseId, existing);
+    }
+    return map;
+  }, [rawSubjects]);
+
+  const indexedTextFilter = useMemo(() => {
+    return createIndexedTextFilter(contents, {
+      getId: (c) => (typeof c.id === 'number' ? c.id : null),
       getTitle: (c) => c.title,
       getCreatedAt: (c) => c.createdAt,
-      getSubjectId: (c) => c.subjectId,
-      trigramLength: 3,
+      getFacetId: (c) => (typeof c.subjectId === 'number' ? c.subjectId : null),
+      ngramLength: 3,
     });
   }, [contents]);
 
   const filteredContents = useMemo(() => {
-    return filterTitleTrigramSearchIndex({
-      index: contentTitleSearchIndex,
-      query: searchQuery,
-      selectedSubjectId,
-    });
-  }, [contentTitleSearchIndex, searchQuery, selectedSubjectId]);
+    return indexedTextFilter.search({ query: searchQuery, selectedFacetId: selectedSubjectId });
+  }, [indexedTextFilter, searchQuery, selectedSubjectId]);
 
   const sortByCreatedAtDesc = useCallback(<T extends { createdAt?: string }>(items: T[]) => {
     return [...items].sort((a, b) => getCreatedAtTime(b.createdAt) - getCreatedAtTime(a.createdAt));
   }, [getCreatedAtTime]);
 
-  const fetchContents = useCallback(async (batchId: number) => {
+  const fetchAndCacheContents = useCallback(async (batchId: number) => {
     setLoading(true);
     setError(null);
     try {
@@ -90,14 +99,30 @@ export default function ContentsPage() {
         (b.createdAt ? new Date(b.createdAt).getTime() : 0) - (a.createdAt ? new Date(a.createdAt).getTime() : 0)
       );
       setContents(fetched);
+      contentsByBatchIdRef.current.set(batchId, fetched);
     } catch (err) {
       console.error('Failed to load contents:', err);
       setError('Failed to load contents');
       setContents([]);
+      contentsByBatchIdRef.current.set(batchId, []);
     } finally {
       setLoading(false);
     }
   }, []);
+
+  const loadContentsForBatch = useCallback(
+    async (batchId: number) => {
+      const cached = contentsByBatchIdRef.current.get(batchId);
+      if (cached) {
+        setError(null);
+        setContents(cached);
+        return;
+      }
+
+      await fetchAndCacheContents(batchId);
+    },
+    [fetchAndCacheContents]
+  );
 
   const fetchSubjects = useCallback(async () => {
     if (!user?.id) return;
@@ -137,11 +162,11 @@ export default function ContentsPage() {
     }
 
     if (selectedBatchId) {
-      fetchContents(selectedBatchId);
+      loadContentsForBatch(selectedBatchId);
     } else {
       setContents([]);
     }
-  }, [selectedBatchId, rawBatches, fetchContents]);
+  }, [selectedBatchId, rawBatches, loadContentsForBatch]);
 
   useEffect(() => {
     if (!selectedBatchId) {
@@ -158,9 +183,10 @@ export default function ContentsPage() {
 
     if (selectedSubjectId === undefined) return;
 
-    const isValidForBatch = rawSubjects.some(s => s.id === selectedSubjectId && s.courseId === courseId);
+    const allowedSubjectIds = subjectIdsByCourseId.get(courseId);
+    const isValidForBatch = allowedSubjectIds ? allowedSubjectIds.has(selectedSubjectId) : false;
     if (!isValidForBatch) setSelectedSubjectId(undefined);
-  }, [selectedBatchId, rawBatches, rawSubjects, selectedSubjectId]);
+  }, [selectedBatchId, rawBatches, selectedSubjectId, subjectIdsByCourseId]);
 
 
   const selectedBatch = useMemo(
@@ -221,7 +247,7 @@ export default function ContentsPage() {
     if (!selectedContent?.id) return;
     try {
       await ContentsService.deleteApiContents({ contentId: selectedContent.id });
-      if (selectedBatchId) await fetchContents(selectedBatchId);
+      if (selectedBatchId) await fetchAndCacheContents(selectedBatchId);
       toast.success('Content deleted successfully');
     } catch (err) {
       console.error('Delete failed:', err);
@@ -230,7 +256,7 @@ export default function ContentsPage() {
       setIsDeleteOpen(false);
       setSelectedContent(null);
     }
-  }, [selectedContent, selectedBatchId, fetchContents]);
+  }, [selectedContent, selectedBatchId, fetchAndCacheContents]);
 
   if (isLoading || !isInitialized || loading) {
     return (
@@ -284,7 +310,7 @@ export default function ContentsPage() {
               batches={rawBatches}
               selectedBatchId={selectedBatchId}
               onBatchChange={setSelectedBatchId}
-              subjects={rawSubjects}
+              subjectsForCourse={subjectsForSelectedBatch}
               selectedSubjectId={selectedSubjectId}
               onSubjectChange={setSelectedSubjectId}
             />
@@ -343,7 +369,7 @@ export default function ContentsPage() {
           batches={rawBatches}
           subjects={subjectsForSelectedBatch}
           initialSubjectId={initialSubjectIdForModals}
-          onCreated={() => selectedBatchId && fetchContents(selectedBatchId)}
+          onCreated={() => selectedBatchId && fetchAndCacheContents(selectedBatchId)}
         />
       )}
 
@@ -353,7 +379,7 @@ export default function ContentsPage() {
           onClose={() => { setIsEditOpen(false); setSelectedContent(null); }}
           content={selectedContent}
           subjects={subjectsForSelectedBatch}
-          onUpdated={() => selectedBatchId && fetchContents(selectedBatchId)}
+          onUpdated={() => selectedBatchId && fetchAndCacheContents(selectedBatchId)}
         />
       )}
 

@@ -7,7 +7,7 @@ interface ContentFilterProps {
   batches: Batch[];
   selectedBatchId?: number;
   onBatchChange: (batchId?: number) => void;
-  subjects: Subject[];
+  subjectsForCourse: Subject[];
   selectedSubjectId?: number;
   onSubjectChange: (subjectId?: number) => void;
   label?: string;
@@ -17,17 +17,10 @@ export function ContentsFilterModal({
   batches,
   selectedBatchId,
   onBatchChange,
-  subjects,
+  subjectsForCourse,
   selectedSubjectId,
   onSubjectChange,
 }: ContentFilterProps) {
-  const selectedBatch = batches.find(b => b.id === selectedBatchId);
-  const selectedCourseId = selectedBatch?.courseId;
-
-  const subjectsForCourse = selectedCourseId
-    ? subjects.filter(s => s.courseId === selectedCourseId)
-    : [];
-
   return (
     <div className="w-full lg:w-[320px]">
       <div className="mt-1 flex items-start gap-3">
