@@ -9,13 +9,14 @@ import { Plus, Search, Layers3 } from 'lucide-react';
 import { AddContentModal } from '@/components/modals/AddContentModal';
 import { EditContentModal } from '@/components/modals/EditContentModal';
 import { DeleteConfirmModal } from '@/components/modals/DeleteConfirmModal';
-import { ContentsService, BatchesService, Content, Batch } from '@/lib/api';
+import { ContentsService, BatchesService, SubjectsService, Content, Batch, Subject } from '@/lib/api';
 import { ContentGridCard } from '@/components/dashboard/contents/ContentGridCard';
 import { ContentsFilterModal } from '@/components/dashboard/contents/ContentsFilterModal';
 import { USER_ROLES } from '@/lib/constants';
 import { EmptyState } from '@/components/common/EmptyState';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import { buildTitleTrigramSearchIndex, filterTitleTrigramSearchIndex } from '@/lib/trigramTitleSearch';
 
 export default function ContentsPage() {
   const { user, business, isAuthenticated, isLoading, isInitialized } = useAuthStore();
@@ -23,6 +24,9 @@ export default function ContentsPage() {
   const [rawBatches, setRawBatches] = useState<Batch[]>([]);
 
   const [selectedBatchId, setSelectedBatchId] = useState<number | undefined>(undefined);
+
+  const [rawSubjects, setRawSubjects] = useState<Subject[]>([]);
+  const [selectedSubjectId, setSelectedSubjectId] = useState<number | undefined>(undefined);
 
   const [contents, setContents] = useState<Content[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,35 +46,35 @@ export default function ContentsPage() {
     return date ? new Date(date).getTime() : 0;
   }, []);
 
+  const subjectsByCourseId = useMemo(() => {
+    const map = new Map<number, Subject[]>();
+    for (const subject of rawSubjects) {
+      if (typeof subject.courseId === 'number') {
+        const existing = map.get(subject.courseId) ?? [];
+        existing.push(subject);
+        map.set(subject.courseId, existing);
+      }
+    }
+    return map;
+  }, [rawSubjects]);
 
-  const getMatchPriority = useCallback((title: string, query: string) => {
-    if (title === query) return 0;
-    if (title.startsWith(query)) return 1;
-    if (title.split(/\s+/).some((word) => word.startsWith(query))) return 2;
-    if (title.includes(query)) return 3;
-    return 4;
-  }, []);
+  const contentTitleSearchIndex = useMemo(() => {
+    return buildTitleTrigramSearchIndex(contents, {
+      getId: (c) => c.id,
+      getTitle: (c) => c.title,
+      getCreatedAt: (c) => c.createdAt,
+      getSubjectId: (c) => c.subjectId,
+      trigramLength: 3,
+    });
+  }, [contents]);
 
   const filteredContents = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    if (!q) return contents;
-
-    return contents
-      .filter((content) => content.title?.toLowerCase().includes(q))
-      .sort((a, b) => {
-        const aTitle = (a.title ?? '').toLowerCase().trim();
-        const bTitle = (b.title ?? '').toLowerCase().trim();
-
-        const aPriority = getMatchPriority(aTitle, q);
-        const bPriority = getMatchPriority(bTitle, q);
-        if (aPriority !== bPriority) return aPriority - bPriority;
-
-        const titleCompare = aTitle.localeCompare(bTitle);
-        if (titleCompare !== 0) return titleCompare;
-
-        return getCreatedAtTime(b.createdAt) - getCreatedAtTime(a.createdAt);
-      });
-  }, [contents, searchQuery, getMatchPriority, getCreatedAtTime]);
+    return filterTitleTrigramSearchIndex({
+      index: contentTitleSearchIndex,
+      query: searchQuery,
+      selectedSubjectId,
+    });
+  }, [contentTitleSearchIndex, searchQuery, selectedSubjectId]);
 
   const sortByCreatedAtDesc = useCallback(<T extends { createdAt?: string }>(items: T[]) => {
     return [...items].sort((a, b) => getCreatedAtTime(b.createdAt) - getCreatedAtTime(a.createdAt));
@@ -95,6 +99,12 @@ export default function ContentsPage() {
     }
   }, []);
 
+  const fetchSubjects = useCallback(async () => {
+    if (!user?.id) return;
+    const res = await SubjectsService.getApiSubjectsUser();
+    setRawSubjects((res.data ?? []) as Subject[]);
+  }, [user?.id]);
+
   const loadPageData = useCallback(async () => {
     if (!business?.id) return;
     setLoading(true);
@@ -102,18 +112,22 @@ export default function ContentsPage() {
     try {
       const batchesRes = await BatchesService.getApiBatchesAll();
       setRawBatches(sortByCreatedAtDesc((batchesRes.data ?? []) as Batch[]));
+
+      await fetchSubjects();
     } catch (err) {
       console.error('Failed to load data:', err);
       setError('Failed to load contents data');
     } finally {
       setLoading(false);
     }
-  }, [business?.id, sortByCreatedAtDesc]);
+  }, [business?.id, sortByCreatedAtDesc, fetchSubjects]);
 
   useEffect(() => {
     if (!isAuthenticated || !business?.id) return;
     loadPageData();
   }, [isAuthenticated, business?.id, loadPageData]);
+
+  // subjects are loaded as part of loadPageData()
 
   useEffect(() => {
     if (!selectedBatchId && rawBatches.length > 0) {
@@ -128,6 +142,47 @@ export default function ContentsPage() {
       setContents([]);
     }
   }, [selectedBatchId, rawBatches, fetchContents]);
+
+  useEffect(() => {
+    if (!selectedBatchId) {
+      setSelectedSubjectId(undefined);
+      return;
+    }
+
+    const selectedBatch = rawBatches.find(b => b.id === selectedBatchId);
+    const courseId = selectedBatch?.courseId;
+    if (typeof courseId !== 'number') {
+      setSelectedSubjectId(undefined);
+      return;
+    }
+
+    if (selectedSubjectId === undefined) return;
+
+    const isValidForBatch = rawSubjects.some(s => s.id === selectedSubjectId && s.courseId === courseId);
+    if (!isValidForBatch) setSelectedSubjectId(undefined);
+  }, [selectedBatchId, rawBatches, rawSubjects, selectedSubjectId]);
+
+
+  const selectedBatch = useMemo(
+    () => rawBatches.find((b) => b.id === selectedBatchId),
+    [rawBatches, selectedBatchId]
+  );
+
+  const subjectsForSelectedBatch = useMemo(() => {
+    const courseId = selectedBatch?.courseId;
+    if (typeof courseId !== 'number') return [];
+    return subjectsByCourseId.get(courseId) ?? [];
+  }, [selectedBatch?.courseId, subjectsByCourseId]);
+
+  const initialSubjectIdForModals = useMemo(() => {
+    if (
+      selectedSubjectId !== undefined &&
+      subjectsForSelectedBatch.some((s) => s.id === selectedSubjectId)
+    ) {
+      return selectedSubjectId;
+    }
+    return subjectsForSelectedBatch[0]?.id;
+  }, [selectedSubjectId, subjectsForSelectedBatch]);
 
   const handleAdd = useCallback(() => {
     setIsAddOpen(true);
@@ -229,6 +284,9 @@ export default function ContentsPage() {
               batches={rawBatches}
               selectedBatchId={selectedBatchId}
               onBatchChange={setSelectedBatchId}
+              subjects={rawSubjects}
+              selectedSubjectId={selectedSubjectId}
+              onSubjectChange={setSelectedSubjectId}
             />
           </div>
         </div>
@@ -252,13 +310,13 @@ export default function ContentsPage() {
                   : 'You are not assigned to any batch. Please contact the administrator.'
               }
               action={
-              isAdmin ? (
-                <Button onClick={handleAdd} className='bg-blue-600 hover:bg-blue-500'>  
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create content
-                </Button>
-              ) : undefined
-            }
+                isAdmin ? (
+                  <Button onClick={handleAdd} className='bg-blue-600 hover:bg-blue-500'>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create content
+                  </Button>
+                ) : undefined
+              }
             />
           )
         ) : (
@@ -283,6 +341,8 @@ export default function ContentsPage() {
           selectedBatchId={selectedBatchId}
           onBatchChange={setSelectedBatchId}
           batches={rawBatches}
+          subjects={subjectsForSelectedBatch}
+          initialSubjectId={initialSubjectIdForModals}
           onCreated={() => selectedBatchId && fetchContents(selectedBatchId)}
         />
       )}
@@ -292,6 +352,7 @@ export default function ContentsPage() {
           isOpen={isEditOpen}
           onClose={() => { setIsEditOpen(false); setSelectedContent(null); }}
           content={selectedContent}
+          subjects={subjectsForSelectedBatch}
           onUpdated={() => selectedBatchId && fetchContents(selectedBatchId)}
         />
       )}

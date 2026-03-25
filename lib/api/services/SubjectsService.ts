@@ -165,4 +165,22 @@ export class SubjectsService {
             },
         });
     }
+
+    /**
+     * Get subjects available for a user (role-aware)
+     */
+    public static getApiSubjectsUser(): CancelablePromise<(ApiResponse & {
+        data?: Array<Subject>;
+    })> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/business/subjects/all',
+            errors: {
+                400: `Invalid user ID`,
+                403: `Forbidden`,
+                404: `User not found`,
+                500: `Internal server error`,
+            },
+        });
+    }
 }
