@@ -1,7 +1,7 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
-## Version [1.1.57] - Test module (Teacher + Student) UI
+## Version [1.2.0] - Test module (Teacher + Student) UI
 **P.R Raised by** : shubh404-SE on **Date** : 2026-03-25
 
 ### Added
