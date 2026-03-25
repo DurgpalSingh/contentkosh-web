@@ -34,10 +34,10 @@ export function BatchesFilterModal({
 
     useEffect(() => {
         if (isOpen) {
-            setLocalExamIds(selectedExamIds);
+            setLocalExamIds(selectedExamIds.length > 0 ? selectedExamIds : exams.length > 0 ? [exams[0].id!] : []);
             setLocalCourseId(selectedCourseId ?? null);
         }
-    }, [isOpen, selectedExamIds, selectedCourseId]);
+    }, [isOpen, selectedExamIds, selectedCourseId, exams]);
 
     const visibleCourses = useMemo(() => {
         if (localExamIds.length === 0) return courses;
