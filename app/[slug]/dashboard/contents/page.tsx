@@ -21,11 +21,11 @@ import { createIndexedTextFilter } from '@/lib/indexedFiltering';
 export default function ContentsPage() {
   const { user, business, isAuthenticated, isLoading, isInitialized } = useAuthStore();
 
-  const [rawBatches, setRawBatches] = useState<Batch[]>([]);
+  const [batches, setBatches] = useState<Batch[]>([]);
 
   const [selectedBatchId, setSelectedBatchId] = useState<number | undefined>(undefined);
 
-  const [rawSubjects, setRawSubjects] = useState<Subject[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
   const [selectedSubjectId, setSelectedSubjectId] = useState<number | undefined>(undefined);
 
   const [contents, setContents] = useState<Content[]>([]);
@@ -48,42 +48,47 @@ export default function ContentsPage() {
   }, []);
 
   const subjectsByCourseId = useMemo(() => {
-    const map = new Map<number, Subject[]>();
-    for (const subject of rawSubjects) {
+    const subjectsByCourseIdMap = new Map<number, Subject[]>();
+    for (const subject of subjects) {
       if (typeof subject.courseId === 'number') {
-        const existing = map.get(subject.courseId) ?? [];
+        const existing = subjectsByCourseIdMap.get(subject.courseId) ?? [];
         existing.push(subject);
-        map.set(subject.courseId, existing);
+        subjectsByCourseIdMap.set(subject.courseId, existing);
       }
     }
-    return map;
-  }, [rawSubjects]);
+    return subjectsByCourseIdMap;
+  }, [subjects]);
 
   const subjectIdsByCourseId = useMemo(() => {
-    const map = new Map<number, Set<number>>();
-    for (const subject of rawSubjects) {
+    const subjectIdsByCourseIdMap = new Map<number, Set<number>>();
+    for (const subject of subjects) {
       if (typeof subject.courseId !== 'number') continue;
       if (typeof subject.id !== 'number') continue;
-      const existing = map.get(subject.courseId) ?? new Set<number>();
+      const existing = subjectIdsByCourseIdMap.get(subject.courseId) ?? new Set<number>();
       existing.add(subject.id);
-      map.set(subject.courseId, existing);
+      subjectIdsByCourseIdMap.set(subject.courseId, existing);
     }
-    return map;
-  }, [rawSubjects]);
+    return subjectIdsByCourseIdMap;
+  }, [subjects]);
 
-  const indexedTextFilter = useMemo(() => {
+  const indexedContentFilter = useMemo(() => {
     return createIndexedTextFilter(contents, {
       getId: (c) => (typeof c.id === 'number' ? c.id : null),
-      getTitle: (c) => c.title,
+      getSearchText: (c) => c.title,
       getCreatedAt: (c) => c.createdAt,
-      getFacetId: (c) => (typeof c.subjectId === 'number' ? c.subjectId : null),
+      getFacetValues: {
+        subjectId: (c) => (typeof c.subjectId === 'number' ? c.subjectId : null),
+      },
       ngramLength: 3,
     });
   }, [contents]);
 
   const filteredContents = useMemo(() => {
-    return indexedTextFilter.search({ query: searchQuery, selectedFacetId: selectedSubjectId });
-  }, [indexedTextFilter, searchQuery, selectedSubjectId]);
+    return indexedContentFilter.filter({
+      query: searchQuery,
+      selectedFacets: { subjectId: selectedSubjectId },
+    });
+  }, [indexedContentFilter, searchQuery, selectedSubjectId]);
 
   const sortByCreatedAtDesc = useCallback(<T extends { createdAt?: string }>(items: T[]) => {
     return [...items].sort((a, b) => getCreatedAtTime(b.createdAt) - getCreatedAtTime(a.createdAt));
@@ -93,8 +98,8 @@ export default function ContentsPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await ContentsService.getApiBatchesContents({ batchId, status: Content.status.ACTIVE });
-      const fetched = (res.data ?? []) as Content[];
+      const contentsResponse = await ContentsService.getApiBatchesContents({ batchId, status: Content.status.ACTIVE });
+      const fetched = (contentsResponse.data ?? []) as Content[];
       fetched.sort((a, b) =>
         (b.createdAt ? new Date(b.createdAt).getTime() : 0) - (a.createdAt ? new Date(a.createdAt).getTime() : 0)
       );
@@ -126,8 +131,8 @@ export default function ContentsPage() {
 
   const fetchSubjects = useCallback(async () => {
     if (!user?.id) return;
-    const res = await SubjectsService.getApiSubjectsUser();
-    setRawSubjects((res.data ?? []) as Subject[]);
+    const subjects = await SubjectsService.getApiSubjectsUser();
+    setSubjects((subjects.data ?? []) as Subject[]);
   }, [user?.id]);
 
   const loadPageData = useCallback(async () => {
@@ -136,7 +141,7 @@ export default function ContentsPage() {
     setError(null);
     try {
       const batchesRes = await BatchesService.getApiBatchesAll();
-      setRawBatches(sortByCreatedAtDesc((batchesRes.data ?? []) as Batch[]));
+      setBatches(sortByCreatedAtDesc((batchesRes.data ?? []) as Batch[]));
 
       await fetchSubjects();
     } catch (err) {
@@ -155,9 +160,9 @@ export default function ContentsPage() {
   // subjects are loaded as part of loadPageData()
 
   useEffect(() => {
-    if (!selectedBatchId && rawBatches.length > 0) {
-      const first = rawBatches[0];
-      setSelectedBatchId(first.id);
+    if (!selectedBatchId && batches.length > 0) {
+      const defaultBatch = batches[0];
+      setSelectedBatchId(defaultBatch.id);
       return;
     }
 
@@ -166,32 +171,33 @@ export default function ContentsPage() {
     } else {
       setContents([]);
     }
-  }, [selectedBatchId, rawBatches, loadContentsForBatch]);
+  }, [selectedBatchId, batches, loadContentsForBatch]);
 
   useEffect(() => {
+    const clearSelectedSubject = () => {
+      if (selectedSubjectId !== undefined) setSelectedSubjectId(undefined);
+    };
+
     if (!selectedBatchId) {
-      setSelectedSubjectId(undefined);
+      clearSelectedSubject();
       return;
     }
 
-    const selectedBatch = rawBatches.find(b => b.id === selectedBatchId);
-    const courseId = selectedBatch?.courseId;
-    if (typeof courseId !== 'number') {
-      setSelectedSubjectId(undefined);
+    const selectedBatchCourseId = batches.find(b => b.id === selectedBatchId)?.courseId;
+    if (typeof selectedBatchCourseId !== 'number' || selectedSubjectId === undefined) {
+      clearSelectedSubject();
       return;
     }
 
-    if (selectedSubjectId === undefined) return;
-
-    const allowedSubjectIds = subjectIdsByCourseId.get(courseId);
-    const isValidForBatch = allowedSubjectIds ? allowedSubjectIds.has(selectedSubjectId) : false;
-    if (!isValidForBatch) setSelectedSubjectId(undefined);
-  }, [selectedBatchId, rawBatches, selectedSubjectId, subjectIdsByCourseId]);
+    const subjectIdsForCourse = subjectIdsByCourseId.get(selectedBatchCourseId);
+    const isSubjectInCourse = subjectIdsForCourse ? subjectIdsForCourse.has(selectedSubjectId) : false;
+    if (!isSubjectInCourse) clearSelectedSubject();
+  }, [selectedBatchId, batches, selectedSubjectId, subjectIdsByCourseId]);
 
 
   const selectedBatch = useMemo(
-    () => rawBatches.find((b) => b.id === selectedBatchId),
-    [rawBatches, selectedBatchId]
+    () => batches.find((b) => b.id === selectedBatchId),
+    [batches, selectedBatchId]
   );
 
   const subjectsForSelectedBatch = useMemo(() => {
@@ -307,7 +313,7 @@ export default function ContentsPage() {
 
           <div className="flex items-center gap-3">
             <ContentsFilterModal
-              batches={rawBatches}
+              batches={batches}
               selectedBatchId={selectedBatchId}
               onBatchChange={setSelectedBatchId}
               subjectsForCourse={subjectsForSelectedBatch}
@@ -366,7 +372,7 @@ export default function ContentsPage() {
           onClose={() => setIsAddOpen(false)}
           selectedBatchId={selectedBatchId}
           onBatchChange={setSelectedBatchId}
-          batches={rawBatches}
+          batches={batches}
           subjects={subjectsForSelectedBatch}
           initialSubjectId={initialSubjectIdForModals}
           onCreated={() => selectedBatchId && fetchAndCacheContents(selectedBatchId)}

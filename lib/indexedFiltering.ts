@@ -1,6 +1,12 @@
 export type DateLike = string | Date | null | undefined;
 
-export type MatchPriorityFn = (titleLowerTrimmed: string, queryLowerTrimmed: string) => number;
+type FacetPrimitive = string | number;
+
+export type MatchPriorityFn = (
+  titleLowerTrimmed: string,
+  titleWordsLowerTrimmed: readonly string[],
+  queryLowerTrimmed: string,
+) => number;
 
 /**
  * Match priority semantics (lower is better):
@@ -11,9 +17,25 @@ export type MatchPriorityFn = (titleLowerTrimmed: string, queryLowerTrimmed: str
  * 4: fallback (should not happen if we pre-filter by includes)
  */
 export function defaultGetMatchPriority(titleLowerTrimmed: string, queryLowerTrimmed: string): number {
+  return defaultGetMatchPriorityWithWords(
+    titleLowerTrimmed,
+    titleLowerTrimmed.split(/\s+/).filter(Boolean),
+    queryLowerTrimmed,
+  );
+}
+
+/**
+ * Match priority using pre-tokenized title words.
+ * Lower values represent stronger matches.
+ */
+export function defaultGetMatchPriorityWithWords(
+  titleLowerTrimmed: string,
+  titleWordsLowerTrimmed: readonly string[],
+  queryLowerTrimmed: string,
+): number {
   if (titleLowerTrimmed === queryLowerTrimmed) return 0;
   if (titleLowerTrimmed.startsWith(queryLowerTrimmed)) return 1;
-  if (titleLowerTrimmed.split(/\s+/).some((word) => word.startsWith(queryLowerTrimmed))) return 2;
+  if (titleWordsLowerTrimmed.some((word) => word.startsWith(queryLowerTrimmed))) return 2;
   if (titleLowerTrimmed.includes(queryLowerTrimmed)) return 3;
   return 4;
 }
@@ -36,8 +58,8 @@ function getNGrams(valueLowerTrimmed: string, ngramLength: number): NGram[] {
   return grams;
 }
 
-function intersectIdSets<Id extends string | number>(a: Set<Id>, b: Set<Id>): Set<Id> {
-  if (a.size === 0 || b.size === 0) return new Set<Id>();
+function intersectIdSets<Id extends string | number>(a: ReadonlySet<Id>, b: ReadonlySet<Id>): Set<Id> {
+  if (a.size === 0 || b.size === 0) return new Set();
   const base = a.size <= b.size ? a : b;
   const other = base === a ? b : a;
   const out = new Set<Id>();
@@ -47,74 +69,95 @@ function intersectIdSets<Id extends string | number>(a: Set<Id>, b: Set<Id>): Se
   return out;
 }
 
-type IndexedTextFilter<T, Id extends string | number, FacetId extends string | number> = {
-  search: (params: { query: string; selectedFacetId?: FacetId }) => T[];
+export type IndexedFilter<T, Facets extends Record<string, FacetPrimitive>> = {
+  /**
+   * Filters the indexed item set using title query and exact-match facet values.
+   */
+  filter: (params: IndexedFilterParams<Facets>) => T[];
 };
 
+/**
+ * Runtime filter parameters.
+ * - `query` is normalized (trim + lowercase) and matched using `includes`.
+ * - `selectedFacets` uses AND semantics across provided facet keys.
+ */
+export type IndexedFilterParams<Facets extends Record<string, FacetPrimitive>> = {
+  query: string;
+  selectedFacets?: Partial<{ [K in keyof Facets]: Facets[K] | null | undefined }>;
+};
+
+/**
+ * Configuration for `createIndexedTextFilter`.
+ * Keep this shape reusable so pages can pass title + facet getters without adapter code.
+ */
+export type IndexedFilterConfig<
+  T,
+  Id extends string | number,
+  Facets extends Record<string, FacetPrimitive>,
+> = {
+  getId: (item: T) => Id | null | undefined;
+  getSearchText: (item: T) => string | null | undefined;
+  getCreatedAt: (item: T) => DateLike;
+  getFacetValues?: { [K in keyof Facets]: (item: T) => Facets[K] | null | undefined };
+  ngramLength?: number;
+  getMatchPriority?: MatchPriorityFn;
+};
+
+/**
+ * Creates a reusable in-memory indexed filter for title query + exact-match facets.
+ * Query matching semantics are case-insensitive and trimmed, and only match `getSearchText`.
+ */
 export function createIndexedTextFilter<
   T,
   Id extends string | number,
-  FacetId extends string | number,
->(items: T[], options: {
-  getId: (item: T) => Id | null | undefined;
-  getTitle: (item: T) => string | null | undefined;
-  getCreatedAt: (item: T) => DateLike;
-  getFacetId: (item: T) => FacetId | null | undefined;
-  ngramLength?: number;
-  /**
-   * Reserved for future improvements; candidate retrieval currently prioritizes n-grams.
-   * Still built because it can be useful for prefix-optimized retrieval strategies.
-   */
-  prefixIndexMaxLength?: number;
-  getMatchPriority?: MatchPriorityFn;
-}): IndexedTextFilter<T, Id, FacetId> {
+  Facets extends Record<string, FacetPrimitive> = Record<never, never>,
+>(items: readonly T[], options: IndexedFilterConfig<T, Id, Facets>): IndexedFilter<T, Facets> {
   const ngramLength = options.ngramLength ?? 3;
-  const prefixIndexMaxLength = options.prefixIndexMaxLength ?? Math.max(6, ngramLength - 1);
-  const getMatchPriority = options.getMatchPriority ?? defaultGetMatchPriority;
+  const getMatchPriority = options.getMatchPriority ?? defaultGetMatchPriorityWithWords;
+  const facetGetters = options.getFacetValues;
 
-  // Facet indices
-  const facetIdsToIds = new Map<FacetId, Set<Id>>();
-  const facetIdsToItems = new Map<FacetId, T[]>();
-
-  // Text indices + lookup tables
   const ngramIndex = new Map<NGram, Set<Id>>();
-  const prefixIndex = new Map<string, Set<Id>>();
+  const facetIndexes = new Map<keyof Facets, Map<Facets[keyof Facets], Set<Id>>>();
 
   const titleLowerTrimmedById = new Map<Id, string>();
+  const titleWordsLowerTrimmedById = new Map<Id, readonly string[]>();
   const createdAtTimeById = new Map<Id, number>();
   const orderIndexById = new Map<Id, number>();
   const itemById = new Map<Id, T>();
 
-  const allItems: T[] = [];
+  const allOrderedIds: Id[] = [];
   const allIds = new Set<Id>();
+  const facetKeys = facetGetters ? (Object.keys(facetGetters) as Array<keyof Facets>) : [];
 
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
     const id = options.getId(item);
     if (id === null || id === undefined) continue;
 
-    allItems.push(item);
+    allOrderedIds.push(id);
     allIds.add(id);
     itemById.set(id, item);
     orderIndexById.set(id, i);
 
-    const titleRaw = options.getTitle(item) ?? '';
+    const titleRaw = options.getSearchText(item) ?? '';
     const titleLowerTrimmed = titleRaw.toLowerCase().trim();
+    const titleWordsLowerTrimmed = titleLowerTrimmed.split(/\s+/).filter(Boolean);
     titleLowerTrimmedById.set(id, titleLowerTrimmed);
+    titleWordsLowerTrimmedById.set(id, titleWordsLowerTrimmed);
     createdAtTimeById.set(id, getCreatedAtTime(options.getCreatedAt(item)));
 
-    const facetId = options.getFacetId(item);
-    if (facetId !== null && facetId !== undefined) {
-      const existingItems = facetIdsToItems.get(facetId) ?? [];
-      existingItems.push(item); // preserve original ordering
-      facetIdsToItems.set(facetId, existingItems);
+    for (const facetKey of facetKeys) {
+      const facetGetter = facetGetters[facetKey];
+      const facetValue = facetGetter(item);
+      if (facetValue === null || facetValue === undefined) continue;
 
-      const existingIds = facetIdsToIds.get(facetId) ?? new Set<Id>();
-      existingIds.add(id);
-      facetIdsToIds.set(facetId, existingIds);
+      const facetValueToIds = facetIndexes.get(facetKey) ?? new Map<Facets[keyof Facets], Set<Id>>();
+      const idsForFacetValue = facetValueToIds.get(facetValue) ?? new Set<Id>();
+      idsForFacetValue.add(id);
+      facetValueToIds.set(facetValue, idsForFacetValue);
+      facetIndexes.set(facetKey, facetValueToIds);
     }
 
-    // Build substring index (fixed n-gram length) for candidate retrieval.
     if (titleLowerTrimmed.length >= ngramLength) {
       const grams = getNGrams(titleLowerTrimmed, ngramLength);
       for (const gram of grams) {
@@ -123,41 +166,47 @@ export function createIndexedTextFilter<
         ngramIndex.set(gram, bucket);
       }
     }
-
-    // Build prefix index for optional retrieval strategies.
-    // It is *not* used to guarantee substring correctness; final results are always confirmed via includes().
-    const maxPrefixLen = Math.min(prefixIndexMaxLength, titleLowerTrimmed.length);
-    for (let prefixLen = 1; prefixLen <= maxPrefixLen; prefixLen++) {
-      const prefix = titleLowerTrimmed.slice(0, prefixLen);
-      const bucket = prefixIndex.get(prefix) ?? new Set<Id>();
-      bucket.add(id);
-      prefixIndex.set(prefix, bucket);
-    }
   }
 
-  const search = (params: { query: string; selectedFacetId?: FacetId }): T[] => {
+  const filter = (params: IndexedFilterParams<Facets>): T[] => {
     const queryLowerTrimmed = params.query.trim().toLowerCase();
-    const selectedFacetId = params.selectedFacetId;
+    const selectedFacets = params.selectedFacets;
 
-    if (!queryLowerTrimmed) {
-      if (selectedFacetId === undefined) return allItems;
-      return facetIdsToItems.get(selectedFacetId) ?? [];
+    let scopedIds: ReadonlySet<Id> = allIds;
+    if (selectedFacets) {
+      for (const facetKey of Object.keys(selectedFacets) as Array<keyof Facets>) {
+        const selectedFacetValue = selectedFacets[facetKey];
+        if (selectedFacetValue === null || selectedFacetValue === undefined) continue;
+
+        const facetValueToIds = facetIndexes.get(facetKey);
+        const idsForFacet = facetValueToIds?.get(selectedFacetValue);
+        if (!idsForFacet) {
+          scopedIds = new Set<Id>();
+          break;
+        }
+
+        scopedIds = intersectIdSets(scopedIds, idsForFacet);
+        if (scopedIds.size === 0) break;
+      }
     }
 
-    const scopedIds =
-      selectedFacetId === undefined ? allIds : facetIdsToIds.get(selectedFacetId) ?? new Set<Id>();
-
     if (scopedIds.size === 0) return [];
+    if (!queryLowerTrimmed) {
+      const scopedItems: T[] = [];
+      for (const id of allOrderedIds) {
+        if (!scopedIds.has(id)) continue;
+        const item = itemById.get(id);
+        if (item) scopedItems.push(item);
+      }
+      return scopedItems;
+    }
 
-    let candidateIds: Set<Id>;
+    let candidateIds: ReadonlySet<Id>;
 
-    // Candidate retrieval:
-    // - For short queries, n-gram indexing is not useful; scan within the scoped set.
-    // - For longer queries, use n-grams to reduce the search space.
     if (queryLowerTrimmed.length < ngramLength) {
-      candidateIds = new Set<Id>(scopedIds);
+      candidateIds = scopedIds;
     } else {
-      const grams = getNGrams(queryLowerTrimmed, ngramLength);
+      const grams = [...new Set(getNGrams(queryLowerTrimmed, ngramLength))];
       if (grams.length === 0) return [];
 
       const buckets = grams.map((g) => ngramIndex.get(g));
@@ -166,16 +215,23 @@ export function createIndexedTextFilter<
       const typedBuckets = buckets as Array<Set<Id>>;
       typedBuckets.sort((a, b) => a.size - b.size);
 
-      const narrowed = new Set<Id>(typedBuckets[0]);
-      for (let i = 1; i < typedBuckets.length; i++) {
-        const bucket = typedBuckets[i];
-        if (narrowed.size === 0) break;
-        for (const id of narrowed) {
-          if (!bucket.has(id)) narrowed.delete(id);
+      const smallestBucket = typedBuckets[0];
+      const remainingBuckets = typedBuckets.slice(1);
+
+      const narrowed = new Set<Id>();
+      for (const id of smallestBucket) {
+        if (!scopedIds.has(id)) continue;
+        let isInAllBuckets = true;
+        for (const bucket of remainingBuckets) {
+          if (!bucket.has(id)) {
+            isInAllBuckets = false;
+            break;
+          }
         }
+        if (isInAllBuckets) narrowed.add(id);
       }
 
-      candidateIds = intersectIdSets(narrowed, scopedIds);
+      candidateIds = narrowed;
     }
 
     if (candidateIds.size === 0) return [];
@@ -193,9 +249,10 @@ export function createIndexedTextFilter<
       if (!item) continue;
 
       const titleLowerTrimmed = titleLowerTrimmedById.get(id) ?? '';
+      const titleWordsLowerTrimmed = titleWordsLowerTrimmedById.get(id) ?? [];
       if (!titleLowerTrimmed.includes(queryLowerTrimmed)) continue;
 
-      const priority = getMatchPriority(titleLowerTrimmed, queryLowerTrimmed);
+      const priority = getMatchPriority(titleLowerTrimmed, titleWordsLowerTrimmed, queryLowerTrimmed);
       const createdAtTime = createdAtTimeById.get(id) ?? 0;
       const orderIndex = orderIndexById.get(id) ?? 0;
 
@@ -208,18 +265,12 @@ export function createIndexedTextFilter<
       });
     }
 
-    ranked.sort((a, b) => {
-      if (a.priority !== b.priority) return a.priority - b.priority;
-      const titleCompare = a.titleLowerTrimmed.localeCompare(b.titleLowerTrimmed);
-      if (titleCompare !== 0) return titleCompare;
-      const createdCompare = b.createdAtTime - a.createdAtTime;
-      if (createdCompare !== 0) return createdCompare;
-      return a.orderIndex - b.orderIndex;
-    });
+    const compareRank = (a: typeof ranked[0], b: typeof ranked[0]) =>  a.priority - b.priority || a.titleLowerTrimmed.localeCompare(b.titleLowerTrimmed) || a.orderIndex - b.orderIndex;
+    ranked.sort(compareRank);
 
     return ranked.map((r) => r.item);
   };
 
-  return { search };
+  return { filter };
 }
 
