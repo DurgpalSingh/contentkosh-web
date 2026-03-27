@@ -1,15 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { FlaskConical } from 'lucide-react';
-import { toast } from 'sonner';
 import { useAuthStore } from '@/store/useAuthStore';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Button } from '@/components/ui/button';
-import { BatchesService, ExamTestsService, PracticeTestsService } from '@/lib/api';
+import { ExamTestsService, PracticeTestsService } from '@/lib/api';
 import { EmptyState } from '@/components/common/EmptyState';
-import { getApiErrorDetailMessage } from '@/lib/tests/getApiErrorDetailMessage';
 import type { PracticeCatalogRow, ExamCatalogRow, UnifiedStudentRow } from '@/lib/tests/studentTestCatalog';
 import {
   buildCardViewModel,
@@ -24,53 +22,31 @@ import { formatDateTime, formatDurationMinutes, testStatus } from '@/lib/tests/t
 import { TestsFiltersBar } from '@/components/dashboard/tests/TestsFiltersBar';
 import { STUDENT_TEST_STATUS } from '@/lib/tests/testConstants';
 
-export function StudentTestsListPage() {
-  const params = useParams();
-  const slug = params.slug as string;
+export function StudentTestsListView({
+  slug,
+  practiceRows,
+  examRows,
+  batches,
+  loading,
+  error,
+}: {
+  slug: string;
+  practiceRows: PracticeCatalogRow[];
+  examRows: ExamCatalogRow[];
+  batches: { id: number; displayName?: string; codeName?: string }[];
+  loading: boolean;
+  error: string | null;
+}) {
   const router = useRouter();
   const { business, isAuthenticated, isInitialized } = useAuthStore();
   const businessId = business?.id;
 
-  const [practiceRows, setPracticeRows] = useState<PracticeCatalogRow[]>([]);
-  const [examRows, setExamRows] = useState<ExamCatalogRow[]>([]);
-  const [batches, setBatches] = useState<{ id: number; displayName?: string; codeName?: string }[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [batchFilter, setBatchFilter] = useState<number | 'all'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'draft' | 'published'>('all');
 
   const [startConfirmOpen, setStartConfirmOpen] = useState(false);
   const [startConfirmPayload, setStartConfirmPayload] = useState<StartAttemptTestInfo | null>(null);
-
-  const loadTests = useCallback(async () => {
-    if (typeof businessId !== 'number') return;
-    setLoading(true);
-    setError(null);
-    try {
-      const [practiceRes, examRes, batchesRes] = await Promise.all([
-        PracticeTestsService.getApiBusinessPracticeTestsAvailable(businessId),
-        ExamTestsService.getApiBusinessExamTestsAvailable(businessId),
-        BatchesService.getApiBatchesAll(),
-      ]);
-      setPracticeRows((practiceRes.data ?? []) as PracticeCatalogRow[]);
-      setExamRows((examRes.data ?? []) as ExamCatalogRow[]);
-      const list = (batchesRes?.data ?? []) as { id?: number; displayName?: string; codeName?: string }[];
-      setBatches(list.map((b) => ({ id: b.id!, displayName: b.displayName, codeName: b.codeName })));
-    } catch (e: unknown) {
-      const msg = getApiErrorDetailMessage(e, 'Failed to load tests');
-      setError(msg);
-      toast.error(msg);
-    } finally {
-      setLoading(false);
-    }
-  }, [businessId]);
-
-  useEffect(() => {
-    if (isInitialized && isAuthenticated && typeof businessId === 'number') {
-      void loadTests();
-    }
-  }, [isInitialized, isAuthenticated, businessId, loadTests]);
 
   const merged: UnifiedStudentRow[] = useMemo(() => {
     const p = practiceRows.map((row) => ({ kind: 'practice' as const, row }));
@@ -374,4 +350,3 @@ export function StudentTestsListPage() {
     </div>
   );
 }
-

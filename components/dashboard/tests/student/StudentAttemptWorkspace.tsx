@@ -1,11 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { Button } from '@/components/ui/button';
 import {
   ExamTestsService,
   PracticeTestsService,
@@ -43,19 +40,19 @@ type AttemptWithTimer = AttemptDetails['attempt'] & { timeRemainingSeconds?: num
 export function StudentAttemptWorkspace({
   kind,
   attemptId,
+  details: detailsProp,
 }: {
   kind: StudentAttemptKind;
   attemptId: string;
+  details: AttemptDetails;
 }) {
   const params = useParams();
   const slug = params.slug as string;
   const router = useRouter();
-  const { business, isAuthenticated, isInitialized } = useAuthStore();
+  const { business, isAuthenticated } = useAuthStore();
   const businessId = business?.id;
 
-  const [loading, setLoading] = useState(true);
-  const [details, setDetails] = useState<AttemptDetails | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const details = detailsProp;
   const [answers, setAnswers] = useState<Record<string, AnswerDraft>>({});
   const [flagged, setFlagged] = useState<Set<string>>(() => new Set());
   const [markedForReview, setMarkedForReview] = useState<Set<string>>(() => new Set());
@@ -73,92 +70,68 @@ export function StudentAttemptWorkspace({
   const submitLock = useRef(false);
   const examCountdownStarted = useRef(false);
 
-  const load = useCallback(async () => {
-    if (typeof businessId !== 'number') return;
-    setLoading(true);
-    setError(null);
+  // Hydrate answers + UI flags from server + localStorage (GET runs in app page only).
+  useEffect(() => {
     didAutoSubmit.current = false;
     examCountdownStarted.current = false;
-    try {
-      const res =
-        kind === 'practice'
-          ? await PracticeTestsService.getApiBusinessPracticeTestsAttempts(businessId, attemptId)
-          : await ExamTestsService.getApiBusinessExamTestsAttempts(businessId, attemptId);
-      const data = res.data;
-      if (!data) {
-        setError('Could not load attempt');
-        return;
-      }
-      // console.log('Loaded attempt details', data);
-      setDetails(data);
-      const inProgress = data.attempt.status === AttemptStatus._0;
+    const data = detailsProp;
+    const inProgress = data.attempt.status === AttemptStatus._0;
 
-      const serverAnswers = initAnswersFromAttemptQuestions(data.questions);
-      if (!inProgress) {
-        // Avoid any draft interference for already-finished attempts.
-        try {
-          window.localStorage.removeItem(draftStorageKey);
-          window.localStorage.removeItem(uiStorageKey);
-        } catch {
-          // ignore storage failures
-        }
-        setAnswers(serverAnswers);
-      } else {
-        let localDraft: Record<string, AnswerDraft> | null = null;
-        try {
-          const raw = window.localStorage.getItem(draftStorageKey);
-          if (raw) {
-            const parsed = JSON.parse(raw) as unknown;
-            if (parsed && typeof parsed === 'object') {
-              localDraft = parsed as Record<string, AnswerDraft>;
-            }
+    const serverAnswers = initAnswersFromAttemptQuestions(data.questions);
+    if (!inProgress) {
+      try {
+        window.localStorage.removeItem(draftStorageKey);
+        window.localStorage.removeItem(uiStorageKey);
+      } catch {
+        // ignore storage failures
+      }
+      setAnswers(serverAnswers);
+      setFlagged(new Set());
+      setMarkedForReview(new Set());
+      setVisited(new Set());
+    } else {
+      let localDraft: Record<string, AnswerDraft> | null = null;
+      try {
+        const raw = window.localStorage.getItem(draftStorageKey);
+        if (raw) {
+          const parsed = JSON.parse(raw) as unknown;
+          if (parsed && typeof parsed === 'object') {
+            localDraft = parsed as Record<string, AnswerDraft>;
           }
-        } catch {
-          // ignore storage failures
         }
+      } catch {
+        // ignore storage failures
+      }
 
-        // Local draft overrides server answers for the same question IDs.
-        setAnswers({ ...serverAnswers, ...(localDraft ?? {}) });
+      setAnswers({ ...serverAnswers, ...(localDraft ?? {}) });
 
-        try {
-          const rawUi = window.localStorage.getItem(uiStorageKey);
-          if (rawUi) {
-            const parsed = JSON.parse(rawUi) as unknown;
-            if (parsed && typeof parsed === 'object') {
-              const obj = parsed as {
-                flagged?: string[];
-                markedForReview?: string[];
-                visited?: string[];
-              };
-              setFlagged(new Set(obj.flagged ?? []));
-              setMarkedForReview(new Set(obj.markedForReview ?? []));
-              setVisited(new Set(obj.visited ?? []));
-            }
+      try {
+        const rawUi = window.localStorage.getItem(uiStorageKey);
+        if (rawUi) {
+          const parsed = JSON.parse(rawUi) as unknown;
+          if (parsed && typeof parsed === 'object') {
+            const obj = parsed as {
+              flagged?: string[];
+              markedForReview?: string[];
+              visited?: string[];
+            };
+            setFlagged(new Set(obj.flagged ?? []));
+            setMarkedForReview(new Set(obj.markedForReview ?? []));
+            setVisited(new Set(obj.visited ?? []));
           }
-        } catch {
-          // ignore storage failures
         }
+      } catch {
+        // ignore storage failures
       }
-      const att = data.attempt as AttemptWithTimer;
-      if (kind === 'exam' && typeof att.timeRemainingSeconds === 'number') {
-        setTimerSec(Math.max(0, att.timeRemainingSeconds));
-      } else {
-        setTimerSec(null);
-      }
-    } catch (e: unknown) {
-      const msg = getApiErrorDetailMessage(e, 'Failed to load attempt');
-      setError(msg);
-      toast.error(msg);
-    } finally {
-      setLoading(false);
     }
-  }, [businessId, kind, attemptId, draftStorageKey]);
 
-  useEffect(() => {
-    if (isInitialized && isAuthenticated && typeof businessId === 'number') {
-      void load();
+    const att = data.attempt as AttemptWithTimer;
+    if (kind === 'exam' && typeof att.timeRemainingSeconds === 'number') {
+      setTimerSec(Math.max(0, att.timeRemainingSeconds));
+    } else {
+      setTimerSec(null);
     }
-  }, [isInitialized, isAuthenticated, businessId, load]);
+  }, [detailsProp, kind, attemptId, draftStorageKey, uiStorageKey]);
 
   useEffect(() => {
     if (!details || !slug) return;
@@ -214,8 +187,8 @@ export function StudentAttemptWorkspace({
         return;
       }
       try {
-        // Clear draft right before navigating to results.
         window.localStorage.removeItem(draftStorageKey);
+        window.localStorage.removeItem(uiStorageKey);
       } catch {
         // ignore storage failures
       }
@@ -232,7 +205,7 @@ export function StudentAttemptWorkspace({
       setSubmitting(false);
       setSubmitOpen(false);
     }
-  }, [businessId, details, answers, kind, attemptId, slug, router, draftStorageKey]);
+  }, [businessId, details, answers, kind, attemptId, slug, router, draftStorageKey, uiStorageKey]);
 
   const finalizeSubmitRef = useRef(finalizeSubmit);
   finalizeSubmitRef.current = finalizeSubmit;
@@ -256,7 +229,6 @@ export function StudentAttemptWorkspace({
     return countUnanswered(details.questions, answers);
   }, [details, answers]);
 
-  // Persist answers draft while the attempt is in progress.
   useEffect(() => {
     if (!details) return;
     if (details.attempt.status !== AttemptStatus._0) return;
@@ -270,7 +242,6 @@ export function StudentAttemptWorkspace({
     return () => window.clearTimeout(id);
   }, [details, answers, draftStorageKey]);
 
-  // Persist navigator/ui state while in progress.
   useEffect(() => {
     if (!details) return;
     if (details.attempt.status !== AttemptStatus._0) return;
@@ -291,7 +262,7 @@ export function StudentAttemptWorkspace({
     return () => window.clearTimeout(id);
   }, [details, flagged, markedForReview, visited, uiStorageKey]);
 
-  const rows = details?.questions ?? [];
+  const rows = useMemo(() => details?.questions ?? [], [details?.questions]);
   const activeRow = rows[activeIndex];
   const testName = details?.test.name ?? 'Test';
   const isExam = kind === 'exam';
@@ -335,7 +306,6 @@ export function StudentAttemptWorkspace({
   const goNext = useCallback(() => setActiveIndex((i) => Math.min(rows.length - 1, i + 1)), [rows.length]);
   const onSelectIndex = useCallback((i: number) => setActiveIndex(i), []);
 
-  // Mark visited when navigating (in-progress only).
   useEffect(() => {
     if (!details) return;
     if (details.attempt.status !== AttemptStatus._0) return;
@@ -354,28 +324,7 @@ export function StudentAttemptWorkspace({
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
-  if (!isInitialized || (loading && !details)) {
-    return (
-      <div className="min-h-[40vh] flex items-center justify-center">
-        <LoadingSpinner size="lg" />
-      </div>
-    );
-  }
-
   if (!isAuthenticated || typeof businessId !== 'number') return null;
-
-  if (error && !details) {
-    return (
-      <div className="space-y-4">
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-          {error}
-        </div>
-        <Button variant="outline" asChild>
-          <Link href={studentTestBasePath(slug)}>Back to My Tests</Link>
-        </Button>
-      </div>
-    );
-  }
 
   if (!details || !activeRow) {
     return (
@@ -427,10 +376,7 @@ export function StudentAttemptWorkspace({
               displayIndex={activeIndex + 1}
               question={activeRow.question}
               value={activeAnswer}
-              flagged={activeIsFlagged}
               onChange={setAnswerForActive}
-              onClearAnswer={clearActiveAnswer}
-              onToggleFlag={toggleActiveFlag}
             />
           </div>
 

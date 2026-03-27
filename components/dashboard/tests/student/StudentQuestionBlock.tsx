@@ -5,16 +5,12 @@ import type { TestOption } from '@/lib/api/models/TestOption';
 import { Label } from '@/components/ui/label';
 import { questionType } from '@/lib/tests/testUiMappers';
 import type { AnswerDraft } from '@/lib/tests/studentAttemptAnswers';
-import { isQuestionAnswered } from '@/lib/tests/studentAttemptAnswers';
 
 interface StudentQuestionBlockProps {
   displayIndex: number;
   question: TestQuestion;
   value: AnswerDraft | undefined;
-  flagged: boolean;
   onChange: (next: AnswerDraft) => void;
-  onToggleFlag: () => void;
-  onClearAnswer: () => void;
 }
 
 function OptionsList({
@@ -63,10 +59,7 @@ export function StudentQuestionBlock({
   displayIndex,
   question,
   value,
-  flagged,
   onChange,
-  onToggleFlag,
-  onClearAnswer,
 }: StudentQuestionBlockProps) {
   const body = question.questionText || question.text || '';
   const qType = question.type;
@@ -90,7 +83,6 @@ export function StudentQuestionBlock({
       if (norm === 'true' || norm === 'false') return norm;
     }
 
-    // Backward compatibility: older attempts may have selectedOptionIds only.
     const selectedIds = value?.selectedOptionIds ?? [];
     if (selectedIds.length === 0) return undefined;
 
@@ -109,33 +101,9 @@ export function StudentQuestionBlock({
       className="rounded-xl border border-gray-200 bg-white p-4 sm:p-6 shadow-sm"
       aria-labelledby={`q-heading-${question.id}`}
     >
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <h3 id={`q-heading-${question.id}`} className="text-base font-semibold text-gray-900">
-          Question {displayIndex}
-        </h3>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={onClearAnswer}
-            className="text-xs font-medium px-2 py-1 rounded-md border border-gray-200 text-gray-700 hover:bg-gray-50"
-          >
-            Clear
-          </button>
-          <button
-            type="button"
-            onClick={onToggleFlag}
-            className={`text-xs font-medium px-2 py-1 rounded-md border ${
-              flagged
-                ? 'border-amber-300 bg-amber-50 text-amber-900'
-                : 'border-gray-200 text-gray-600 hover:bg-gray-50'
-            }`}
-            aria-pressed={flagged}
-            aria-label={flagged ? 'Unflag question' : 'Flag for review'}
-          >
-            {flagged ? 'Flagged' : 'Flag'}
-          </button>
-        </div>
-      </div>
+      <h3 id={`q-heading-${question.id}`} className="text-base font-semibold text-gray-900">
+        Question {displayIndex}
+      </h3>
       <p className="mt-3 text-gray-800 whitespace-pre-wrap">{body}</p>
 
       {qType === questionType.trueFalse && (

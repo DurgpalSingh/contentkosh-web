@@ -11,9 +11,10 @@ function buildPrimaryNextLabel(params: { hasAnswer: boolean; flagged: boolean; m
 }
 
 function buildPrimaryNextClass(params: { hasAnswer: boolean; flagged: boolean; markedForReview: boolean }): string {
-  if (params.flagged) return 'bg-amber-600 hover:bg-amber-700 text-white';
-  if (params.markedForReview) return 'bg-blue-600 hover:bg-blue-700 text-white';
+  if (params.hasAnswer && params.flagged) return 'bg-amber-600 hover:bg-amber-700 text-white';
+  if (params.hasAnswer && params.markedForReview) return 'bg-cyan-600 hover:bg-cyan-700 text-white';
   if (params.hasAnswer) return 'bg-emerald-600 hover:bg-emerald-700 text-white';
+  if (params.markedForReview) return 'bg-indigo-600 hover:bg-indigo-700 text-white';
   return 'bg-slate-900 hover:bg-slate-800 text-white';
 }
 
@@ -54,7 +55,7 @@ export function AttemptActionBar({
         <Button
           type="button"
           variant="outline"
-          className={flagged ? 'border-amber-300 bg-amber-50 text-amber-900' : ''}
+          className={flagged ? 'border-amber-400 bg-amber-50 text-amber-900' : 'border-amber-200 text-amber-900 hover:bg-amber-50'}
           onClick={onToggleFlag}
         >
           {flagged ? 'Flag: On' : 'Flag'}
@@ -62,7 +63,11 @@ export function AttemptActionBar({
         <Button
           type="button"
           variant="outline"
-          className={markedForReview ? 'border-blue-300 bg-blue-50 text-blue-900' : ''}
+          className={
+            markedForReview
+              ? 'border-violet-400 bg-violet-50 text-violet-900'
+              : 'border-violet-200 text-violet-800 hover:bg-violet-50'
+          }
           onClick={onToggleMarkForReview}
         >
           {markedForReview ? 'Review: On' : 'Mark for review'}
@@ -77,4 +82,3 @@ export function AttemptActionBar({
     </div>
   );
 }
-

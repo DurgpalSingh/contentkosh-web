@@ -88,7 +88,10 @@ export function AttemptQuestionNavigator({
             <span className="h-3 w-3 rounded-sm bg-amber-200 border border-amber-400" /> Flagged
           </li>
           <li className="flex items-center gap-2">
-            <span className="h-3 w-3 rounded-sm bg-blue-200 border border-blue-400" /> Review
+            <span className="h-3 w-3 rounded-sm bg-violet-100 border border-violet-400" /> Review (no answer)
+          </li>
+          <li className="flex items-center gap-2">
+            <span className="h-3 w-3 rounded-sm bg-cyan-100 border border-cyan-500" /> Review + answered
           </li>
           <li className="flex items-center gap-2">
             <span className="h-3 w-3 rounded-sm bg-white border border-gray-300" /> Visited
