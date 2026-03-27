@@ -28,6 +28,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname();
   const displayName = business?.instituteName || 'Contentkosh';
 
+  const hideDashboardChrome = useMemo(() => {
+    if (!pathname) return false;
+    return /^\/[^/]+\/dashboard\/student\/mytest\/(practice|exam)\/attempt\/[^/]+/.test(pathname);
+  }, [pathname]);
+
   const logoUrl = useMemo(() => {
     const logoPath = business?.logo?.trim();
     if (!logoPath) return null;
@@ -91,6 +96,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       </div>
     </div>
   );
+
+  if (hideDashboardChrome) {
+    return <div className="min-h-screen bg-slate-50">{children}</div>;
+  }
 
   return (
     <div className="min-h-screen bg-slate-50">

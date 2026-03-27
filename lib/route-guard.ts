@@ -20,7 +20,7 @@ const roleRouteRules: RoleRouteRule[] = [
   { prefix: '/dashboard/batches', allowedRoles: ['ADMIN', 'SUPERADMIN', 'TEACHER'] },
   { prefix: '/dashboard/contents', allowedRoles: ['ADMIN', 'SUPERADMIN', 'TEACHER', 'STUDENT'] },
   { prefix: '/dashboard/tests', allowedRoles: ['ADMIN', 'SUPERADMIN', 'TEACHER'] },
-  { prefix: '/dashboard/student/tests', allowedRoles: ['STUDENT'] },
+  { prefix: '/dashboard/student/mytest', allowedRoles: ['STUDENT'] },
 ];
 
 function normalizePath(pathname: string): string {

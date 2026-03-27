@@ -16,7 +16,7 @@ export const ROUTES = {
   STUDENT: {
     CLASSES: '/dashboard/student/classes',
     ANNOUNCEMENTS: '/dashboard/student/announcements',
-    TESTS: '/dashboard/student/tests',
+    MYTEST: '/dashboard/student/mytest',
   },
 } as const;
 

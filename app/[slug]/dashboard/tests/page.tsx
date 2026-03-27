@@ -211,7 +211,7 @@ export default function TestsListPage() {
                 onClick={() => goToDetail(row.kind, t.id)}
                 className="bg-white hover:bg-gray-50 cursor-pointer border border-gray-200 rounded-xl p-4 shadow-sm flex flex-col gap-3 transition-colors"
               >
-                <div className="flex items-start justify-between gap-2">
+                <div className="flex items-start justify-items-start gap-2">
                   <div className="flex items-start gap-3 min-w-0">
                     <div
                       className={`mt-0.5 h-8 w-8 rounded-lg flex items-center justify-center shrink-0 ${isPractice ? 'bg-emerald-50' : 'bg-amber-50'}`}

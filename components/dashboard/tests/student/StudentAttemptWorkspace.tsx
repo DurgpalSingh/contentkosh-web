@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { ChevronLeft } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Button } from '@/components/ui/button';
@@ -26,13 +25,14 @@ import {
   buildSubmitPayload,
   countUnanswered,
   type AnswerDraft,
+  isQuestionAnswered,
 } from '@/lib/tests/studentAttemptAnswers';
 import { StudentSubmitTestModal } from '@/components/dashboard/tests/student/StudentSubmitTestModal';
-import {
-  StudentQuestionBlock,
-  questionButtonTone,
-} from '@/components/dashboard/tests/student/StudentQuestionBlock';
 import { formatDurationMinutes } from '@/lib/tests/testUiMappers';
+import { AttemptHeader } from '@/components/dashboard/tests/student/AttemptHeader';
+import { AttemptQuestionNavigator } from '@/components/dashboard/tests/student/AttemptQuestionNavigator';
+import { AttemptActionBar } from '@/components/dashboard/tests/student/AttemptActionBar';
+import { StudentQuestionBlock } from '@/components/dashboard/tests/student/StudentQuestionBlock';
 
 export type StudentAttemptKind = 'practice' | 'exam';
 
@@ -58,6 +58,8 @@ export function StudentAttemptWorkspace({
   const [error, setError] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<string, AnswerDraft>>({});
   const [flagged, setFlagged] = useState<Set<string>>(() => new Set());
+  const [markedForReview, setMarkedForReview] = useState<Set<string>>(() => new Set());
+  const [visited, setVisited] = useState<Set<string>>(() => new Set());
   const [activeIndex, setActiveIndex] = useState(0);
   const [submitOpen, setSubmitOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -66,6 +68,7 @@ export function StudentAttemptWorkspace({
     () => `studentAttemptDraft:${kind}:${attemptId}`,
     [kind, attemptId],
   );
+  const uiStorageKey = useMemo(() => `studentAttemptUi:${kind}:${attemptId}`, [kind, attemptId]);
   const didAutoSubmit = useRef(false);
   const submitLock = useRef(false);
   const examCountdownStarted = useRef(false);
@@ -95,6 +98,7 @@ export function StudentAttemptWorkspace({
         // Avoid any draft interference for already-finished attempts.
         try {
           window.localStorage.removeItem(draftStorageKey);
+          window.localStorage.removeItem(uiStorageKey);
         } catch {
           // ignore storage failures
         }
@@ -115,6 +119,25 @@ export function StudentAttemptWorkspace({
 
         // Local draft overrides server answers for the same question IDs.
         setAnswers({ ...serverAnswers, ...(localDraft ?? {}) });
+
+        try {
+          const rawUi = window.localStorage.getItem(uiStorageKey);
+          if (rawUi) {
+            const parsed = JSON.parse(rawUi) as unknown;
+            if (parsed && typeof parsed === 'object') {
+              const obj = parsed as {
+                flagged?: string[];
+                markedForReview?: string[];
+                visited?: string[];
+              };
+              setFlagged(new Set(obj.flagged ?? []));
+              setMarkedForReview(new Set(obj.markedForReview ?? []));
+              setVisited(new Set(obj.visited ?? []));
+            }
+          }
+        } catch {
+          // ignore storage failures
+        }
       }
       const att = data.attempt as AttemptWithTimer;
       if (kind === 'exam' && typeof att.timeRemainingSeconds === 'number') {
@@ -247,10 +270,83 @@ export function StudentAttemptWorkspace({
     return () => window.clearTimeout(id);
   }, [details, answers, draftStorageKey]);
 
+  // Persist navigator/ui state while in progress.
+  useEffect(() => {
+    if (!details) return;
+    if (details.attempt.status !== AttemptStatus._0) return;
+    const id = window.setTimeout(() => {
+      try {
+        window.localStorage.setItem(
+          uiStorageKey,
+          JSON.stringify({
+            flagged: [...flagged],
+            markedForReview: [...markedForReview],
+            visited: [...visited],
+          }),
+        );
+      } catch {
+        // ignore storage failures
+      }
+    }, 200);
+    return () => window.clearTimeout(id);
+  }, [details, flagged, markedForReview, visited, uiStorageKey]);
+
   const rows = details?.questions ?? [];
   const activeRow = rows[activeIndex];
   const testName = details?.test.name ?? 'Test';
   const isExam = kind === 'exam';
+
+  const activeQuestionId = activeRow?.question.id;
+
+  const setAnswerForActive = useCallback(
+    (next: AnswerDraft) => {
+      if (!activeQuestionId) return;
+      setAnswers((prev) => ({ ...prev, [activeQuestionId]: next }));
+    },
+    [activeQuestionId],
+  );
+
+  const clearActiveAnswer = useCallback(() => {
+    if (!activeQuestionId) return;
+    setAnswers((prev) => ({ ...prev, [activeQuestionId]: {} }));
+  }, [activeQuestionId]);
+
+  const toggleActiveFlag = useCallback(() => {
+    if (!activeQuestionId) return;
+    setFlagged((prev) => {
+      const next = new Set(prev);
+      if (next.has(activeQuestionId)) next.delete(activeQuestionId);
+      else next.add(activeQuestionId);
+      return next;
+    });
+  }, [activeQuestionId]);
+
+  const toggleActiveMarkForReview = useCallback(() => {
+    if (!activeQuestionId) return;
+    setMarkedForReview((prev) => {
+      const next = new Set(prev);
+      if (next.has(activeQuestionId)) next.delete(activeQuestionId);
+      else next.add(activeQuestionId);
+      return next;
+    });
+  }, [activeQuestionId]);
+
+  const goPrev = useCallback(() => setActiveIndex((i) => Math.max(0, i - 1)), []);
+  const goNext = useCallback(() => setActiveIndex((i) => Math.min(rows.length - 1, i + 1)), [rows.length]);
+  const onSelectIndex = useCallback((i: number) => setActiveIndex(i), []);
+
+  // Mark visited when navigating (in-progress only).
+  useEffect(() => {
+    if (!details) return;
+    if (details.attempt.status !== AttemptStatus._0) return;
+    const qid = rows[activeIndex]?.question.id;
+    if (!qid) return;
+    setVisited((prev) => {
+      const next = new Set(prev);
+      next.add(qid);
+      return next;
+    });
+  }, [details, rows, activeIndex]);
 
   const formatClock = (sec: number) => {
     const m = Math.floor(sec / 60);
@@ -289,149 +385,78 @@ export function StudentAttemptWorkspace({
     );
   }
 
+  const activeAnswer = activeQuestionId ? answers[activeQuestionId] : undefined;
+  const activeHasAnswer = isQuestionAnswered(activeRow.question.type, activeAnswer);
+  const activeIsFlagged = !!activeQuestionId && flagged.has(activeQuestionId);
+  const activeIsMarkedForReview = !!activeQuestionId && markedForReview.has(activeQuestionId);
+
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <Link
-          href={studentTestBasePath(slug)}
-          className="inline-flex items-center text-sm text-violet-700 hover:text-violet-900"
-        >
-          <ChevronLeft className="h-4 w-4 mr-1" aria-hidden />
-          My Tests
-        </Link>
-        {isExam && timerSec !== null && (
-          <div
-            className={`text-sm font-mono font-semibold px-3 py-1 rounded-lg border ${
-              timerSec < 300 ? 'border-red-200 bg-red-50 text-red-900' : 'border-gray-200 bg-white'
-            }`}
-            aria-live="polite"
-          >
-            Time left: {formatClock(timerSec)}
-          </div>
-        )}
-      </div>
-
-      <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 sm:p-6">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-          <div>
-            <span
-              className={`inline-flex text-xs font-semibold px-2 py-0.5 rounded-full mb-2 ${
-                isExam ? 'bg-amber-50 text-amber-800' : 'bg-emerald-50 text-emerald-800'
+      <AttemptHeader
+        backHref={studentTestBasePath(slug)}
+        kindLabel={isExam ? 'Exam' : 'Practice'}
+        testName={testName}
+        subtitle={isExam && 'durationMinutes' in details.test ? `Duration ${formatDurationMinutes(details.test.durationMinutes)}` : undefined}
+        rightSlot={
+          isExam && timerSec !== null ? (
+            <div
+              className={`text-sm font-mono font-semibold px-3 py-1 rounded-lg border ${
+                timerSec < 300 ? 'border-red-200 bg-red-50 text-red-900' : 'border-gray-200 bg-white'
               }`}
+              aria-live="polite"
             >
-              {isExam ? 'Exam' : 'Practice'}
-            </span>
-            <h1 className="text-xl font-bold text-gray-900">{testName}</h1>
-            {isExam && 'durationMinutes' in details.test && (
-              <p className="text-sm text-gray-600 mt-1">
-                Duration {formatDurationMinutes(details.test.durationMinutes)}
-              </p>
-            )}
-          </div>
-          <div className="text-sm text-gray-600">
-            Answered{' '}
-            <span className="font-semibold text-gray-900">
-              {rows.length - unanswered}/{rows.length}
-            </span>
-          </div>
-        </div>
-      </div>
+              Time left: {formatClock(timerSec)}
+            </div>
+          ) : (
+            <div className="text-sm text-gray-600">
+              Answered{' '}
+              <span className="font-semibold text-gray-900">
+                {rows.length - unanswered}/{rows.length}
+              </span>
+            </div>
+          )
+        }
+        onSubmit={() => setSubmitOpen(true)}
+        submitDisabled={submitting}
+      />
 
-      <div className="flex flex-col lg:flex-row gap-6">
-        <aside className="lg:w-56 shrink-0">
-          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Questions</p>
-          <div className="grid grid-cols-5 sm:grid-cols-6 lg:grid-cols-4 gap-2">
-            {rows.map((row, i) => {
-              const tone = questionButtonTone(
-                row.question.type,
-                answers[row.question.id],
-                flagged.has(row.question.id),
-              );
-              const cls =
-                tone === 'answered'
-                  ? 'bg-emerald-600 text-white border-emerald-600'
-                  : tone === 'flagged'
-                    ? 'bg-amber-100 text-amber-900 border-amber-300'
-                    : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50';
-              return (
-                <button
-                  key={row.question.id}
-                  type="button"
-                  onClick={() => setActiveIndex(i)}
-                  className={`h-9 rounded-md border text-sm font-medium ${cls} ${
-                    i === activeIndex ? 'ring-2 ring-violet-500 ring-offset-1' : ''
-                  }`}
-                  aria-label={`Question ${i + 1}`}
-                  aria-current={i === activeIndex ? 'true' : undefined}
-                >
-                  {i + 1}
-                </button>
-              );
-            })}
-          </div>
-          <ul className="mt-4 text-xs text-gray-500 space-y-1">
-            <li className="flex items-center gap-2">
-              <span className="h-3 w-3 rounded-sm bg-emerald-600" /> Answered
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="h-3 w-3 rounded-sm bg-amber-200 border border-amber-400" /> Flagged
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="h-3 w-3 rounded-sm bg-white border border-gray-300" /> Unanswered
-            </li>
-          </ul>
-        </aside>
-
+      <div className="flex flex-col lg:flex-row gap-4">
         <div className="flex-1 min-w-0 space-y-4">
-          <StudentQuestionBlock
-            displayIndex={activeIndex + 1}
-            question={activeRow.question}
-            value={answers[activeRow.question.id]}
-            flagged={flagged.has(activeRow.question.id)}
-            onChange={(next) =>
-              setAnswers((prev) => ({ ...prev, [activeRow.question.id]: next }))
-            }
-            onToggleFlag={() =>
-              setFlagged((prev) => {
-                const next = new Set(prev);
-                const id = activeRow.question.id;
-                if (next.has(id)) next.delete(id);
-                else next.add(id);
-                return next;
-              })
-            }
+          <div className="space-y-3">
+            <StudentQuestionBlock
+              displayIndex={activeIndex + 1}
+              question={activeRow.question}
+              value={activeAnswer}
+              flagged={activeIsFlagged}
+              onChange={setAnswerForActive}
+              onClearAnswer={clearActiveAnswer}
+              onToggleFlag={toggleActiveFlag}
+            />
+          </div>
+
+          <AttemptActionBar
+            canGoPrev={activeIndex > 0}
+            canGoNext={activeIndex < rows.length - 1}
+            hasAnswer={activeHasAnswer}
+            flagged={activeIsFlagged}
+            onPrev={goPrev}
+            onNext={goNext}
+            onClearAnswer={clearActiveAnswer}
+            onToggleFlag={toggleActiveFlag}
+            markedForReview={activeIsMarkedForReview}
+            onToggleMarkForReview={toggleActiveMarkForReview}
           />
-
-          <div className="flex flex-wrap gap-2 justify-between">
-            <Button
-              type="button"
-              variant="outline"
-              disabled={activeIndex === 0}
-              onClick={() => setActiveIndex((i) => Math.max(0, i - 1))}
-            >
-              Previous
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={activeIndex >= rows.length - 1}
-              onClick={() => setActiveIndex((i) => Math.min(rows.length - 1, i + 1))}
-            >
-              Next
-            </Button>
-          </div>
-
-          <div className="flex justify-end pt-2 border-t border-gray-100">
-            <Button
-              type="button"
-              className="bg-violet-600 hover:bg-violet-700 text-white"
-              onClick={() => setSubmitOpen(true)}
-              disabled={submitting}
-            >
-              Submit test
-            </Button>
-          </div>
         </div>
+
+        <AttemptQuestionNavigator
+          rows={rows}
+          activeIndex={activeIndex}
+          answers={answers}
+          visited={visited}
+          flagged={flagged}
+          markedForReview={markedForReview}
+          onSelectIndex={onSelectIndex}
+        />
       </div>
 
       <StudentSubmitTestModal

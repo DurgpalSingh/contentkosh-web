@@ -3,12 +3,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { FlaskConical } from 'lucide-react';
+import { toast } from 'sonner';
 import { useAuthStore } from '@/store/useAuthStore';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Button } from '@/components/ui/button';
 import { BatchesService, ExamTestsService, PracticeTestsService } from '@/lib/api';
 import { EmptyState } from '@/components/common/EmptyState';
-import { toast } from 'sonner';
 import { getApiErrorDetailMessage } from '@/lib/tests/getApiErrorDetailMessage';
 import type { PracticeCatalogRow, ExamCatalogRow, UnifiedStudentRow } from '@/lib/tests/studentTestCatalog';
 import {
@@ -24,7 +24,7 @@ import { formatDateTime, formatDurationMinutes, testStatus } from '@/lib/tests/t
 import { TestsFiltersBar } from '@/components/dashboard/tests/TestsFiltersBar';
 import { STUDENT_TEST_STATUS } from '@/lib/tests/testConstants';
 
-export default function StudentTestsPage() {
+export function StudentTestsListPage() {
   const params = useParams();
   const slug = params.slug as string;
   const router = useRouter();
@@ -80,8 +80,7 @@ export default function StudentTestsPage() {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    const desiredStatus =
-      statusFilter === 'all' ? null : statusFilter === 'draft' ? testStatus.draft : testStatus.published;
+    const desiredStatus = statusFilter === 'all' ? null : statusFilter === 'draft' ? testStatus.draft : testStatus.published;
 
     return merged.filter((item) => {
       const r = item.row;
@@ -200,9 +199,7 @@ export default function StudentTestsPage() {
         searchPlaceholder="Search by title, batch, or description…"
       />
 
-      {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</div>
-      )}
+      {error && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</div>}
 
       {filtered.length === 0 ? (
         <EmptyState
@@ -228,11 +225,15 @@ export default function StudentTestsPage() {
                       : 'bg-gray-100 text-gray-600';
 
             const statusLabel =
-              vm.displayStatus === STUDENT_TEST_STATUS.LIVE ? 'Live'
-              : vm.displayStatus === STUDENT_TEST_STATUS.IN_PROGRESS ? 'In progress'
-              : vm.displayStatus === STUDENT_TEST_STATUS.COMPLETED ? 'Completed'
-              : vm.displayStatus === STUDENT_TEST_STATUS.STARTS_SOON ? 'Starts soon'
-              : 'Expired';
+              vm.displayStatus === STUDENT_TEST_STATUS.LIVE
+                ? 'Live'
+                : vm.displayStatus === STUDENT_TEST_STATUS.IN_PROGRESS
+                  ? 'In progress'
+                  : vm.displayStatus === STUDENT_TEST_STATUS.COMPLETED
+                    ? 'Completed'
+                    : vm.displayStatus === STUDENT_TEST_STATUS.STARTS_SOON
+                      ? 'Starts soon'
+                      : 'Expired';
 
             return (
               <div
@@ -246,18 +247,12 @@ export default function StudentTestsPage() {
                       <p className="text-xs text-gray-500 mt-1">{vm.batchName || 'Batch'}</p>
                     </div>
                     <div className="flex items-end gap-1 shrink-0 justify-center">
-                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${vm.badgeClass}`}>
-                        {vm.kindLabel}
-                      </span>
-                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${statusBadgeClass}`}>
-                        {statusLabel}
-                      </span>
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${vm.badgeClass}`}>{vm.kindLabel}</span>
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${statusBadgeClass}`}>{statusLabel}</span>
                     </div>
                   </div>
 
-                  {vm.description && (
-                    <p className="text-sm text-gray-600 line-clamp-3">{vm.description}</p>
-                  )}
+                  {vm.description && <p className="text-sm text-gray-600 line-clamp-3">{vm.description}</p>}
 
                   <dl className="flex flex-wrap gap-x-6 gap-y-2 mt-2 text-sm">
                     <div className="flex gap-3">
@@ -288,7 +283,7 @@ export default function StudentTestsPage() {
                     )}
                   </dl>
 
-                  {vm.actions.some(a => a.type === 'locked') && er && (
+                  {vm.actions.some((a) => a.type === 'locked') && er && (
                     <div className="rounded-md bg-gray-50 border border-gray-200 px-3 py-2 text-sm text-gray-700">
                       {lockedReasonLabel(vm.lockedReason ?? undefined)}
                     </div>
@@ -379,3 +374,4 @@ export default function StudentTestsPage() {
     </div>
   );
 }
+

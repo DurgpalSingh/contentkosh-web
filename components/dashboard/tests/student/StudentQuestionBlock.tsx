@@ -14,6 +14,7 @@ interface StudentQuestionBlockProps {
   flagged: boolean;
   onChange: (next: AnswerDraft) => void;
   onToggleFlag: () => void;
+  onClearAnswer: () => void;
 }
 
 function OptionsList({
@@ -65,6 +66,7 @@ export function StudentQuestionBlock({
   flagged,
   onChange,
   onToggleFlag,
+  onClearAnswer,
 }: StudentQuestionBlockProps) {
   const body = question.questionText || question.text || '';
   const qType = question.type;
@@ -111,19 +113,28 @@ export function StudentQuestionBlock({
         <h3 id={`q-heading-${question.id}`} className="text-base font-semibold text-gray-900">
           Question {displayIndex}
         </h3>
-        <button
-          type="button"
-          onClick={onToggleFlag}
-          className={`text-xs font-medium px-2 py-1 rounded-md border ${
-            flagged
-              ? 'border-amber-300 bg-amber-50 text-amber-900'
-              : 'border-gray-200 text-gray-600 hover:bg-gray-50'
-          }`}
-          aria-pressed={flagged}
-          aria-label={flagged ? 'Unflag question' : 'Flag for review'}
-        >
-          {flagged ? 'Flagged' : 'Flag'}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onClearAnswer}
+            className="text-xs font-medium px-2 py-1 rounded-md border border-gray-200 text-gray-700 hover:bg-gray-50"
+          >
+            Clear
+          </button>
+          <button
+            type="button"
+            onClick={onToggleFlag}
+            className={`text-xs font-medium px-2 py-1 rounded-md border ${
+              flagged
+                ? 'border-amber-300 bg-amber-50 text-amber-900'
+                : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+            }`}
+            aria-pressed={flagged}
+            aria-label={flagged ? 'Unflag question' : 'Flag for review'}
+          >
+            {flagged ? 'Flagged' : 'Flag'}
+          </button>
+        </div>
       </div>
       <p className="mt-3 text-gray-800 whitespace-pre-wrap">{body}</p>
 
@@ -198,14 +209,4 @@ export function StudentQuestionBlock({
       )}
     </section>
   );
-}
-
-export function questionButtonTone(
-  qType: number,
-  answer: AnswerDraft | undefined,
-  flagged: boolean,
-): 'answered' | 'flagged' | 'empty' {
-  if (flagged) return 'flagged';
-  if (isQuestionAnswered(qType, answer)) return 'answered';
-  return 'empty';
 }

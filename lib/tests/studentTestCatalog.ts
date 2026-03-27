@@ -47,15 +47,23 @@ export function lockedReasonLabel(reason: number | undefined): string {
 }
 
 export function studentTestBasePath(slug: string): string {
-  return `/${slug}/dashboard/student/tests`;
+  return `/${slug}/dashboard/student/mytest`;
+}
+
+export function studentMyTestAttemptPath(slug: string, kind: 'practice' | 'exam', attemptId: string): string {
+  return `${studentTestBasePath(slug)}/${kind}/attempt/${attemptId}`;
+}
+
+export function studentMyTestResultPath(slug: string, kind: 'practice' | 'exam', attemptId: string): string {
+  return `${studentTestBasePath(slug)}/${kind}/result/${attemptId}`;
 }
 
 export function studentPracticeAttemptPath(slug: string, attemptId: string): string {
-  return `${studentTestBasePath(slug)}/practice/attempt/${attemptId}`;
+  return studentMyTestAttemptPath(slug, 'practice', attemptId);
 }
 
 export function studentExamAttemptPath(slug: string, attemptId: string): string {
-  return `${studentTestBasePath(slug)}/exam/attempt/${attemptId}`;
+  return studentMyTestAttemptPath(slug, 'exam', attemptId);
 }
 
 export function studentPracticeResultPath(
@@ -63,11 +71,13 @@ export function studentPracticeResultPath(
   practiceTestId: string,
   attemptId: string,
 ): string {
-  return `${studentTestBasePath(slug)}/practice/${practiceTestId}/result/${attemptId}`;
+  void practiceTestId;
+  return studentMyTestResultPath(slug, 'practice', attemptId);
 }
 
 export function studentExamResultPath(slug: string, examTestId: string, attemptId: string): string {
-  return `${studentTestBasePath(slug)}/exam/${examTestId}/result/${attemptId}`;
+  void examTestId;
+  return studentMyTestResultPath(slug, 'exam', attemptId);
 }
 
 export type { StudentTestDisplayStatus };

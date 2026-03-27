@@ -76,7 +76,7 @@ export const NAVIGATION_CONFIG: NavigationItem[] = [
     },
     {
         name: 'My Tests',
-        href: ROUTES.STUDENT.TESTS,
+        href: ROUTES.STUDENT.MYTEST,
         icon: FlaskConical,
         roles: [USER_ROLES.STUDENT],
     },
