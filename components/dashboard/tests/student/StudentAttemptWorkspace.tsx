@@ -31,6 +31,34 @@ import { AttemptQuestionNavigator } from '@/components/dashboard/tests/student/A
 import { AttemptActionBar } from '@/components/dashboard/tests/student/AttemptActionBar';
 import { StudentQuestionBlock } from '@/components/dashboard/tests/student/StudentQuestionBlock';
 
+function readJsonFromLocalStorage(key: string): unknown | null {
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return null;
+    return JSON.parse(raw) as unknown;
+  } catch {
+    return null;
+  }
+}
+
+function removeLocalStorageKeys(keys: string[]): void {
+  try {
+    for (const key of keys) {
+      window.localStorage.removeItem(key);
+    }
+  } catch {
+    // ignore storage failures
+  }
+}
+
+function writeJsonToLocalStorage(key: string, value: unknown): void {
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // ignore storage failures
+  }
+}
+
 export type StudentAttemptKind = 'practice' | 'exam';
 
 type AttemptDetails = PracticeTestAttemptDetails | ExamTestAttemptDetails;
@@ -79,49 +107,30 @@ export function StudentAttemptWorkspace({
 
     const serverAnswers = initAnswersFromAttemptQuestions(data.questions);
     if (!inProgress) {
-      try {
-        window.localStorage.removeItem(draftStorageKey);
-        window.localStorage.removeItem(uiStorageKey);
-      } catch {
-        // ignore storage failures
-      }
+      removeLocalStorageKeys([draftStorageKey, uiStorageKey]);
       setAnswers(serverAnswers);
       setFlagged(new Set());
       setMarkedForReview(new Set());
       setVisited(new Set());
     } else {
       let localDraft: Record<string, AnswerDraft> | null = null;
-      try {
-        const raw = window.localStorage.getItem(draftStorageKey);
-        if (raw) {
-          const parsed = JSON.parse(raw) as unknown;
-          if (parsed && typeof parsed === 'object') {
-            localDraft = parsed as Record<string, AnswerDraft>;
-          }
-        }
-      } catch {
-        // ignore storage failures
+      const parsedDraft = readJsonFromLocalStorage(draftStorageKey);
+      if (parsedDraft && typeof parsedDraft === 'object') {
+        localDraft = parsedDraft as Record<string, AnswerDraft>;
       }
 
       setAnswers({ ...serverAnswers, ...(localDraft ?? {}) });
 
-      try {
-        const rawUi = window.localStorage.getItem(uiStorageKey);
-        if (rawUi) {
-          const parsed = JSON.parse(rawUi) as unknown;
-          if (parsed && typeof parsed === 'object') {
-            const obj = parsed as {
-              flagged?: string[];
-              markedForReview?: string[];
-              visited?: string[];
-            };
-            setFlagged(new Set(obj.flagged ?? []));
-            setMarkedForReview(new Set(obj.markedForReview ?? []));
-            setVisited(new Set(obj.visited ?? []));
-          }
-        }
-      } catch {
-        // ignore storage failures
+      const parsedUi = readJsonFromLocalStorage(uiStorageKey);
+      if (parsedUi && typeof parsedUi === 'object') {
+        const obj = parsedUi as {
+          flagged?: string[];
+          markedForReview?: string[];
+          visited?: string[];
+        };
+        setFlagged(new Set(obj.flagged ?? []));
+        setMarkedForReview(new Set(obj.markedForReview ?? []));
+        setVisited(new Set(obj.visited ?? []));
       }
     }
 
@@ -186,12 +195,7 @@ export function StudentAttemptWorkspace({
         toast.error('Missing test id');
         return;
       }
-      try {
-        window.localStorage.removeItem(draftStorageKey);
-        window.localStorage.removeItem(uiStorageKey);
-      } catch {
-        // ignore storage failures
-      }
+      removeLocalStorageKeys([draftStorageKey, uiStorageKey]);
       if (kind === 'practice') {
         router.push(studentPracticeResultPath(slug, tid, attemptId));
       } else {
@@ -233,11 +237,7 @@ export function StudentAttemptWorkspace({
     if (!details) return;
     if (details.attempt.status !== AttemptStatus._0) return;
     const id = window.setTimeout(() => {
-      try {
-        window.localStorage.setItem(draftStorageKey, JSON.stringify(answers));
-      } catch {
-        // ignore storage failures
-      }
+      writeJsonToLocalStorage(draftStorageKey, answers);
     }, 300);
     return () => window.clearTimeout(id);
   }, [details, answers, draftStorageKey]);
@@ -246,18 +246,11 @@ export function StudentAttemptWorkspace({
     if (!details) return;
     if (details.attempt.status !== AttemptStatus._0) return;
     const id = window.setTimeout(() => {
-      try {
-        window.localStorage.setItem(
-          uiStorageKey,
-          JSON.stringify({
-            flagged: [...flagged],
-            markedForReview: [...markedForReview],
-            visited: [...visited],
-          }),
-        );
-      } catch {
-        // ignore storage failures
-      }
+      writeJsonToLocalStorage(uiStorageKey, {
+        flagged: [...flagged],
+        markedForReview: [...markedForReview],
+        visited: [...visited],
+      });
     }, 200);
     return () => window.clearTimeout(id);
   }, [details, flagged, markedForReview, visited, uiStorageKey]);

@@ -24,6 +24,7 @@ import {
   testStatusLabel,
 } from '@/lib/tests/testUiMappers';
 import { TEST_STATUS } from '@/lib/tests/testConstants';
+import { teacherExamTestPath, teacherPracticeTestPath } from '@/lib/tests/teacherTestPaths';
 import { TestsFiltersBar } from '@/components/dashboard/tests/TestsFiltersBar';
 
 type UnifiedRow =
@@ -104,9 +105,8 @@ export default function TestsListPage() {
   );
 
   const goToDetail = (kind: TestKindForm, id: string) => {
-    const base = `/${slug}/dashboard/tests`;
-    if (kind === 'practice') router.push(`${base}/practice/${id}`);
-    else router.push(`${base}/exam/${id}`);
+    if (kind === 'practice') router.push(teacherPracticeTestPath(slug, id));
+    else router.push(teacherExamTestPath(slug, id));
   };
 
   const handleCreated = (kind: TestKindForm, testId: string) => {

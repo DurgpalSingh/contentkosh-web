@@ -27,3 +27,9 @@ export const USER_ROLES = {
   USER: 'USER',
 } as const;
 
+/**
+ * Matches `/[slug]/dashboard/student/mytest/(practice|exam)/attempt/[attemptId]`.
+ * Used by dashboard layout to hide chrome on fullscreen student attempts.
+ */
+export const STUDENT_ATTEMPT_FULLSCREEN_PATHNAME_PATTERN =
+  /^\/[^/]+\/dashboard\/student\/mytest\/(practice|exam)\/attempt\/[^/]+/;

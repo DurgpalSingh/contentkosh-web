@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { ROUTES } from '@/lib/constants';
+import { STUDENT_ATTEMPT_FULLSCREEN_PATHNAME_PATTERN } from '@/lib/constants';
 import { getNavigationItems } from '@/lib/rbac';
 import {
   Menu,
@@ -30,7 +31,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const hideDashboardChrome = useMemo(() => {
     if (!pathname) return false;
-    return /^\/[^/]+\/dashboard\/student\/mytest\/(practice|exam)\/attempt\/[^/]+/.test(pathname);
+    return STUDENT_ATTEMPT_FULLSCREEN_PATHNAME_PATTERN.test(pathname);
   }, [pathname]);
 
   const logoUrl = useMemo(() => {

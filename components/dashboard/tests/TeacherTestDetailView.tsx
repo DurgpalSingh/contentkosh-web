@@ -29,6 +29,7 @@ import type { TeacherTestQuestion } from '@/lib/tests/teacherQuestionTypes'
 import { testStatus } from '@/lib/tests/testUiMappers'
 import { TEACHER_TEST_TAB, TEACHER_TEST_TAB_LABEL } from '@/lib/tests/testConstants'
 import type { TeacherTestTabId } from '@/lib/tests/testConstants'
+import { teacherTestsListPath } from '@/lib/tests/teacherTestPaths'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
 
@@ -48,7 +49,7 @@ export function TeacherTestDetailView({
   slug,
 }: TeacherTestDetailViewProps) {
   const router = useRouter()
-  const listHref = `/${slug}/dashboard/tests`
+  const listHref = teacherTestsListPath(slug)
 
   const [activeTab, setActiveTab] = useState<TeacherTestTabId>(TEACHER_TEST_TAB.QUESTIONS)
   const [loading, setLoading] = useState(true)

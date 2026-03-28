@@ -29,6 +29,57 @@ const toOneBasedOptionIndex = (optionId: string, cleanedOptions: QuestionOptionR
   return zeroBased + 1
 }
 
+type McqMode = 'single' | 'multiple'
+
+const buildMcqPayload = (
+  base: TeacherQuestionFormPayload,
+  mode: McqMode,
+  optionRows: QuestionOptionRow[],
+  correctSingleId: string,
+  correctMultiIds: Record<string, boolean>,
+): TeacherQuestionFormPayload => {
+  const cleaned = optionRows.filter((o) => o.text.trim())
+  if (cleaned.length < 2) {
+    throw new Error('Add at least two options')
+  }
+  const withOptions: TeacherQuestionFormPayload = {
+    ...base,
+    options: cleaned.map((o) => ({ id: o.id, text: o.text.trim() })),
+  }
+  if (mode === 'single') {
+    if (!correctSingleId) throw new Error('Select the correct option')
+    return {
+      ...withOptions,
+      correctOptionIdsAnswers: [toOneBasedOptionIndex(correctSingleId, cleaned)],
+    }
+  }
+  const selectedOptionIds = Object.entries(correctMultiIds)
+    .filter(([, v]) => v)
+    .map(([k]) => k)
+  if (selectedOptionIds.length < 1) throw new Error('Select at least one correct option')
+  const oneBasedSorted = selectedOptionIds
+    .map((id) => toOneBasedOptionIndex(id, cleaned))
+    .sort((a, b) => a - b)
+  return { ...withOptions, correctOptionIdsAnswers: oneBasedSorted }
+}
+
+const buildTrueFalsePayload = (
+  base: TeacherQuestionFormPayload,
+  correctTextValue: string,
+): TeacherQuestionFormPayload => ({
+  ...base,
+  correctTextAnswer: correctTextValue === 'true' ? 'true' : 'false',
+})
+
+const buildTextAnswerPayload = (
+  base: TeacherQuestionFormPayload,
+  correctTextValue: string,
+): TeacherQuestionFormPayload => {
+  const t = correctTextValue.trim()
+  if (!t) throw new Error('Enter the correct answer')
+  return { ...base, correctTextAnswer: t }
+}
+
 export const useTeacherQuestionForm = (
   isOpen: boolean,
   initialQuestion: TeacherTestQuestion | null,
@@ -107,34 +158,16 @@ export const useTeacherQuestionForm = (
       ...(trimmedExplanation ? { explanation: trimmedExplanation } : {}),
     }
 
-    if (questionTypeValue === questionType.singleChoice || questionTypeValue === questionType.multipleChoice) {
-      const cleaned = options.filter((o) => o.text.trim())
-      if (cleaned.length < 2) {
-        throw new Error('Add at least two options')
-      }
-      base.options = cleaned.map((o) => ({ id: o.id, text: o.text.trim() }))
-      if (questionTypeValue === questionType.singleChoice) {
-        if (!correctSingleId) throw new Error('Select the correct option')
-        base.correctOptionIdsAnswers = [toOneBasedOptionIndex(correctSingleId, cleaned)]
-      } else {
-        const selectedOptionIds = Object.entries(correctMultiIds)
-          .filter(([, v]) => v)
-          .map(([k]) => k)
-        if (selectedOptionIds.length < 1) throw new Error('Select at least one correct option')
-        const oneBasedSorted = selectedOptionIds
-          .map((id) => toOneBasedOptionIndex(id, cleaned))
-          .sort((a, b) => a - b)
-        base.correctOptionIdsAnswers = oneBasedSorted
-      }
-    } else if (questionTypeValue === questionType.trueFalse) {
-      base.correctTextAnswer = correctText === 'true' ? 'true' : 'false'
-    } else {
-      const t = correctText.trim()
-      if (!t) throw new Error('Enter the correct answer')
-      base.correctTextAnswer = t
+    switch (questionTypeValue) {
+      case questionType.singleChoice:
+        return buildMcqPayload(base, 'single', options, correctSingleId, correctMultiIds)
+      case questionType.multipleChoice:
+        return buildMcqPayload(base, 'multiple', options, correctSingleId, correctMultiIds)
+      case questionType.trueFalse:
+        return buildTrueFalsePayload(base, correctText)
+      default:
+        return buildTextAnswerPayload(base, correctText)
     }
-
-    return base
   }, [
     correctMultiIds,
     correctSingleId,
