@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { ROUTES } from '@/lib/constants';
+import { STUDENT_ATTEMPT_FULLSCREEN_PATHNAME_PATTERN } from '@/lib/constants';
 import { getNavigationItems } from '@/lib/rbac';
 import {
   Menu,
@@ -27,6 +28,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
   const displayName = business?.instituteName || 'Contentkosh';
+
+  const hideDashboardChrome = useMemo(() => {
+    if (!pathname) return false;
+    return STUDENT_ATTEMPT_FULLSCREEN_PATHNAME_PATTERN.test(pathname);
+  }, [pathname]);
 
   const logoUrl = useMemo(() => {
     const logoPath = business?.logo?.trim();
@@ -91,6 +97,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       </div>
     </div>
   );
+
+  if (hideDashboardChrome) {
+    return <div className="min-h-screen bg-slate-50">{children}</div>;
+  }
 
   return (
     <div className="min-h-screen bg-slate-50">

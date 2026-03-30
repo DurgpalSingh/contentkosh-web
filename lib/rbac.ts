@@ -11,6 +11,7 @@ import {
     GraduationCap,
     LucideIcon,
     FileText,
+    FlaskConical,
 } from 'lucide-react';
 
 export type UserRole = (typeof USER_ROLES)[keyof typeof USER_ROLES];
@@ -73,6 +74,12 @@ export const NAVIGATION_CONFIG: NavigationItem[] = [
         icon: Bell,
         roles: [USER_ROLES.STUDENT],
     },
+    {
+        name: 'My Tests',
+        href: ROUTES.STUDENT.MYTEST,
+        icon: FlaskConical,
+        roles: [USER_ROLES.STUDENT],
+    },
 
     // Common items
     {
@@ -91,6 +98,12 @@ export const NAVIGATION_CONFIG: NavigationItem[] = [
         name: 'Batches',
         href: '/dashboard/batches',
         icon: Calendar,
+        roles: [USER_ROLES.ADMIN, USER_ROLES.TEACHER],
+    },
+    {
+        name: 'Tests',
+        href: ROUTES.TESTS,
+        icon: FlaskConical,
         roles: [USER_ROLES.ADMIN, USER_ROLES.TEACHER],
     },
     {
