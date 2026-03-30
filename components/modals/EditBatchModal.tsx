@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { BatchesService, UpdateBatchRequest, Batch } from '@/lib/api';
 import { DatePicker } from '@/components/ui/date-picker';
 import { validateRequired, validateDateRange } from '@/lib/validation';
-import { toISODateTime } from '@/lib/utils';
+import { parseDateOnly, toISODateTime } from '@/lib/utils';
 import { toast } from 'sonner';
 
 interface EditBatchModalProps {
@@ -30,14 +30,6 @@ export function EditBatchModal({
     const [isActive, setIsActive] = useState(batch.isActive ?? true);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-
-    const parseDateValue = (value: string) => {
-        if (!value) return undefined;
-        const [year, month, day] = value.split('-').map(Number);
-        if (!year || !month || !day) return undefined;
-        const parsed = new Date(year, month - 1, day);
-        return Number.isNaN(parsed.getTime()) ? undefined : parsed;
-    };
 
     useEffect(() => {
         setCodeName(batch.codeName || '');
@@ -182,7 +174,7 @@ export function EditBatchModal({
                                 Start Date <span className="text-red-500">*</span>
                             </label>
                             <DatePicker
-                                date={parseDateValue(startDate)}
+                                date={parseDateOnly(startDate)}
                                 setDate={(value) => setStartDate(value ? format(value, 'yyyy-MM-dd') : '')}
                                 disabled={loading}
                             />
@@ -196,7 +188,7 @@ export function EditBatchModal({
                                 End Date <span className="text-red-500">*</span>
                             </label>
                             <DatePicker
-                                date={parseDateValue(endDate)}
+                                date={parseDateOnly(endDate)}
                                 setDate={(value) => setEndDate(value ? format(value, 'yyyy-MM-dd') : '')}
                                 disabled={loading}
                             />
