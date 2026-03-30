@@ -97,6 +97,13 @@ const capitalizeNameInput = (value: string) => {
   return hasTrailingSpace ? `${capitalized} ` : capitalized;
 };
 
+const capitalizeFirstCharacter = (value: string) => {
+  if (!value) return value;
+  const trimmed = value.trimStart();
+  if (!trimmed) return '';
+  return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+};
+
 export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -338,7 +345,12 @@ export default function RegisterPage() {
                   Institute Name
                 </label>
                 <input
-                  {...register('instituteName')}
+                  {...register('instituteName', {
+                    onChange: (event) => {
+                      const nextValue = capitalizeFirstCharacter(event.target.value);
+                      setValue('instituteName', nextValue, { shouldValidate: true });
+                    },
+                  })}
                   type="text"
                   id="instituteName"
                   className="block w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-slate-900 shadow-sm outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100"

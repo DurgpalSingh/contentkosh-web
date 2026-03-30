@@ -1,6 +1,14 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.2.1] - Batch details tab remove + datepicker ui
+**P.R Raised by** : shubh404-SE on **Date** : 2026-03-30
+
+### Changed
+  - `Batch details` tab removed.
+  - Date picker ui improved for better user experence.
+
+---
 ## Version [1.2.0] - Test module (Teacher + Student) UI
 **P.R Raised by** : shubh404-SE on **Date** : 2026-03-25
 
@@ -12,6 +20,7 @@ All notable changes to this project will be documented in this file.
  - Student attempt workspace with per-question navigation, flagging, unanswered counter, and exam countdown timer.
  - Draft persistence for in-progress student attempts via `localStorage`, cleared after successful submit.
  - Submit confirmation modal showing remaining unanswered question count.
+
 ---
 ## Version [1.1.56] - Sidebar scroll hide + UI Fixes
 **P.R Raised by** : shubh404-SE on **Date** : 2026-03-24

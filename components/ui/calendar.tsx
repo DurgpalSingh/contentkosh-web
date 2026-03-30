@@ -18,41 +18,45 @@ function Calendar({
     return (
         <DayPicker
             showOutsideDays={showOutsideDays}
-            className={cn("p-3", className)}
+            className={cn("p-4", className)}
             classNames={{
-                months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
-                month: "space-y-4",
-                caption: "flex justify-center pt-1 relative items-center",
-                caption_label: "text-sm font-medium",
+                months: "flex flex-col space-y-3",
+                month: "space-y-3",
+                caption: "flex items-center justify-between gap-3",
+                caption_dropdowns: "flex items-center gap-2",
+                caption_label: "sr-only",
+                dropdown: "rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-cyan-200",
+                dropdown_month: "min-w-[9.5rem]",
+                dropdown_year: "min-w-[6.5rem]",
                 nav: "space-x-1 flex items-center",
                 nav_button: cn(
                     buttonVariants({ variant: "outline" }),
-                    "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
+                    "h-8 w-8 rounded-lg bg-white p-0 border border-slate-200 text-slate-600 shadow-sm hover:bg-slate-50 hover:text-slate-900"
                 ),
                 nav_button_previous: "absolute left-1",
                 nav_button_next: "absolute right-1",
                 table: "w-full border-collapse space-y-1",
                 weekdays: "flex justify-between",
-                weekday: "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
+                weekday: "text-slate-400 rounded-md w-9 font-medium text-[0.75rem] uppercase tracking-wide",
                 row: "flex w-full mt-2 justify-between",
-                cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
+                cell: "h-10 w-10 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-xl [&:has([aria-selected].day-outside)]:bg-slate-100 [&:has([aria-selected])]:bg-cyan-50 first:[&:has([aria-selected])]:rounded-xl last:[&:has([aria-selected])]:rounded-xl focus-within:relative focus-within:z-20",
                 day: cn(
                     buttonVariants({ variant: "ghost" }),
-                    "h-9 w-9 p-0 font-normal aria-selected:opacity-100"
+                    "h-10 w-10 rounded-xl p-0 font-medium text-slate-700 hover:bg-slate-100 aria-selected:opacity-100"
                 ),
                 day_button: cn(
                     buttonVariants({ variant: "ghost" }),
-                    "h-9 w-9 p-0 font-normal aria-selected:opacity-100"
+                    "h-10 w-10 rounded-xl p-0 font-medium text-slate-700 hover:bg-slate-100 aria-selected:opacity-100"
                 ),
                 range_end: "day-range-end",
                 selected:
-                    "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
-                today: "bg-accent text-accent-foreground",
+                    "bg-cyan-600 text-white hover:bg-cyan-600 hover:text-white focus:bg-cyan-600 focus:text-white",
+                today: "bg-slate-100 text-slate-900",
                 outside:
-                    "day-outside text-muted-foreground opacity-50 aria-selected:bg-accent/50 aria-selected:text-muted-foreground aria-selected:opacity-30",
-                disabled: "text-muted-foreground opacity-50",
+                    "day-outside text-slate-400 opacity-60 aria-selected:bg-slate-100 aria-selected:text-slate-400 aria-selected:opacity-60",
+                disabled: "text-slate-300 opacity-60",
                 range_middle:
-                    "aria-selected:bg-accent aria-selected:text-accent-foreground",
+                    "aria-selected:bg-cyan-50 aria-selected:text-slate-900",
                 hidden: "invisible",
                 ...classNames,
             }}

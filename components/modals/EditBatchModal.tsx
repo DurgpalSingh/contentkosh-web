@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { format } from 'date-fns';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { BatchesService, UpdateBatchRequest, Batch } from '@/lib/api';
+import { DatePicker } from '@/components/ui/date-picker';
 import { validateRequired, validateDateRange } from '@/lib/validation';
 import { toISODateTime } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -28,6 +30,14 @@ export function EditBatchModal({
     const [isActive, setIsActive] = useState(batch.isActive ?? true);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    const parseDateValue = (value: string) => {
+        if (!value) return undefined;
+        const [year, month, day] = value.split('-').map(Number);
+        if (!year || !month || !day) return undefined;
+        const parsed = new Date(year, month - 1, day);
+        return Number.isNaN(parsed.getTime()) ? undefined : parsed;
+    };
 
     useEffect(() => {
         setCodeName(batch.codeName || '');
@@ -171,12 +181,9 @@ export function EditBatchModal({
                             >
                                 Start Date <span className="text-red-500">*</span>
                             </label>
-                            <input
-                                id="edit-batch-start-date"
-                                type="date"
-                                value={startDate}
-                                onChange={(e) => setStartDate(e.target.value)}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors focus-visible:ring-blue-500 focus-visible:ring-offset-1"
+                            <DatePicker
+                                date={parseDateValue(startDate)}
+                                setDate={(value) => setStartDate(value ? format(value, 'yyyy-MM-dd') : '')}
                                 disabled={loading}
                             />
                         </div>
@@ -188,12 +195,9 @@ export function EditBatchModal({
                             >
                                 End Date <span className="text-red-500">*</span>
                             </label>
-                            <input
-                                id="edit-batch-end-date"
-                                type="date"
-                                value={endDate}
-                                onChange={(e) => setEndDate(e.target.value)}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors focus-visible:ring-blue-500 focus-visible:ring-offset-1"
+                            <DatePicker
+                                date={parseDateValue(endDate)}
+                                setDate={(value) => setEndDate(value ? format(value, 'yyyy-MM-dd') : '')}
                                 disabled={loading}
                             />
                         </div>
