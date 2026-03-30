@@ -22,13 +22,3 @@ export function toISODateTime(date?: string | Date): string | undefined {
   return new Date(date).toISOString();
 }
 
-/**
- * Parse a YYYY-MM-DD string as a local Date (avoids UTC shift).
- */
-export function parseDateOnly(value?: string): Date | undefined {
-  if (!value) return undefined;
-  const [year, month, day] = value.split('-').map(Number);
-  if (!year || !month || !day) return undefined;
-  const parsed = new Date(year, month - 1, day);
-  return Number.isNaN(parsed.getTime()) ? undefined : parsed;
-}
