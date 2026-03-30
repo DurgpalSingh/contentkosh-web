@@ -21,3 +21,4 @@ export function toISODateTime(date?: string | Date): string | undefined {
   // Fallback: try to parse and return ISO string
   return new Date(date).toISOString();
 }
+

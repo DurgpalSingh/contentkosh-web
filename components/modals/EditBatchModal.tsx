@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { BatchesService, UpdateBatchRequest, Batch } from '@/lib/api';
+import { DatePicker } from '@/components/ui/date-picker';
 import { validateRequired, validateDateRange } from '@/lib/validation';
 import { toISODateTime } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -23,8 +24,8 @@ export function EditBatchModal({
 }: EditBatchModalProps) {
     const [codeName, setCodeName] = useState(batch.codeName || '');
     const [displayName, setDisplayName] = useState(batch.displayName || '');
-    const [startDate, setStartDate] = useState(batch.startDate?.split('T')[0] || '');
-    const [endDate, setEndDate] = useState(batch.endDate?.split('T')[0] || '');
+    const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+    const [endDate, setEndDate] = useState<Date | undefined>(undefined);
     const [isActive, setIsActive] = useState(batch.isActive ?? true);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -32,8 +33,8 @@ export function EditBatchModal({
     useEffect(() => {
         setCodeName(batch.codeName || '');
         setDisplayName(batch.displayName || '');
-        setStartDate(batch.startDate?.split('T')[0] || '');
-        setEndDate(batch.endDate?.split('T')[0] || '');
+        setStartDate(batch.startDate ? new Date(batch.startDate) : undefined);
+        setEndDate(batch.endDate ? new Date(batch.endDate) : undefined);
         setIsActive(batch.isActive ?? true);
         setError(null);
     }, [batch]);
@@ -57,7 +58,10 @@ export function EditBatchModal({
             validateRequired(displayName, 'Display name') ||
             validateRequired(startDate, 'Start date') ||
             validateRequired(endDate, 'End date') ||
-            validateDateRange(startDate, endDate) ||
+            validateDateRange(
+                toISODateTime(startDate) || '',
+                toISODateTime(endDate) || ''
+            ) ||
             (!batch.id ? 'Batch ID is missing' : null);
 
         if (validationError) {
@@ -171,12 +175,9 @@ export function EditBatchModal({
                             >
                                 Start Date <span className="text-red-500">*</span>
                             </label>
-                            <input
-                                id="edit-batch-start-date"
-                                type="date"
-                                value={startDate}
-                                onChange={(e) => setStartDate(e.target.value)}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors focus-visible:ring-blue-500 focus-visible:ring-offset-1"
+                            <DatePicker
+                                date={startDate}
+                                setDate={setStartDate}
                                 disabled={loading}
                             />
                         </div>
@@ -188,12 +189,9 @@ export function EditBatchModal({
                             >
                                 End Date <span className="text-red-500">*</span>
                             </label>
-                            <input
-                                id="edit-batch-end-date"
-                                type="date"
-                                value={endDate}
-                                onChange={(e) => setEndDate(e.target.value)}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors focus-visible:ring-blue-500 focus-visible:ring-offset-1"
+                            <DatePicker
+                                date={endDate}
+                                setDate={setEndDate}
                                 disabled={loading}
                             />
                         </div>

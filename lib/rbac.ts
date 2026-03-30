@@ -107,12 +107,6 @@ export const NAVIGATION_CONFIG: NavigationItem[] = [
         roles: [USER_ROLES.ADMIN, USER_ROLES.TEACHER],
     },
     {
-        name: 'Batch Details',
-        href: '/dashboard/batches/details',
-        icon: GraduationCap,
-        roles: [USER_ROLES.ADMIN, USER_ROLES.TEACHER],
-    },
-    {
         name: 'Content',
         href: '/dashboard/contents',
         icon: FileText,
