@@ -76,9 +76,8 @@ export default function ContentsPage() {
       getId: (c) => (typeof c.id === 'number' ? c.id : null),
       getSearchText: (c) => c.title,
       getCreatedAt: (c) => c.createdAt,
-      getFacetValues: {
-        subjectId: (c) => (typeof c.subjectId === 'number' ? c.subjectId : null),
-      },
+      getFacetValues: (c, id) =>
+        typeof c.subjectId === 'number' ? [[id, 'subjectId', c.subjectId]] : [],
       ngramLength: 3,
     });
   }, [contents]);

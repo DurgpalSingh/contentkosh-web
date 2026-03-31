@@ -58,6 +58,21 @@ function getNGrams(valueLowerTrimmed: string, ngramLength: number): NGram[] {
   return grams;
 }
 
+function addNGramsToIndex<Id extends string | number>(
+  ngramIndex: Map<NGram, Set<Id>>,
+  valueLowerTrimmed: string,
+  ngramLength: number,
+  id: Id,
+): void {
+  if (valueLowerTrimmed.length < ngramLength) return;
+  const grams = getNGrams(valueLowerTrimmed, ngramLength);
+  for (const gram of grams) {
+    const bucket = ngramIndex.get(gram) ?? new Set<Id>();
+    bucket.add(id);
+    ngramIndex.set(gram, bucket);
+  }
+}
+
 function intersectIdSets<Id extends string | number>(a: ReadonlySet<Id>, b: ReadonlySet<Id>): Set<Id> {
   if (a.size === 0 || b.size === 0) return new Set();
   const base = a.size <= b.size ? a : b;
@@ -98,7 +113,7 @@ export type IndexedFilterConfig<
   getId: (item: T) => Id | null | undefined;
   getSearchText: (item: T) => string | null | undefined;
   getCreatedAt: (item: T) => DateLike;
-  getFacetValues?: { [K in keyof Facets]: (item: T) => Facets[K] | null | undefined };
+  getFacetValues?: (item: T, id: Id) => ReadonlyArray<readonly [Id, keyof Facets, Facets[keyof Facets]]>;
   ngramLength?: number;
   getMatchPriority?: MatchPriorityFn;
 };
@@ -114,7 +129,7 @@ export function createIndexedTextFilter<
 >(items: readonly T[], options: IndexedFilterConfig<T, Id, Facets>): IndexedFilter<T, Facets> {
   const ngramLength = options.ngramLength ?? 3;
   const getMatchPriority = options.getMatchPriority ?? defaultGetMatchPriorityWithWords;
-  const facetGetters = options.getFacetValues;
+  const getFacetValues = options.getFacetValues;
 
   const ngramIndex = new Map<NGram, Set<Id>>();
   const facetIndexes = new Map<keyof Facets, Map<Facets[keyof Facets], Set<Id>>>();
@@ -127,7 +142,7 @@ export function createIndexedTextFilter<
 
   const allOrderedIds: Id[] = [];
   const allIds = new Set<Id>();
-  const facetKeys = facetGetters ? (Object.keys(facetGetters) as Array<keyof Facets>) : [];
+  const facetIndexEntries: Array<readonly [Id, keyof Facets, Facets[keyof Facets]]> = [];
 
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
@@ -146,25 +161,23 @@ export function createIndexedTextFilter<
     titleWordsLowerTrimmedById.set(id, titleWordsLowerTrimmed);
     createdAtTimeById.set(id, getCreatedAtTime(options.getCreatedAt(item)));
 
-    for (const facetKey of facetKeys) {
-      const facetGetter = facetGetters[facetKey];
-      const facetValue = facetGetter(item);
-      if (facetValue === null || facetValue === undefined) continue;
+    if (getFacetValues) {
+      const facetValues = getFacetValues(item, id);
+      if (facetValues.length > 0) facetIndexEntries.push(...facetValues);
+    }
 
-      const facetValueToIds = facetIndexes.get(facetKey) ?? new Map<Facets[keyof Facets], Set<Id>>();
+    addNGramsToIndex(ngramIndex, titleLowerTrimmed, ngramLength, id);
+  }
+
+  if (facetIndexEntries.length > 0) {
+    for (const [id, facetKey, facetValue] of facetIndexEntries) {
+      if (facetValue === null || facetValue === undefined) continue;
+      const facetValueToIds =
+        facetIndexes.get(facetKey) ?? new Map<Facets[keyof Facets], Set<Id>>();
       const idsForFacetValue = facetValueToIds.get(facetValue) ?? new Set<Id>();
       idsForFacetValue.add(id);
       facetValueToIds.set(facetValue, idsForFacetValue);
       facetIndexes.set(facetKey, facetValueToIds);
-    }
-
-    if (titleLowerTrimmed.length >= ngramLength) {
-      const grams = getNGrams(titleLowerTrimmed, ngramLength);
-      for (const gram of grams) {
-        const bucket = ngramIndex.get(gram) ?? new Set<Id>();
-        bucket.add(id);
-        ngramIndex.set(gram, bucket);
-      }
     }
   }
 
