@@ -172,38 +172,30 @@ export default function ContentsPage() {
     }
   }, [selectedBatchId, batches, loadContentsForBatch]);
 
-  useEffect(() => {
-    const clearSelectedSubject = () => {
-      if (selectedSubjectId !== undefined) setSelectedSubjectId(undefined);
-    };
-
-    if (!selectedBatchId) {
-      clearSelectedSubject();
-      return;
-    }
-
-    const selectedBatchCourseId = batches.find(b => b.id === selectedBatchId)?.courseId;
-    if (typeof selectedBatchCourseId !== 'number' || selectedSubjectId === undefined) {
-      clearSelectedSubject();
-      return;
-    }
-
-    const subjectIdsForCourse = subjectIdsByCourseId.get(selectedBatchCourseId);
-    const isSubjectInCourse = subjectIdsForCourse ? subjectIdsForCourse.has(selectedSubjectId) : false;
-    if (!isSubjectInCourse) clearSelectedSubject();
-  }, [selectedBatchId, batches, selectedSubjectId, subjectIdsByCourseId]);
-
-
   const selectedBatch = useMemo(
     () => batches.find((b) => b.id === selectedBatchId),
     [batches, selectedBatchId]
   );
 
+  const selectedCourseId = selectedBatch?.courseId;
+
+  useEffect(() => {
+    if (selectedSubjectId === undefined) return;
+    if (typeof selectedCourseId !== 'number') {
+      setSelectedSubjectId(undefined);
+      return;
+    }
+
+    const subjectIds = subjectIdsByCourseId.get(selectedCourseId);
+    if (!subjectIds?.has(selectedSubjectId)) {
+      setSelectedSubjectId(undefined);
+    }
+  }, [selectedCourseId, selectedSubjectId, subjectIdsByCourseId]);
+
   const subjectsForSelectedBatch = useMemo(() => {
-    const courseId = selectedBatch?.courseId;
-    if (typeof courseId !== 'number') return [];
-    return subjectsByCourseId.get(courseId) ?? [];
-  }, [selectedBatch?.courseId, subjectsByCourseId]);
+    if (typeof selectedCourseId !== 'number') return [];
+    return subjectsByCourseId.get(selectedCourseId) ?? [];
+  }, [selectedCourseId, subjectsByCourseId]);
 
   const initialSubjectIdForModals = useMemo(() => {
     if (
