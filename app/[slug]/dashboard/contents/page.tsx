@@ -179,6 +179,11 @@ export default function ContentsPage() {
 
   const selectedCourseId = selectedBatch?.courseId;
 
+  const subjectIdsForSelectedCourse = useMemo(() => {
+    if (typeof selectedCourseId !== 'number') return undefined;
+    return subjectIdsByCourseId.get(selectedCourseId);
+  }, [selectedCourseId, subjectIdsByCourseId]);
+
   useEffect(() => {
     if (selectedSubjectId === undefined) return;
     if (typeof selectedCourseId !== 'number') {
@@ -186,11 +191,10 @@ export default function ContentsPage() {
       return;
     }
 
-    const subjectIds = subjectIdsByCourseId.get(selectedCourseId);
-    if (!subjectIds?.has(selectedSubjectId)) {
+    if (!subjectIdsForSelectedCourse?.has(selectedSubjectId)) {
       setSelectedSubjectId(undefined);
     }
-  }, [selectedCourseId, selectedSubjectId, subjectIdsByCourseId]);
+  }, [selectedCourseId, selectedSubjectId, subjectIdsForSelectedCourse]);
 
   const subjectsForSelectedBatch = useMemo(() => {
     if (typeof selectedCourseId !== 'number') return [];
@@ -198,14 +202,11 @@ export default function ContentsPage() {
   }, [selectedCourseId, subjectsByCourseId]);
 
   const initialSubjectIdForModals = useMemo(() => {
-    if (
-      selectedSubjectId !== undefined &&
-      subjectsForSelectedBatch.some((s) => s.id === selectedSubjectId)
-    ) {
+    if (selectedSubjectId !== undefined && subjectIdsForSelectedCourse?.has(selectedSubjectId)) {
       return selectedSubjectId;
     }
     return subjectsForSelectedBatch[0]?.id;
-  }, [selectedSubjectId, subjectsForSelectedBatch]);
+  }, [selectedSubjectId, subjectIdsForSelectedCourse, subjectsForSelectedBatch]);
 
   const handleAdd = useCallback(() => {
     setIsAddOpen(true);
