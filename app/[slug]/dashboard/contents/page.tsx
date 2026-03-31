@@ -47,28 +47,28 @@ export default function ContentsPage() {
     return date ? new Date(date).getTime() : 0;
   }, []);
 
-  const subjectsByCourseId = useMemo(() => {
+  const { subjectsByCourseId, subjectIdsByCourseId } = useMemo(() => {
     const subjectsByCourseIdMap = new Map<number, Subject[]>();
-    for (const subject of subjects) {
-      if (typeof subject.courseId === 'number') {
-        const existing = subjectsByCourseIdMap.get(subject.courseId) ?? [];
-        existing.push(subject);
-        subjectsByCourseIdMap.set(subject.courseId, existing);
-      }
-    }
-    return subjectsByCourseIdMap;
-  }, [subjects]);
-
-  const subjectIdsByCourseId = useMemo(() => {
     const subjectIdsByCourseIdMap = new Map<number, Set<number>>();
+
     for (const subject of subjects) {
-      if (typeof subject.courseId !== 'number') continue;
+      const courseId = subject.courseId;
+      if (typeof courseId !== 'number') continue;
+
+      const subjectsForCourse = subjectsByCourseIdMap.get(courseId) ?? [];
+      subjectsForCourse.push(subject);
+      subjectsByCourseIdMap.set(courseId, subjectsForCourse);
+
       if (typeof subject.id !== 'number') continue;
-      const existing = subjectIdsByCourseIdMap.get(subject.courseId) ?? new Set<number>();
-      existing.add(subject.id);
-      subjectIdsByCourseIdMap.set(subject.courseId, existing);
+      const subjectIdsForCourse = subjectIdsByCourseIdMap.get(courseId) ?? new Set<number>();
+      subjectIdsForCourse.add(subject.id);
+      subjectIdsByCourseIdMap.set(courseId, subjectIdsForCourse);
     }
-    return subjectIdsByCourseIdMap;
+
+    return {
+      subjectsByCourseId: subjectsByCourseIdMap,
+      subjectIdsByCourseId: subjectIdsByCourseIdMap,
+    };
   }, [subjects]);
 
   const indexedContentFilter = useMemo(() => {
