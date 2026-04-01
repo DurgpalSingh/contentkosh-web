@@ -140,7 +140,6 @@ export function createIndexedTextFilter<
   const orderIndexById = new Map<Id, number>();
   const itemById = new Map<Id, T>();
 
-  const allOrderedIds: Id[] = [];
   const allIds = new Set<Id>();
   const facetIndexEntries: Array<readonly [Id, keyof Facets, Facets[keyof Facets]]> = [];
 
@@ -149,13 +148,11 @@ export function createIndexedTextFilter<
     const id = options.getId(item);
     if (id === null || id === undefined) continue;
 
-    allOrderedIds.push(id);
     allIds.add(id);
     itemById.set(id, item);
     orderIndexById.set(id, i);
 
-    const titleRaw = options.getSearchText(item) ?? '';
-    const titleLowerTrimmed = titleRaw.toLowerCase().trim();
+    const titleLowerTrimmed = (options.getSearchText(item) ?? '').toLowerCase().trim();
     const titleWordsLowerTrimmed = titleLowerTrimmed.split(/\s+/).filter(Boolean);
     titleLowerTrimmedById.set(id, titleLowerTrimmed);
     titleWordsLowerTrimmedById.set(id, titleWordsLowerTrimmed);
@@ -206,10 +203,9 @@ export function createIndexedTextFilter<
     if (scopedIds.size === 0) return [];
     if (!queryLowerTrimmed) {
       const scopedItems: T[] = [];
-      for (const id of allOrderedIds) {
+      for (const [id, item] of itemById) {
         if (!scopedIds.has(id)) continue;
-        const item = itemById.get(id);
-        if (item) scopedItems.push(item);
+        scopedItems.push(item);
       }
       return scopedItems;
     }
