@@ -8,7 +8,6 @@ export type QuestionUiState =
   | 'answered'
   | 'markedForReviewUnanswered'
   | 'markedForReviewAnswered'
-  | 'flagged'
   | 'visited'
   | 'unvisited';
 
@@ -16,12 +15,10 @@ export function getQuestionUiState(params: {
   qType: number;
   answer: AnswerDraft | undefined;
   visited: boolean;
-  flagged: boolean;
   markedForReview: boolean;
   isActive: boolean;
 }): QuestionUiState {
   if (params.isActive) return 'active';
-  if (params.flagged) return 'flagged';
   if (params.markedForReview) {
     if (isQuestionAnswered(params.qType, params.answer)) {
       return 'markedForReviewAnswered';
@@ -36,20 +33,17 @@ export function getQuestionUiState(params: {
 export function getQuestionUiClass(state: QuestionUiState): string {
   switch (state) {
     case 'active':
-      return 'bg-white text-gray-900 border-violet-300 ring-2 ring-violet-500 ring-offset-1';
+      return 'border-blue-500 bg-blue-50 text-blue-900 shadow-sm shadow-blue-500/15';
     case 'answered':
-      return 'bg-emerald-600 text-white border-emerald-600';
-    case 'flagged':
-      return 'bg-amber-100 text-amber-900 border-amber-300';
+      return 'border-emerald-500 bg-emerald-600 text-white hover:bg-emerald-600';
     case 'markedForReviewUnanswered':
-      return 'bg-violet-100 text-violet-900 border-violet-400';
+      return 'border-violet-400 bg-violet-50 text-violet-900 hover:bg-violet-100/80';
     case 'markedForReviewAnswered':
-      return 'bg-cyan-100 text-cyan-950 border-cyan-500';
+      return 'border-cyan-500 bg-cyan-50 text-cyan-950 hover:bg-cyan-100/80';
     case 'visited':
-      return 'bg-white text-gray-700 border-gray-300';
+      return 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50';
     case 'unvisited':
     default:
-      return 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50';
+      return 'border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:bg-slate-50';
   }
 }
-

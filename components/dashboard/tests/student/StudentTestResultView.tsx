@@ -15,6 +15,8 @@ import {
   studentTestBasePath,
 } from '@/lib/tests/studentTestCatalog';
 import { questionTypeLabel, questionType } from '@/lib/tests/testUiMappers';
+import { HtmlContent } from '@/components/common/HtmlContent';
+import { TEST_KIND, TEST_KIND_LABEL, type TestKind } from '@/lib/tests/testConstants';
 
 type AttemptDetails = PracticeTestAttemptDetails | ExamTestAttemptDetails;
 
@@ -24,7 +26,7 @@ export function StudentTestResultView({
   slug,
   details,
 }: {
-  kind: 'practice' | 'exam';
+  kind: TestKind;
   attemptId: string;
   slug: string;
   details: AttemptDetails;
@@ -37,7 +39,7 @@ export function StudentTestResultView({
 
   const derived = useMemo(() => {
     const attemptStatus = safeAttempt?.status;
-    const isExam = kind === 'exam';
+    const isExam = kind === TEST_KIND.EXAM;
     const hiddenByPolicy =
       !!safeAttempt &&
       !!safeTest &&
@@ -76,7 +78,7 @@ export function StudentTestResultView({
   const test = details.test;
   const questions = safeQuestions;
   const hiddenByPolicy = derived.hiddenByPolicy;
-  const isExam = kind === 'exam';
+  const isExam = kind === TEST_KIND.EXAM;
 
   const scoreLine =
     attempt.score != null && attempt.totalScore != null ? (
@@ -110,7 +112,7 @@ export function StudentTestResultView({
             isExam ? 'bg-amber-50 text-amber-800' : 'bg-emerald-50 text-emerald-800'
           }`}
         >
-          {isExam ? 'Exam' : 'Practice'}
+          {TEST_KIND_LABEL[kind]}
         </span>
         <h1 className="text-2xl font-bold text-gray-900">{test.name}</h1>
         {test.batchName && <p className="text-sm text-gray-500 mt-1">{test.batchName}</p>}
@@ -128,7 +130,7 @@ export function StudentTestResultView({
               variant="outline"
               className="border-amber-300 bg-white text-amber-900 hover:bg-amber-100"
               onClick={() => {
-                if (kind === 'practice') router.push(studentPracticeAttemptPath(slug, attemptId));
+                if (kind === TEST_KIND.PRACTICE) router.push(studentPracticeAttemptPath(slug, attemptId));
                 else router.push(studentExamAttemptPath(slug, attemptId));
               }}
             >
@@ -219,7 +221,9 @@ function ResultQuestionCard({
         <h3 className="font-semibold text-gray-900">Question {index}</h3>
         <span className="text-xs text-gray-500">{questionTypeLabel(q.type)}</span>
       </div>
-      <p className="mt-2 text-gray-800 whitespace-pre-wrap">{body}</p>
+      <div className="mt-2 text-gray-800">
+        <HtmlContent html={body} />
+      </div>
 
       {hiddenByPolicy && (
         <p className="mt-3 text-sm text-amber-800 bg-amber-50 border border-amber-100 rounded-md px-3 py-2">
@@ -274,7 +278,9 @@ function ResultQuestionCard({
           {!hiddenByPolicy && explanation && (
             <div className="mt-3">
               <p className="font-medium text-gray-700">Explanation</p>
-              <p className="text-gray-600 mt-1 whitespace-pre-wrap">{explanation}</p>
+              <div className="text-gray-600 mt-1">
+                <HtmlContent html={explanation} />
+              </div>
             </div>
           )}
 

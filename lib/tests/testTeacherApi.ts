@@ -2,8 +2,9 @@ import {
   ExamTestsService,
   PracticeTestsService,
 } from '@/lib/api';
+import { TEST_KIND, type TestKind } from '@/lib/tests/testConstants';
 
-export type TestKind = 'practice' | 'exam';
+export type { TestKind };
 
 export async function downloadTestAnalyticsCsv(
   kind: TestKind,
@@ -12,7 +13,7 @@ export async function downloadTestAnalyticsCsv(
   downloadBaseName: string,
 ): Promise<void> {
   const csv =
-    kind === 'practice'
+    kind === TEST_KIND.PRACTICE
       ? await PracticeTestsService.getApiBusinessPracticeTestsAnalyticsExport(
           businessId,
           testId,

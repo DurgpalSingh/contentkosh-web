@@ -19,21 +19,21 @@ export default function StudentMyTestAttemptLayout({ children }: { children: Rea
   }, [router, slug]);
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen flex flex-col bg-slate-50 overflow-x-hidden w-full">
       {guard.needsUserGesture && (
-        <div className="sticky top-0 z-40 border-b border-slate-200 bg-white">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-3">
-            <p className="text-sm text-slate-700">
-              Fullscreen is recommended for this attempt.
-            </p>
-            <Button className="bg-violet-600 hover:bg-violet-700 text-white" onClick={() => void guard.requestFullscreen()}>
+        <div className="sticky top-0 z-40 border-b border-slate-200/90 bg-white/95 backdrop-blur-sm shrink-0 shadow-sm">
+          <div className="mx-auto w-full max-w-[1320px] px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-3">
+            <p className="text-sm text-slate-600">Fullscreen is recommended for this attempt.</p>
+            <Button className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm" onClick={() => void guard.requestFullscreen()}>
               Enter fullscreen
             </Button>
           </div>
         </div>
       )}
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4">{children}</div>
+      <div className="flex-1 flex flex-col w-full min-h-0 min-w-0 mx-auto max-w-[1320px] px-4 sm:px-6 lg:px-8 py-5 sm:py-6 lg:py-8">
+        {children}
+      </div>
 
       <AttemptExitConfirmModal
         isOpen={guard.isExitPromptOpen}
@@ -44,4 +44,3 @@ export default function StudentMyTestAttemptLayout({ children }: { children: Rea
     </div>
   );
 }
-

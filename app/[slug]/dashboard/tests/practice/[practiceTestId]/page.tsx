@@ -4,6 +4,7 @@ import { useParams } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { TeacherTestDetailView } from '@/components/dashboard/tests/TeacherTestDetailView';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { TEST_KIND } from '@/lib/tests/testConstants';
 
 export default function PracticeTestDetailPage() {
   const params = useParams();
@@ -28,7 +29,7 @@ export default function PracticeTestDetailPage() {
 
   return (
     <TeacherTestDetailView
-      kind="practice"
+      kind={TEST_KIND.PRACTICE}
       testId={practiceTestId}
       businessId={businessId}
       slug={slug}

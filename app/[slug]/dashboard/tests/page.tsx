@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { createIndexedTextFilter } from '@/lib/indexedFiltering';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -11,25 +12,33 @@ import {
   ExamTestsService,
   PracticeTest,
   PracticeTestsService,
+  SubjectsService,
+  type Subject,
 } from '@/lib/api';
 import { Plus, FlaskConical, BookOpen, GraduationCap, HelpCircle, Star } from 'lucide-react';
 import { EmptyState } from '@/components/common/EmptyState';
 import { toast } from 'sonner';
-import { CreateTestModal, TestKindForm } from '@/components/modals/CreateTestModal';
+import { CreateTestModal } from '@/components/modals/CreateTestModal';
 import { DeleteConfirmModal } from '@/components/modals/DeleteConfirmModal';
 import {
-  filterTests,
   formatDurationMinutes,
-  testStatus,
+  type TestListIndexedFacets,
+  type UnifiedRow,
   testStatusLabel,
 } from '@/lib/tests/testUiMappers';
-import { TEST_STATUS } from '@/lib/tests/testConstants';
-import { teacherExamTestPath, teacherPracticeTestPath } from '@/lib/tests/teacherTestPaths';
-import { TestsFiltersBar } from '@/components/dashboard/tests/TestsFiltersBar';
-
-type UnifiedRow =
-  | { kind: 'practice'; test: PracticeTest }
-  | { kind: 'exam'; test: ExamTest };
+import {
+  TEACHER_TESTS_FILTER,
+  TEACHER_TEST_PUBLISH_FILTER,
+  TEST_STATUS,
+  type TeacherTestsPublishFacet,
+} from '@/lib/tests/testConstants';
+import { TEST_KIND, TEST_KIND_LABEL, type TestKind } from '@/lib/tests/testConstants';
+import { buildTestListSelectedFacets, useTestListSubjectIndex } from '@/lib/subjectsByCourseIndex';
+import { teacherExamTestPath, teacherPracticeTestPath } from '@/lib/tests/testPaths';
+import {
+  TestsFiltersBar,
+  type TestsKindFilter,
+} from '@/components/dashboard/tests/TestsFiltersBar';
 
 export default function TestsListPage() {
   const router = useRouter();
@@ -39,15 +48,22 @@ export default function TestsListPage() {
 
   const [practiceRows, setPracticeRows] = useState<PracticeTest[]>([]);
   const [examRows, setExamRows] = useState<ExamTest[]>([]);
-  const [batches, setBatches] = useState<{ id: number; displayName?: string; codeName?: string }[]>(
-    [],
-  );
+  const [batches, setBatches] = useState<
+    { id: number; displayName?: string; codeName?: string; courseId?: number; examId?: number }[]
+  >([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const [search, setSearch] = useState('');
-  const [batchFilter, setBatchFilter] = useState<number | 'all'>('all');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'draft' | 'published'>('all');
+  const [batchFilter, setBatchFilter] = useState<number | typeof TEACHER_TESTS_FILTER.ALL>(
+    TEACHER_TESTS_FILTER.ALL,
+  );
+  const [subjectFilter, setSubjectFilter] = useState<number | typeof TEACHER_TESTS_FILTER.ALL>(
+    TEACHER_TESTS_FILTER.ALL,
+  );
+  const [kindFilter, setKindFilter] = useState<TestsKindFilter>(TEACHER_TESTS_FILTER.ALL);
+  const [statusFilter, setStatusFilter] = useState<TeacherTestsPublishFacet>(TEACHER_TEST_PUBLISH_FILTER.ALL);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<UnifiedRow | null>(null);
@@ -59,22 +75,24 @@ export default function TestsListPage() {
     setLoading(true);
     setError(null);
     try {
-      const [practiceRes, examRes, batchesRes] = await Promise.all([
+      const [practiceRes, examRes, batchesRes, subjectsRes] = await Promise.all([
         PracticeTestsService.getApiBusinessPracticeTests(businessId),
         ExamTestsService.getApiBusinessExamTests(businessId),
-        BatchesService.getApiBatchesAll(),
+        BatchesService.getApiBatchesAll('course'),
+        SubjectsService.getApiSubjectsUser(),
       ]);
-
       setPracticeRows(practiceRes.data ?? []);
       setExamRows(examRes.data ?? []);
-      const list = (batchesRes?.data ?? []) as { id?: number; displayName?: string; codeName?: string }[];
-      setBatches(
-        list.map((b: { id?: number; displayName?: string; codeName?: string }) => ({
-          id: b.id!,
-          displayName: b.displayName,
-          codeName: b.codeName,
-        })),
-      );
+      setSubjects(subjectsRes.data ?? []);
+      const list = (batchesRes?.data ?? []) as Array<{
+        id?: number
+        displayName?: string
+        codeName?: string
+        courseId?: number
+        examId?: number
+        course?: { id?: number; examId?: number }
+      }>;
+      setBatches(list as Array<{ id: number; displayName?: string; codeName?: string; courseId?: number }>);
     } catch {
       setError('Failed to load tests');
       toast.error('Failed to load tests');
@@ -90,8 +108,8 @@ export default function TestsListPage() {
   }, [isInitialized, isAuthenticated, businessId, load]);
 
   const merged: UnifiedRow[] = useMemo(() => {
-    const p = practiceRows.map((test) => ({ kind: 'practice' as const, test }));
-    const e = examRows.map((test) => ({ kind: 'exam' as const, test }));
+    const p = practiceRows.map((test) => ({ kind: TEST_KIND.PRACTICE, test }));
+    const e = examRows.map((test) => ({ kind: TEST_KIND.EXAM, test }));
     return [...p, ...e].sort((a, b) => {
       const da = new Date(a.test.updatedAt).getTime();
       const db = new Date(b.test.updatedAt).getTime();
@@ -99,24 +117,74 @@ export default function TestsListPage() {
     });
   }, [practiceRows, examRows]);
 
-  const filtered = useMemo(
-    () => filterTests(merged, { search, batchFilter, statusFilter }),
-    [merged, search, batchFilter, statusFilter],
+  const subjectIndex = useTestListSubjectIndex(
+    subjects,
+    batches,
+    batchFilter,
+    subjectFilter,
+    setSubjectFilter,
   );
 
-  const goToDetail = (kind: TestKindForm, id: string) => {
-    if (kind === 'practice') router.push(teacherPracticeTestPath(slug, id));
+  const indexedTestFilter = useMemo(() => {
+    return createIndexedTextFilter<UnifiedRow, string, TestListIndexedFacets>(merged, {
+      getId: (row) => `${row.kind}-${row.test.id}`,
+      getSearchText: (row) => {
+        const t = row.test;
+        const parts = [t.name, t.description, t.batchName, t.subjectName].filter(
+          (x): x is string => typeof x === 'string' && x.length > 0,
+        );
+        return parts.join(' ');
+      },
+      getCreatedAt: (row) => row.test.updatedAt,
+      getFacetValues: (row, id) => {
+        const t = row.test;
+        const batchId = Number(t.batchId);
+        const status = typeof t.status === 'number' ? t.status : 0;
+        const entries: Array<readonly [string, keyof TestListIndexedFacets, string | number]> = [
+          [id, 'batchId', batchId],
+          [id, 'status', status],
+          [id, 'kind', row.kind],
+        ];
+        const sid = t.subjectId;
+        if (typeof sid === 'number') entries.push([id, 'subjectId', sid]);
+        return entries;
+      },
+      ngramLength: 3,
+    });
+  }, [merged]);
+
+  const filtered = useMemo(() => {
+    return indexedTestFilter.filter({
+      query: search,
+      selectedFacets: buildTestListSelectedFacets({
+        batchFilter,
+        subjectFilter,
+        statusFilter,
+        kindFilter,
+      }),
+    });
+  }, [
+    indexedTestFilter,
+    search,
+    batchFilter,
+    subjectFilter,
+    statusFilter,
+    kindFilter,
+  ]);
+
+  const goToDetail = (kind: TestKind, id: string) => {
+    if (kind === TEST_KIND.PRACTICE) router.push(teacherPracticeTestPath(slug, id));
     else router.push(teacherExamTestPath(slug, id));
   };
 
-  const handleCreated = (kind: TestKindForm, testId: string) => {
+  const handleCreated = (kind: TestKind, testId: string) => {
     void load();
     goToDetail(kind, testId);
   };
 
   const handleDelete = async () => {
     if (!deleteTarget || typeof businessId !== 'number') return;
-    if (deleteTarget.kind === 'practice') {
+    if (deleteTarget.kind === TEST_KIND.PRACTICE) {
       await PracticeTestsService.deleteApiBusinessPracticeTests(
         businessId,
         deleteTarget.test.id,
@@ -173,11 +241,20 @@ export default function TestsListPage() {
         search={search}
         onSearchChange={setSearch}
         batches={batches}
-        batchFilter={batchFilter}
-        onBatchFilterChange={setBatchFilter}
-        statusFilter={statusFilter}
-        onStatusFilterChange={setStatusFilter}
-        searchPlaceholder="Search by title or description…"
+        subjectIndex={subjectIndex}
+        facets={{
+          batch: batchFilter,
+          subject: subjectFilter,
+          kind: kindFilter,
+          status: statusFilter,
+        }}
+        onFacetsChange={(f) => {
+          setBatchFilter(f.batch);
+          setSubjectFilter(f.subject);
+          setKindFilter(f.kind);
+          setStatusFilter(f.status);
+        }}
+        searchPlaceholder="Search by title, description, batch, or subject…"
       />
 
       {error && (
@@ -196,7 +273,7 @@ export default function TestsListPage() {
           {filtered.map((row) => {
             const t = row.test;
             const st = typeof t.status === 'number' ? t.status : 0;
-            const isPractice = row.kind === 'practice';
+            const isPractice = row.kind === TEST_KIND.PRACTICE;
             const TypeIcon = isPractice ? BookOpen : GraduationCap;
             const typeBadgeClass = isPractice
               ? 'bg-emerald-50 text-emerald-700'
@@ -223,14 +300,16 @@ export default function TestsListPage() {
                     </div>
                     <div className="min-w-0">
                       <h3 className="font-semibold text-gray-900 line-clamp-2">{t.name}</h3>
-                      {t.batchName && (
-                        <p className="text-xs text-gray-500 mt-0.5 truncate">{t.batchName}</p>
+                      {(t.batchName || t.subjectName) && (
+                        <p className="text-xs text-gray-500 mt-0.5 truncate">
+                          {[t.batchName, t.subjectName].filter(Boolean).join(' · ')}
+                        </p>
                       )}
                     </div>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${typeBadgeClass}`}>
-                      {isPractice ? 'Practice' : 'Exam'}
+                      {TEST_KIND_LABEL[row.kind]}
                     </span>
                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${statusBadgeClass}`}>
                       {testStatusLabel(st)}
@@ -251,7 +330,7 @@ export default function TestsListPage() {
                     <span className="font-medium text-gray-900">{t.totalMarks ?? '—'}</span>
                     <span>marks</span>
                   </div>
-                  {row.kind === 'exam' && 'durationMinutes' in t && (
+                  {row.kind === TEST_KIND.EXAM && 'durationMinutes' in t && (
                     <div className="flex items-center gap-1.5 text-gray-500">
                       <span className="font-medium text-gray-900">
                         {formatDurationMinutes(t.durationMinutes)}
@@ -272,6 +351,7 @@ export default function TestsListPage() {
           onClose={() => setCreateOpen(false)}
           businessId={businessId}
           batches={batches}
+          subjects={subjects}
           onCreated={handleCreated}
         />
       )}

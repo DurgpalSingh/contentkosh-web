@@ -1,19 +1,24 @@
 import type { ExamAvailableTest } from '@/lib/api/models/ExamAvailableTest';
 import type { PracticeAvailableTest } from '@/lib/api/models/PracticeAvailableTest';
+import { TEST_KIND } from './testConstants';
+import { TEST_ROUTE_SEGMENT as SEG } from '@/lib/tests/testConstants';
+import type { TestListSubjectFields } from '@/lib/tests/testUiMappers';
 import { STUDENT_TEST_STATUS } from './testConstants';
-import type { StudentTestDisplayStatus } from './testConstants';
+import type { StudentTestDisplayStatus, TestKind } from './testConstants';
 
 /** Extra fields returned by the backend student catalog (may be missing in older OpenAPI snapshots). */
-export type PracticeCatalogRow = PracticeAvailableTest & {
-  canStart?: boolean;
-  canResume?: boolean;
-  attemptStatus?: number | null;
-};
+export type PracticeCatalogRow = PracticeAvailableTest &
+  TestListSubjectFields & {
+    canStart?: boolean;
+    canResume?: boolean;
+    attemptStatus?: number | null;
+  };
 
-export type ExamCatalogRow = ExamAvailableTest & {
-  attemptStatus?: number | null;
-  timeRemainingSeconds?: number | null;
-};
+export type ExamCatalogRow = ExamAvailableTest &
+  TestListSubjectFields & {
+    attemptStatus?: number | null;
+    timeRemainingSeconds?: number | null;
+  };
 
 export const attemptStatusInProgress = 0;
 export const attemptStatusSubmitted = 1;
@@ -46,24 +51,23 @@ export function lockedReasonLabel(reason: number | undefined): string {
   }
 }
 
+export const STUDENT_TEST_ROUTES = {
+  BASE: (slug: string) => `/${slug}/${SEG.DASHBOARD}/${SEG.STUDENT}/${SEG.MYTEST}`,
+  ATTEMPT: (slug: string, kind: TestKind, attemptId: string) => `${STUDENT_TEST_ROUTES.BASE(slug)}/${kind}/${SEG.ATTEMPT}/${attemptId}`,
+  RESULT: (slug: string, kind: TestKind, attemptId: string) => `${STUDENT_TEST_ROUTES.BASE(slug)}/${kind}/${SEG.RESULT}/${attemptId}`,
+} as const;
+
 export function studentTestBasePath(slug: string): string {
-  return `/${slug}/dashboard/student/mytest`;
+  return STUDENT_TEST_ROUTES.BASE(slug);
 }
 
-export function studentMyTestAttemptPath(slug: string, kind: 'practice' | 'exam', attemptId: string): string {
-  return `${studentTestBasePath(slug)}/${kind}/attempt/${attemptId}`;
-}
-
-export function studentMyTestResultPath(slug: string, kind: 'practice' | 'exam', attemptId: string): string {
-  return `${studentTestBasePath(slug)}/${kind}/result/${attemptId}`;
-}
 
 export function studentPracticeAttemptPath(slug: string, attemptId: string): string {
-  return studentMyTestAttemptPath(slug, 'practice', attemptId);
+  return STUDENT_TEST_ROUTES.ATTEMPT(slug, TEST_KIND.PRACTICE, attemptId);
 }
 
 export function studentExamAttemptPath(slug: string, attemptId: string): string {
-  return studentMyTestAttemptPath(slug, 'exam', attemptId);
+  return STUDENT_TEST_ROUTES.ATTEMPT(slug, TEST_KIND.EXAM, attemptId);
 }
 
 export function studentPracticeResultPath(
@@ -72,12 +76,12 @@ export function studentPracticeResultPath(
   attemptId: string,
 ): string {
   void practiceTestId;
-  return studentMyTestResultPath(slug, 'practice', attemptId);
+  return STUDENT_TEST_ROUTES.RESULT(slug, TEST_KIND.PRACTICE, attemptId);
 }
 
 export function studentExamResultPath(slug: string, examTestId: string, attemptId: string): string {
   void examTestId;
-  return studentMyTestResultPath(slug, 'exam', attemptId);
+  return STUDENT_TEST_ROUTES.RESULT(slug, TEST_KIND.EXAM, attemptId);
 }
 
 export type { StudentTestDisplayStatus };
@@ -85,6 +89,25 @@ export type { StudentTestDisplayStatus };
 export type UnifiedStudentRow =
   | { kind: 'practice'; row: PracticeCatalogRow }
   | { kind: 'exam'; row: ExamCatalogRow };
+
+export const TEST_CARD_ACTION = {
+  START: 'start',
+  RESUME: 'resume',
+  VIEW_RESULT: 'view_result',
+  LOCKED: 'locked',
+  SOON: 'soon',
+  EXPIRED: 'expired',
+  NONE: 'none',
+} as const;
+
+export type TestCardAction =
+  | { type: typeof TEST_CARD_ACTION.START }
+  | { type: typeof TEST_CARD_ACTION.RESUME; attemptId: string }
+  | { type: typeof TEST_CARD_ACTION.VIEW_RESULT; attemptId: string }
+  | { type: typeof TEST_CARD_ACTION.LOCKED; reason?: number | null }
+  | { type: typeof TEST_CARD_ACTION.SOON }
+  | { type: typeof TEST_CARD_ACTION.EXPIRED }
+  | { type: typeof TEST_CARD_ACTION.NONE };
 
 // ── computeTestDisplayStatus ──────────────────────────────────────────────────
 
@@ -107,15 +130,6 @@ export function computeTestDisplayStatus(params: {
   return STUDENT_TEST_STATUS.LIVE;
 }
 
-export type TestCardAction =
-  | { type: 'start' }
-  | { type: 'resume'; attemptId: string }
-  | { type: 'view_result'; attemptId: string }
-  | { type: 'locked'; reason?: number | null }
-  | { type: 'soon' }
-  | { type: 'expired' }
-  | { type: 'none' };
-
 export function computeTestCardActions(item: UnifiedStudentRow, displayStatus: StudentTestDisplayStatus): TestCardAction[] {
   const { kind, row } = item;
   const attemptId = row.attemptId ?? undefined;
@@ -125,12 +139,12 @@ export function computeTestCardActions(item: UnifiedStudentRow, displayStatus: S
     const pr = row as PracticeCatalogRow;
     const actions: TestCardAction[] = [];
     if (pr.canResume && attemptId) {
-      actions.push({ type: 'resume', attemptId });
+      actions.push({ type: TEST_CARD_ACTION.RESUME, attemptId });
     } else if (pr.canStart !== false) {
-      actions.push({ type: 'start' });
+      actions.push({ type: TEST_CARD_ACTION.START });
     }
     if (isAttemptFinished(attemptStatus) && attemptId) {
-      actions.push({ type: 'view_result', attemptId });
+      actions.push({ type: TEST_CARD_ACTION.VIEW_RESULT, attemptId });
     }
     return actions;
   }
@@ -138,22 +152,22 @@ export function computeTestCardActions(item: UnifiedStudentRow, displayStatus: S
   // For exam, only one action
   const er = row as ExamCatalogRow;
   if (displayStatus === STUDENT_TEST_STATUS.STARTS_SOON) {
-    return [{ type: 'soon' }];
+    return [{ type: TEST_CARD_ACTION.SOON }];
   }
   if (isAttemptFinished(attemptStatus) && attemptId) {
-    return [{ type: 'view_result', attemptId }];
+    return [{ type: TEST_CARD_ACTION.VIEW_RESULT, attemptId }];
   }
   if (displayStatus === STUDENT_TEST_STATUS.EXPIRED && !isAttemptFinished(attemptStatus)) {
-    return [{ type: 'expired' }];
+    return [{ type: TEST_CARD_ACTION.EXPIRED }];
   }
   if (er.canAttempt === false) {
-    return [{ type: 'locked', reason: er.lockedReason }];
+    return [{ type: TEST_CARD_ACTION.LOCKED, reason: er.lockedReason }];
   }
   if (isAttemptInProgress(attemptStatus) && attemptId) {
-    return [{ type: 'resume', attemptId }];
+    return [{ type: TEST_CARD_ACTION.RESUME, attemptId }];
   }
-  
-  return [{ type: 'start' }];
+
+  return [{ type: TEST_CARD_ACTION.START }];
 }
 
 // ── buildCardViewModel ────────────────────────────────────────────────────────
@@ -165,6 +179,7 @@ export type StudentTestCardViewModel = {
   badgeClass: string;
   name: string;
   batchName: string;
+  subjectName?: string;
   description?: string | null;
   totalQuestions: number | null;
   totalMarks: number | null;
@@ -193,6 +208,7 @@ export function buildCardViewModel(item: UnifiedStudentRow, now?: Date): Student
     badgeClass: isPractice ? 'bg-emerald-50 text-emerald-800' : 'bg-amber-50 text-amber-800',
     name: row.name,
     batchName: row.batchName ?? '',
+    subjectName: row.subjectName,
     description: row.description,
     totalQuestions: row.totalQuestions ?? null,
     totalMarks: row.totalMarks ?? null,

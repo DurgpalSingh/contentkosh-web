@@ -18,9 +18,11 @@ import {
   PracticeTestsService,
   PublishExamTestRequest,
   PublishPracticeTestRequest,
+  type Subject,
+  SubjectsService,
 } from '@/lib/api'
 import { downloadTestAnalyticsCsv } from '@/lib/tests/testTeacherApi'
-import type { TestKind } from '@/lib/tests/testTeacherApi'
+import { TEST_KIND, type TestKind } from '@/lib/tests/testConstants'
 import {
   isTestAnalyticsApiResponse,
   type TestAnalyticsApiResponse,
@@ -29,7 +31,7 @@ import type { TeacherTestQuestion } from '@/lib/tests/teacherQuestionTypes'
 import { testStatus } from '@/lib/tests/testUiMappers'
 import { TEACHER_TEST_TAB, TEACHER_TEST_TAB_LABEL } from '@/lib/tests/testConstants'
 import type { TeacherTestTabId } from '@/lib/tests/testConstants'
-import { teacherTestsListPath } from '@/lib/tests/teacherTestPaths'
+import { teacherTestsListPath } from '@/lib/tests/testPaths'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
 
@@ -57,6 +59,7 @@ export function TeacherTestDetailView({
   const [questions, setQuestions] = useState<TeacherTestQuestion[]>([])
   const [analytics, setAnalytics] = useState<TestAnalyticsApiResponse | null>(null)
   const [analyticsLoading, setAnalyticsLoading] = useState(false)
+  const [subjects, setSubjects] = useState<Subject[]>([])
 
   const [addQuestionOpen, setAddQuestionOpen] = useState(false)
   const [editQuestion, setEditQuestion] = useState<TeacherTestQuestion | null>(null)
@@ -66,12 +69,13 @@ export function TeacherTestDetailView({
   const loadTest = useCallback(async () => {
     setLoading(true)
     try {
-      if (kind === 'practice') {
+      if (kind === TEST_KIND.PRACTICE) {
         const res = await PracticeTestsService.getApiBusinessPracticeTests1(businessId, testId)
         const data = res.data
         setTest(data ?? null)
-        if (data && Array.isArray((data as any).questions)) {
-          setQuestions((data as any).questions as TeacherTestQuestion[])
+        const questionsUnknown = (data as { questions?: unknown } | null)?.questions
+        if (Array.isArray(questionsUnknown)) {
+          setQuestions(questionsUnknown as TeacherTestQuestion[])
         } else {
           setQuestions([])
         }
@@ -79,8 +83,9 @@ export function TeacherTestDetailView({
         const res = await ExamTestsService.getApiBusinessExamTests1(businessId, testId)
         const data = res.data
         setTest(data ?? null)
-        if (data && Array.isArray((data as any).questions)) {
-          setQuestions((data as any).questions as TeacherTestQuestion[])
+        const questionsUnknown = (data as { questions?: unknown } | null)?.questions
+        if (Array.isArray(questionsUnknown)) {
+          setQuestions(questionsUnknown as TeacherTestQuestion[])
         } else {
           setQuestions([])
         }
@@ -92,9 +97,22 @@ export function TeacherTestDetailView({
     }
   }, [kind, businessId, testId])
 
+  const loadSubjects = useCallback(async () => {
+    try {
+      const list = await SubjectsService.getApiSubjectsUser().then((r) => r.data ?? [])
+      setSubjects(list)
+    } catch {
+      toast.error('Failed to load subjects')
+    }
+  }, [])
+
+  useEffect(() => {
+    void loadSubjects()
+  }, [loadSubjects])
+
   const loadQuestions = useCallback(async () => {
     try {
-      if (kind === 'practice') {
+      if (kind === TEST_KIND.PRACTICE) {
         const res = await PracticeTestsService.getApiBusinessPracticeTestsQuestions(
           businessId,
           testId,
@@ -112,7 +130,7 @@ export function TeacherTestDetailView({
   const loadAnalytics = useCallback(async () => {
     setAnalyticsLoading(true)
     try {
-      if (kind === 'practice') {
+      if (kind === TEST_KIND.PRACTICE) {
         const res = await PracticeTestsService.getApiBusinessPracticeTestsAnalytics(
           businessId,
           testId,
@@ -140,7 +158,7 @@ export function TeacherTestDetailView({
   }, [activeTab, loadAnalytics])
 
   const runPublishTest = useCallback(async () => {
-    if (kind === 'practice') {
+    if (kind === TEST_KIND.PRACTICE) {
       const body: PublishPracticeTestRequest = { practiceTestId: testId }
       await PracticeTestsService.postApiBusinessPracticeTestsPublish(businessId, body)
     } else {
@@ -154,7 +172,7 @@ export function TeacherTestDetailView({
   const handleDeleteQuestion = async (): Promise<void> => {
     if (!deleteQuestionTarget?.id) return
     try {
-      if (kind === 'practice') {
+      if (kind === TEST_KIND.PRACTICE) {
         await PracticeTestsService.deleteApiBusinessPracticeTestsQuestions(
           businessId,
           deleteQuestionTarget.id,
@@ -262,6 +280,7 @@ export function TeacherTestDetailView({
           businessId={businessId}
           testId={testId}
           test={test}
+          subjects={subjects}
           onSettingsSaved={() => void loadTest()}
           onTestDeleted={handleTestDeleted}
         />

@@ -4,8 +4,7 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
-import { ROUTES } from '@/lib/constants';
-import { STUDENT_ATTEMPT_FULLSCREEN_PATHNAME_PATTERN } from '@/lib/constants';
+import { isStudentAttemptFullscreenPath } from '@/lib/tests/testPaths';
 import { getNavigationItems } from '@/lib/rbac';
 import {
   Menu,
@@ -31,7 +30,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const hideDashboardChrome = useMemo(() => {
     if (!pathname) return false;
-    return STUDENT_ATTEMPT_FULLSCREEN_PATHNAME_PATTERN.test(pathname);
+    return isStudentAttemptFullscreenPath(pathname);
   }, [pathname]);
 
   const logoUrl = useMemo(() => {
@@ -99,7 +98,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   );
 
   if (hideDashboardChrome) {
-    return <div className="min-h-screen bg-slate-50">{children}</div>;
+    return <div className="min-h-screen w-full bg-slate-50">{children}</div>;
   }
 
   return (
