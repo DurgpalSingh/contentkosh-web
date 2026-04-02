@@ -1,6 +1,6 @@
 'use client';
 
-import { Edit, Trash2, Eye, FileText, FileImage, Calendar, HardDrive, User } from 'lucide-react';
+import { Edit, Trash2, Eye, FileText, FileImage, Calendar, HardDrive, User, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { OverviewCard, OverviewCardMenuItem } from '@/components/common/OverviewCard';
 import { Content } from '@/lib/api';
@@ -87,6 +87,12 @@ export function ContentGridCard({ content, onView, onEdit, onDelete }: ContentGr
           <User className="h-4 w-4 mr-2 shrink-0 text-slate-400" />
           <span className="truncate" title={content.uploader?.name || 'Unknown User'}>
             Upload By: {content.uploader?.name || 'Unknown User'}
+          </span>
+        </div>
+        <div className="flex min-w-0 items-center">
+          <BookOpen className="h-4 w-4 mr-2 shrink-0 text-slate-400" />
+          <span className="truncate" title={content.subject?.name || 'Unassigned'}>
+            Subject: {content.subject?.name || 'Unassigned'}
           </span>
         </div>
         <div className="flex min-w-0 items-center">

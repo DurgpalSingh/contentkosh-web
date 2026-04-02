@@ -7,6 +7,8 @@ export type UpdateContentRequest = {
     title?: string;
     /** Updated status */
     status?: UpdateContentRequest.status;
+    /** Updated subject ID */
+    subjectId: number;
 };
 export namespace UpdateContentRequest {
     /**
