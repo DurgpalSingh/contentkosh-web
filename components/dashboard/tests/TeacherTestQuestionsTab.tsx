@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import type { TestQuestion } from '@/lib/api'
 import type { TeacherTestQuestion } from '@/lib/tests/teacherQuestionTypes'
 import { questionTypeLabel } from '@/lib/tests/testUiMappers'
+import { HtmlContent } from '@/components/common/HtmlContent'
 
 interface TeacherTestQuestionsTabProps {
   questions: TestQuestion[]
@@ -42,11 +43,14 @@ export const TeacherTestQuestionsTab = ({
                 <div className="text-sm font-medium text-gray-500 w-8 shrink-0">{i + 1}.</div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs text-violet-700 font-medium mb-1">{questionTypeLabel(qt)}</p>
-                  <p className="text-gray-900">{q.questionText ?? q.text}</p>
+                  <div className="text-gray-900">
+                    <HtmlContent html={q.questionText ?? q.text ?? ''} />
+                  </div>
                   {teacherQ.explanation ? (
-                    <p className="text-xs text-gray-500 mt-1 line-clamp-2">
-                      Explanation: {teacherQ.explanation}
-                    </p>
+                    <div className="text-xs text-gray-500 mt-1 line-clamp-2">
+                      <p className="font-medium text-gray-500">Explanation:</p>
+                      <HtmlContent html={teacherQ.explanation ?? ''} />
+                    </div>
                   ) : null}
                 </div>
                 <div className="flex gap-2 shrink-0">

@@ -1,8 +1,9 @@
 'use client';
 
-import { memo, useCallback } from 'react';
+import { memo, useCallback, useMemo } from 'react';
 import type { TestQuestion } from '@/lib/api/models/TestQuestion';
 import type { AnswerDraft } from '@/lib/tests/studentAttemptAnswers';
+import { isQuestionAnswered } from '@/lib/tests/studentAttemptAnswers';
 import { getQuestionUiClass, getQuestionUiState } from '@/lib/tests/attempt/attemptQuestionState';
 
 type QuestionRow = {
@@ -15,7 +16,6 @@ const NavigatorItem = memo(function NavigatorItem(props: {
   isActive: boolean;
   answer: AnswerDraft | undefined;
   visited: boolean;
-  flagged: boolean;
   markedForReview: boolean;
   onSelectIndex: (index: number) => void;
 }) {
@@ -24,7 +24,6 @@ const NavigatorItem = memo(function NavigatorItem(props: {
     qType: props.row.question.type,
     answer: props.answer,
     visited: props.visited,
-    flagged: props.flagged,
     markedForReview: props.markedForReview,
     isActive: props.isActive,
   });
@@ -34,7 +33,7 @@ const NavigatorItem = memo(function NavigatorItem(props: {
     <button
       type="button"
       onClick={onSelect}
-      className={`h-9 rounded-md border text-sm font-medium ${cls}`}
+      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border text-sm font-bold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${cls}`}
       aria-label={`Question ${props.index + 1}`}
       aria-current={props.isActive ? 'true' : undefined}
     >
@@ -48,7 +47,6 @@ export function AttemptQuestionNavigator({
   activeIndex,
   answers,
   visited,
-  flagged,
   markedForReview,
   onSelectIndex,
 }: {
@@ -56,15 +54,35 @@ export function AttemptQuestionNavigator({
   activeIndex: number;
   answers: Record<string, AnswerDraft>;
   visited: Set<string>;
-  flagged: Set<string>;
   markedForReview: Set<string>;
   onSelectIndex: (index: number) => void;
 }) {
+  const stats = useMemo(() => {
+    let answered = 0;
+    let reviewNoAnswer = 0;
+    let reviewWithAnswer = 0;
+    let unanswered = 0;
+    for (const row of rows) {
+      const q = row.question;
+      const a = answers[q.id];
+      const answeredQ = isQuestionAnswered(q.type, a);
+      const mr = markedForReview.has(q.id);
+      if (answeredQ) {
+        answered += 1;
+        if (mr) reviewWithAnswer += 1;
+      } else {
+        unanswered += 1;
+        if (mr) reviewNoAnswer += 1;
+      }
+    }
+    return { answered, reviewNoAnswer, reviewWithAnswer, unanswered };
+  }, [rows, answers, markedForReview]);
+
   return (
-    <aside className="w-full lg:w-72 shrink-0">
-      <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-4">
-        <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-3">Questions</p>
-        <div className="grid grid-cols-6 sm:grid-cols-8 lg:grid-cols-6 gap-2">
+    <aside className="w-full">
+      <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-[0_2px_16px_-6px_rgba(15,23,42,0.1)]">
+        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-4">Questions</p>
+        <div className="flex flex-wrap gap-2.5">
           {rows.map((row, i) => (
             <NavigatorItem
               key={row.question.id}
@@ -73,35 +91,43 @@ export function AttemptQuestionNavigator({
               isActive={i === activeIndex}
               answer={answers[row.question.id]}
               visited={visited.has(row.question.id)}
-              flagged={flagged.has(row.question.id)}
               markedForReview={markedForReview.has(row.question.id)}
               onSelectIndex={onSelectIndex}
             />
           ))}
         </div>
 
-        <ul className="mt-4 text-xs text-slate-600 space-y-1">
-          <li className="flex items-center gap-2">
-            <span className="h-3 w-3 rounded-sm bg-emerald-600" /> Answered
+        <ul className="mt-6 space-y-2.5 border-t border-slate-100 pt-5 text-xs text-slate-600">
+          <li className="flex items-center justify-between gap-2">
+            <span className="flex items-center gap-2.5 min-w-0">
+              <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-500" />
+              <span>Answered</span>
+            </span>
+            <span className="tabular-nums font-medium text-slate-500">{stats.answered}</span>
           </li>
-          <li className="flex items-center gap-2">
-            <span className="h-3 w-3 rounded-sm bg-amber-200 border border-amber-400" /> Flagged
+          <li className="flex items-center justify-between gap-2">
+            <span className="flex items-center gap-2.5 min-w-0">
+              <span className="h-2.5 w-2.5 shrink-0 rounded-full border-2 border-violet-400 bg-violet-100" />
+              <span>Review (no answer)</span>
+            </span>
+            <span className="tabular-nums font-medium text-slate-500">{stats.reviewNoAnswer}</span>
           </li>
-          <li className="flex items-center gap-2">
-            <span className="h-3 w-3 rounded-sm bg-violet-100 border border-violet-400" /> Review (no answer)
+          <li className="flex items-center justify-between gap-2">
+            <span className="flex items-center gap-2.5 min-w-0">
+              <span className="h-2.5 w-2.5 shrink-0 rounded-full border-2 border-cyan-500 bg-cyan-100" />
+              <span>Review + answered</span>
+            </span>
+            <span className="tabular-nums font-medium text-slate-500">{stats.reviewWithAnswer}</span>
           </li>
-          <li className="flex items-center gap-2">
-            <span className="h-3 w-3 rounded-sm bg-cyan-100 border border-cyan-500" /> Review + answered
-          </li>
-          <li className="flex items-center gap-2">
-            <span className="h-3 w-3 rounded-sm bg-white border border-gray-300" /> Visited
-          </li>
-          <li className="flex items-center gap-2">
-            <span className="h-3 w-3 rounded-sm bg-white border border-gray-200" /> Unvisited
+          <li className="flex items-center justify-between gap-2">
+            <span className="flex items-center gap-2.5 min-w-0">
+              <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-slate-300" />
+              <span>Unanswered</span>
+            </span>
+            <span className="tabular-nums font-medium text-slate-500">{stats.unanswered}</span>
           </li>
         </ul>
       </div>
     </aside>
   );
 }
-

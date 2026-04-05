@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
   AlertTriangle,
   Award,
@@ -21,13 +21,15 @@ import { DeleteConfirmModal } from '@/components/modals/DeleteConfirmModal'
 import {
   ExamTest,
   ExamTestsService,
+  BatchesService,
   PracticeTest,
   PracticeTestsService,
   ResultVisibilityExam,
   UpdateExamTestDTO,
   UpdatePracticeTestDTO,
 } from '@/lib/api'
-import type { TestKind } from '@/lib/tests/testTeacherApi'
+import type { Subject } from '@/lib/api'
+import { TEST_KIND, type TestKind } from '@/lib/tests/testConstants'
 import { resultVisibilityExamLabel } from '@/lib/tests/testUiMappers'
 import { validateTestForm, type TestFormErrors } from '@/lib/tests/testFormValidation'
 import { toast } from 'sonner'
@@ -37,6 +39,7 @@ interface TeacherTestSettingsTabProps {
   businessId: number
   testId: string
   test: PracticeTest | ExamTest
+  subjects: Subject[]
   onSettingsSaved: () => void
   onTestDeleted: () => void
 }
@@ -48,16 +51,24 @@ const toDatetimeLocalValue = (iso: string | undefined): string => {
   return new Date(d.getTime() - offset).toISOString().slice(0, 16)
 }
 
-const buildPracticeDraft = (t: PracticeTest): UpdatePracticeTestDTO => ({
+type PracticeWithSubject = PracticeTest & { subjectId?: number | null }
+type ExamWithSubject = ExamTest & { subjectId?: number | null }
+type UpdatePracticeWithSubject = UpdatePracticeTestDTO & { subjectId?: number | null }
+type UpdateExamWithSubject = UpdateExamTestDTO & { subjectId?: number | null }
+
+const buildPracticeDraft = (t: PracticeTest): UpdatePracticeWithSubject => ({
   name: t.name,
   description: t.description,
   defaultMarksPerQuestion: t.defaultMarksPerQuestion,
   showExplanations: t.showExplanations,
   shuffleQuestions: t.shuffleQuestions,
   shuffleOptions: t.shuffleOptions,
+  ...(typeof (t as PracticeWithSubject).subjectId === 'number'
+    ? { subjectId: (t as PracticeWithSubject).subjectId }
+    : {}),
 })
 
-const buildExamDraft = (t: ExamTest): UpdateExamTestDTO => ({
+const buildExamDraft = (t: ExamTest): UpdateExamWithSubject => ({
   name: t.name,
   description: t.description,
   startAt: toDatetimeLocalValue(t.startAt),
@@ -68,6 +79,9 @@ const buildExamDraft = (t: ExamTest): UpdateExamTestDTO => ({
   resultVisibility: t.resultVisibility,
   shuffleQuestions: t.shuffleQuestions,
   shuffleOptions: t.shuffleOptions,
+  ...(typeof (t as ExamWithSubject).subjectId === 'number'
+    ? { subjectId: (t as ExamWithSubject).subjectId }
+    : {}),
 })
 
 const inputClass =
@@ -81,18 +95,21 @@ export const TeacherTestSettingsTab = ({
   businessId,
   testId,
   test,
+  subjects: subjectsAll,
   onSettingsSaved,
   onTestDeleted,
 }: TeacherTestSettingsTabProps) => {
   const [isEditing, setIsEditing] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [draftPractice, setDraftPractice] = useState<UpdatePracticeTestDTO>({})
-  const [draftExam, setDraftExam] = useState<UpdateExamTestDTO>({})
+  const [draftPractice, setDraftPractice] = useState<UpdatePracticeWithSubject>({})
+  const [draftExam, setDraftExam] = useState<UpdateExamWithSubject>({})
   const [formErrors, setFormErrors] = useState<TestFormErrors>({})
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [subjectsForBatch, setSubjectsForBatch] = useState<Subject[]>([])
+  const [subjectsLoading, setSubjectsLoading] = useState(false)
 
   const handleStartEdit = () => {
-    if (kind === 'practice') {
+    if (kind === TEST_KIND.PRACTICE) {
       setDraftPractice(buildPracticeDraft(test as PracticeTest))
     } else {
       setDraftExam(buildExamDraft(test as ExamTest))
@@ -108,15 +125,16 @@ export const TeacherTestSettingsTab = ({
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    const draft = kind === 'practice' ? draftPractice : draftExam
+    const draft = kind === TEST_KIND.PRACTICE ? draftPractice : draftExam
     const errors = validateTestForm({
       name: draft.name ?? '',
       kind,
-      startAt: kind === 'exam' ? (draftExam.startAt ?? undefined) : undefined,
-      deadlineAt: kind === 'exam' ? (draftExam.deadlineAt ?? undefined) : undefined,
-      durationMinutes: kind === 'exam' ? (draftExam.durationMinutes ?? undefined) : undefined,
+      startAt: kind === TEST_KIND.EXAM ? (draftExam.startAt ?? undefined) : undefined,
+      deadlineAt: kind === TEST_KIND.EXAM ? (draftExam.deadlineAt ?? undefined) : undefined,
+      durationMinutes: kind === TEST_KIND.EXAM ? (draftExam.durationMinutes ?? undefined) : undefined,
       defaultMarksPerQuestion: draft.defaultMarksPerQuestion ?? undefined,
       requireBatch: false,
+      subjectId: draft.subjectId ?? undefined,
     })
 
     if (Object.keys(errors).length > 0) {
@@ -127,7 +145,7 @@ export const TeacherTestSettingsTab = ({
     setFormErrors({})
     setSaving(true)
     try {
-      if (kind === 'practice') {
+      if (kind === TEST_KIND.PRACTICE) {
         await PracticeTestsService.putApiBusinessPracticeTests(businessId, testId, draftPractice)
       } else {
         const body = {
@@ -150,7 +168,7 @@ export const TeacherTestSettingsTab = ({
   }
 
   const handleConfirmDelete = useCallback(async () => {
-    if (kind === 'practice') {
+    if (kind === TEST_KIND.PRACTICE) {
       await PracticeTestsService.deleteApiBusinessPracticeTests(businessId, testId)
     } else {
       await ExamTestsService.deleteApiBusinessExamTests(businessId, testId)
@@ -158,6 +176,66 @@ export const TeacherTestSettingsTab = ({
     toast.success('Test deleted')
     onTestDeleted()
   }, [businessId, kind, onTestDeleted, testId])
+
+  useEffect(() => {
+    if (!isEditing) return
+    const rawBatchId = (test as { batchId?: string | number }).batchId
+    const batchId = typeof rawBatchId === 'string' ? Number(rawBatchId) : rawBatchId
+    if (!batchId) return
+    if (Number.isNaN(batchId)) return
+
+    let cancelled = false
+    setSubjectsLoading(true)
+    setSubjectsForBatch([])
+
+    type BatchWithCourseExam = {
+      courseId?: number
+      examId?: number
+      course?: { id?: number; examId?: number }
+    }
+
+    void BatchesService.getApiBatches(batchId)
+      .then((res) => {
+        if (cancelled) return
+        const batch = res.data as BatchWithCourseExam
+        const courseId = batch.courseId ?? batch.course?.id
+        const list =
+          typeof courseId === 'number'
+            ? subjectsAll.filter((s) => s.courseId === courseId)
+            : subjectsAll
+
+        setSubjectsForBatch(list)
+
+        const currentSubjectId =
+          (test as PracticeWithSubject | ExamWithSubject).subjectId ?? undefined
+        const nextSubjectId =
+          typeof currentSubjectId === 'number' && list.some((s) => s.id === currentSubjectId)
+            ? currentSubjectId
+            : list[0]?.id
+
+        if (typeof nextSubjectId === 'number' && nextSubjectId > 0) {
+          if (kind === TEST_KIND.PRACTICE) {
+            setDraftPractice((prev) => ({ ...prev, subjectId: nextSubjectId }))
+          } else {
+            setDraftExam((prev) => ({ ...prev, subjectId: nextSubjectId }))
+          }
+        }
+      })
+      .catch(() => {
+        if (cancelled) return
+        setSubjectsForBatch([])
+        setSubjectsLoading(false)
+        toast.error('Failed to load subjects')
+      })
+      .finally(() => {
+        if (cancelled) return
+        setSubjectsLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [isEditing, kind, test, subjectsAll])
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -213,13 +291,15 @@ export const TeacherTestSettingsTab = ({
               onSubmit={(e) => void handleSave(e)}
               className="space-y-8"
             >
-              {kind === 'practice' ? (
+              {kind === TEST_KIND.PRACTICE ? (
                 <PracticeSettingsFields
                   draft={draftPractice}
                   setDraft={setDraftPractice}
                   inputClass={inputClass}
                   selectClass={selectClass}
                   errors={formErrors}
+                  subjects={subjectsForBatch}
+                  subjectsLoading={subjectsLoading}
                 />
               ) : (
                 <ExamSettingsFields
@@ -228,6 +308,8 @@ export const TeacherTestSettingsTab = ({
                   inputClass={inputClass}
                   selectClass={selectClass}
                   errors={formErrors}
+                  subjects={subjectsForBatch}
+                  subjectsLoading={subjectsLoading}
                 />
               )}
             </form>
@@ -325,7 +407,10 @@ const ReadOnlySettings = ({
   kind: TestKind
   test: PracticeTest | ExamTest
 }) => {
-  if (kind === 'practice') {
+  const batchName = (test as { batchName?: string }).batchName
+  const subjectName = (test as { subjectName?: string }).subjectName
+
+  if (kind === TEST_KIND.PRACTICE) {
     const t = test as PracticeTest
     return (
       <div className="space-y-8">
@@ -337,6 +422,12 @@ const ReadOnlySettings = ({
             </ReadOnlyValueCard>
             <ReadOnlyValueCard label="Description" className="sm:col-span-2">
               <span className="whitespace-pre-wrap text-gray-700">{t.description ?? '—'}</span>
+            </ReadOnlyValueCard>
+            <ReadOnlyValueCard label="Batch">
+              <span className="text-gray-800">{batchName ?? '—'}</span>
+            </ReadOnlyValueCard>
+            <ReadOnlyValueCard label="Subject">
+              <span className="text-gray-800">{subjectName ?? '—'}</span>
             </ReadOnlyValueCard>
           </div>
         </section>
@@ -383,6 +474,12 @@ const ReadOnlySettings = ({
           </ReadOnlyValueCard>
           <ReadOnlyValueCard label="Description" className="sm:col-span-2">
             <span className="whitespace-pre-wrap text-gray-700">{t.description ?? '—'}</span>
+          </ReadOnlyValueCard>
+          <ReadOnlyValueCard label="Batch">
+            <span className="text-gray-800">{batchName ?? '—'}</span>
+          </ReadOnlyValueCard>
+          <ReadOnlyValueCard label="Subject">
+            <span className="text-gray-800">{subjectName ?? '—'}</span>
           </ReadOnlyValueCard>
         </div>
       </section>
@@ -492,24 +589,47 @@ const PracticeSettingsFields = ({
   inputClass,
   selectClass,
   errors,
+  subjects,
+  subjectsLoading,
 }: {
-  draft: UpdatePracticeTestDTO
-  setDraft: React.Dispatch<React.SetStateAction<UpdatePracticeTestDTO>>
+  draft: UpdatePracticeWithSubject
+  setDraft: React.Dispatch<React.SetStateAction<UpdatePracticeWithSubject>>
   inputClass: string
   selectClass: string
   errors: TestFormErrors
+  subjects: Array<{ id: number; name?: string }>
+  subjectsLoading: boolean
 }) => (
   <div className="space-y-8">
     <section>
       <SectionHeader icon={FileText} title="General" />
       <div className="space-y-4">
+        <Field label="Subject" error={errors.subjectId}>
+          <select
+            className={selectClass}
+            value={draft.subjectId ?? ''}
+            onChange={(e) =>
+              setDraft((s) => ({ ...s, subjectId: Number(e.target.value) }))
+            }
+            disabled={subjectsLoading || subjects.length === 0}
+          >
+            <option value="">Select subject</option>
+            {subjects.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name ?? `Subject ${s.id}`}
+              </option>
+            ))}
+          </select>
+        </Field>
         <Field label="Test name" error={errors.name}>
           <Input
             className={inputClass}
             value={draft.name ?? ''}
             onChange={(e) => setDraft((s) => ({ ...s, name: e.target.value }))}
+            maxLength={50}
             required
           />
+          <p className="text-xs text-gray-500">{draft.name?.length}/50 characters</p>
         </Field>
         <Field label="Description">
           <Textarea
@@ -570,24 +690,47 @@ const ExamSettingsFields = ({
   inputClass,
   selectClass,
   errors,
+  subjects,
+  subjectsLoading,
 }: {
-  draft: UpdateExamTestDTO
-  setDraft: React.Dispatch<React.SetStateAction<UpdateExamTestDTO>>
+  draft: UpdateExamWithSubject
+  setDraft: React.Dispatch<React.SetStateAction<UpdateExamWithSubject>>
   inputClass: string
   selectClass: string
   errors: TestFormErrors
+  subjects: Array<{ id: number; name?: string }>
+  subjectsLoading: boolean
 }) => (
   <div className="space-y-8">
     <section>
       <SectionHeader icon={FileText} title="General" />
       <div className="space-y-4">
+        <Field label="Subject" error={errors.subjectId}>
+          <select
+            className={selectClass}
+            value={draft.subjectId ?? ''}
+            onChange={(e) =>
+              setDraft((s) => ({ ...s, subjectId: Number(e.target.value) }))
+            }
+            disabled={subjectsLoading || subjects.length === 0}
+          >
+            <option value="">Select subject</option>
+            {subjects.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name ?? `Subject ${s.id}`}
+              </option>
+            ))}
+          </select>
+        </Field>
         <Field label="Test name" error={errors.name}>
           <Input
             className={inputClass}
             value={draft.name ?? ''}
             onChange={(e) => setDraft((s) => ({ ...s, name: e.target.value }))}
+            maxLength={50}
             required
           />
+          <p className="text-xs text-gray-500">{draft.name?.length}/50 characters</p>
         </Field>
         <Field label="Description">
           <Textarea

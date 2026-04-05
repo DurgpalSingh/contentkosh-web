@@ -61,7 +61,7 @@ const signupSchema = z.object({
   email: z
     .string()
     .trim()
-    .email('Please enter valid email address')
+    .email('Email address is required')
     .refine((value) => !/\+{2,}/.test(value), 'Email cannot contain multiple consecutive "+" characters'),
   password: passwordSchema,
   confirmPassword: z.string(),

@@ -25,11 +25,14 @@ import {
   isQuestionAnswered,
 } from '@/lib/tests/studentAttemptAnswers';
 import { StudentSubmitTestModal } from '@/components/dashboard/tests/student/StudentSubmitTestModal';
-import { formatDurationMinutes } from '@/lib/tests/testUiMappers';
+import { formatDurationMinutes, type TestListSubjectFields } from '@/lib/tests/testUiMappers';
 import { AttemptHeader } from '@/components/dashboard/tests/student/AttemptHeader';
 import { AttemptQuestionNavigator } from '@/components/dashboard/tests/student/AttemptQuestionNavigator';
 import { AttemptActionBar } from '@/components/dashboard/tests/student/AttemptActionBar';
 import { StudentQuestionBlock } from '@/components/dashboard/tests/student/StudentQuestionBlock';
+import { TEST_KIND, type TestKind } from '@/lib/tests/testConstants';
+
+export type StudentAttemptKind = TestKind;
 
 function readJsonFromLocalStorage(key: string): unknown | null {
   try {
@@ -59,18 +62,21 @@ function writeJsonToLocalStorage(key: string, value: unknown): void {
   }
 }
 
-export type StudentAttemptKind = 'practice' | 'exam';
-
 type AttemptDetails = PracticeTestAttemptDetails | ExamTestAttemptDetails;
 
 type AttemptWithTimer = AttemptDetails['attempt'] & { timeRemainingSeconds?: number };
+
+type AttemptTestMeta = TestListSubjectFields & {
+  batchName?: string;
+  name?: string;
+};
 
 export function StudentAttemptWorkspace({
   kind,
   attemptId,
   details: detailsProp,
 }: {
-  kind: StudentAttemptKind;
+  kind: TestKind;
   attemptId: string;
   details: AttemptDetails;
 }) {
@@ -82,7 +88,6 @@ export function StudentAttemptWorkspace({
 
   const details = detailsProp;
   const [answers, setAnswers] = useState<Record<string, AnswerDraft>>({});
-  const [flagged, setFlagged] = useState<Set<string>>(() => new Set());
   const [markedForReview, setMarkedForReview] = useState<Set<string>>(() => new Set());
   const [visited, setVisited] = useState<Set<string>>(() => new Set());
   const [activeIndex, setActiveIndex] = useState(0);
@@ -98,7 +103,6 @@ export function StudentAttemptWorkspace({
   const submitLock = useRef(false);
   const examCountdownStarted = useRef(false);
 
-  // Hydrate answers + UI flags from server + localStorage (GET runs in app page only).
   useEffect(() => {
     didAutoSubmit.current = false;
     examCountdownStarted.current = false;
@@ -109,7 +113,6 @@ export function StudentAttemptWorkspace({
     if (!inProgress) {
       removeLocalStorageKeys([draftStorageKey, uiStorageKey]);
       setAnswers(serverAnswers);
-      setFlagged(new Set());
       setMarkedForReview(new Set());
       setVisited(new Set());
     } else {
@@ -124,18 +127,16 @@ export function StudentAttemptWorkspace({
       const parsedUi = readJsonFromLocalStorage(uiStorageKey);
       if (parsedUi && typeof parsedUi === 'object') {
         const obj = parsedUi as {
-          flagged?: string[];
           markedForReview?: string[];
           visited?: string[];
         };
-        setFlagged(new Set(obj.flagged ?? []));
         setMarkedForReview(new Set(obj.markedForReview ?? []));
         setVisited(new Set(obj.visited ?? []));
       }
     }
 
     const att = data.attempt as AttemptWithTimer;
-    if (kind === 'exam' && typeof att.timeRemainingSeconds === 'number') {
+    if (kind === TEST_KIND.EXAM && typeof att.timeRemainingSeconds === 'number') {
       setTimerSec(Math.max(0, att.timeRemainingSeconds));
     } else {
       setTimerSec(null);
@@ -147,15 +148,15 @@ export function StudentAttemptWorkspace({
     if (details.attempt.status === AttemptStatus._0) return;
     const practiceId = details.attempt.practiceTestId;
     const examId = details.attempt.examTestId;
-    if (kind === 'practice' && practiceId) {
+    if (kind === TEST_KIND.PRACTICE && practiceId) {
       router.replace(studentPracticeResultPath(slug, practiceId, attemptId));
-    } else if (kind === 'exam' && examId) {
+    } else if (kind === TEST_KIND.EXAM && examId) {
       router.replace(studentExamResultPath(slug, examId, attemptId));
     }
   }, [details, slug, kind, attemptId, router]);
 
   useEffect(() => {
-    if (!details || kind !== 'exam' || examCountdownStarted.current) return;
+    if (!details || kind !== TEST_KIND.EXAM || examCountdownStarted.current) return;
     if (details.attempt.status !== AttemptStatus._0) return;
     const att = details.attempt as AttemptWithTimer;
     if (typeof att.timeRemainingSeconds !== 'number') return;
@@ -179,7 +180,7 @@ export function StudentAttemptWorkspace({
     setSubmitting(true);
     try {
       const payload = buildSubmitPayload(details.questions, answers);
-      if (kind === 'practice') {
+      if (kind === TEST_KIND.PRACTICE) {
         await PracticeTestsService.postApiBusinessPracticeTestsAttemptsSubmit(businessId, attemptId, {
           answers: payload,
         });
@@ -190,13 +191,13 @@ export function StudentAttemptWorkspace({
       }
       toast.success('Test submitted');
       const tid =
-        kind === 'practice' ? details.attempt.practiceTestId : details.attempt.examTestId;
+        kind === TEST_KIND.PRACTICE ? details.attempt.practiceTestId : details.attempt.examTestId;
       if (!tid) {
         toast.error('Missing test id');
         return;
       }
       removeLocalStorageKeys([draftStorageKey, uiStorageKey]);
-      if (kind === 'practice') {
+      if (kind === TEST_KIND.PRACTICE) {
         router.push(studentPracticeResultPath(slug, tid, attemptId));
       } else {
         router.push(studentExamResultPath(slug, tid, attemptId));
@@ -216,7 +217,7 @@ export function StudentAttemptWorkspace({
 
   useEffect(() => {
     if (
-      kind !== 'exam' ||
+      kind !== TEST_KIND.EXAM ||
       timerSec !== 0 ||
       submitting ||
       didAutoSubmit.current ||
@@ -247,18 +248,29 @@ export function StudentAttemptWorkspace({
     if (details.attempt.status !== AttemptStatus._0) return;
     const id = window.setTimeout(() => {
       writeJsonToLocalStorage(uiStorageKey, {
-        flagged: [...flagged],
         markedForReview: [...markedForReview],
         visited: [...visited],
       });
     }, 200);
     return () => window.clearTimeout(id);
-  }, [details, flagged, markedForReview, visited, uiStorageKey]);
+  }, [details, markedForReview, visited, uiStorageKey]);
 
   const rows = useMemo(() => details?.questions ?? [], [details?.questions]);
   const activeRow = rows[activeIndex];
   const testName = details?.test.name ?? 'Test';
-  const isExam = kind === 'exam';
+  const isExam = kind === TEST_KIND.EXAM;
+
+  const testMeta = details?.test as AttemptTestMeta | undefined;
+  const metaLine = useMemo(() => {
+    if (!details) return undefined;
+    const parts: string[] = [];
+    if (testMeta?.batchName) parts.push(testMeta.batchName);
+    if (testMeta?.subjectName) parts.push(testMeta.subjectName);
+    if (isExam && 'durationMinutes' in details.test) {
+      parts.push(`Duration ${formatDurationMinutes(details.test.durationMinutes)}`);
+    }
+    return parts.length > 0 ? parts.join(' · ') : undefined;
+  }, [details, testMeta, isExam]);
 
   const activeQuestionId = activeRow?.question.id;
 
@@ -273,16 +285,6 @@ export function StudentAttemptWorkspace({
   const clearActiveAnswer = useCallback(() => {
     if (!activeQuestionId) return;
     setAnswers((prev) => ({ ...prev, [activeQuestionId]: {} }));
-  }, [activeQuestionId]);
-
-  const toggleActiveFlag = useCallback(() => {
-    if (!activeQuestionId) return;
-    setFlagged((prev) => {
-      const next = new Set(prev);
-      if (next.has(activeQuestionId)) next.delete(activeQuestionId);
-      else next.add(activeQuestionId);
-      return next;
-    });
   }, [activeQuestionId]);
 
   const toggleActiveMarkForReview = useCallback(() => {
@@ -321,7 +323,7 @@ export function StudentAttemptWorkspace({
 
   if (!details || !activeRow) {
     return (
-      <div className="min-h-[40vh] flex items-center justify-center text-gray-600 text-sm">
+      <div className="min-h-[40vh] flex items-center justify-center text-slate-600 text-sm">
         No questions in this attempt.
       </div>
     );
@@ -329,73 +331,69 @@ export function StudentAttemptWorkspace({
 
   const activeAnswer = activeQuestionId ? answers[activeQuestionId] : undefined;
   const activeHasAnswer = isQuestionAnswered(activeRow.question.type, activeAnswer);
-  const activeIsFlagged = !!activeQuestionId && flagged.has(activeQuestionId);
   const activeIsMarkedForReview = !!activeQuestionId && markedForReview.has(activeQuestionId);
+  const answeredCount = rows.length - unanswered;
+
+  const timerSlot =
+    isExam && timerSec !== null ? (
+      <div
+        className={`inline-flex items-center rounded-full border px-3.5 py-1.5 text-sm font-mono font-semibold tabular-nums ${
+          timerSec < 300
+            ? 'border-red-200 bg-red-50 text-red-900'
+            : 'border-slate-200 bg-white text-slate-800 shadow-sm'
+        }`}
+        aria-live="polite"
+      >
+        {formatClock(timerSec)} left
+      </div>
+    ) : null;
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col flex-1 min-h-0 w-full min-w-0 gap-6 lg:gap-8">
       <AttemptHeader
         backHref={studentTestBasePath(slug)}
         kindLabel={isExam ? 'Exam' : 'Practice'}
         testName={testName}
-        subtitle={isExam && 'durationMinutes' in details.test ? `Duration ${formatDurationMinutes(details.test.durationMinutes)}` : undefined}
-        rightSlot={
-          isExam && timerSec !== null ? (
-            <div
-              className={`text-sm font-mono font-semibold px-3 py-1 rounded-lg border ${
-                timerSec < 300 ? 'border-red-200 bg-red-50 text-red-900' : 'border-gray-200 bg-white'
-              }`}
-              aria-live="polite"
-            >
-              Time left: {formatClock(timerSec)}
-            </div>
-          ) : (
-            <div className="text-sm text-gray-600">
-              Answered{' '}
-              <span className="font-semibold text-gray-900">
-                {rows.length - unanswered}/{rows.length}
-              </span>
-            </div>
-          )
-        }
+        metaLine={metaLine}
+        timerSlot={timerSlot}
+        answeredCount={answeredCount}
+        totalQuestions={rows.length}
         onSubmit={() => setSubmitOpen(true)}
         submitDisabled={submitting}
       />
 
-      <div className="flex flex-col lg:flex-row gap-4">
-        <div className="flex-1 min-w-0 space-y-4">
-          <div className="space-y-3">
-            <StudentQuestionBlock
-              displayIndex={activeIndex + 1}
-              question={activeRow.question}
-              value={activeAnswer}
-              onChange={setAnswerForActive}
-            />
-          </div>
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-6 lg:gap-8 items-start lg:pb-4">
+        <div className="flex flex-col gap-5 min-w-0 order-2 lg:order-1">
+          <StudentQuestionBlock
+            displayIndex={activeIndex + 1}
+            totalQuestions={rows.length}
+            question={activeRow.question}
+            value={activeAnswer}
+            onChange={setAnswerForActive}
+          />
 
           <AttemptActionBar
             canGoPrev={activeIndex > 0}
             canGoNext={activeIndex < rows.length - 1}
             hasAnswer={activeHasAnswer}
-            flagged={activeIsFlagged}
             onPrev={goPrev}
             onNext={goNext}
             onClearAnswer={clearActiveAnswer}
-            onToggleFlag={toggleActiveFlag}
-            markedForReview={activeIsMarkedForReview}
             onToggleMarkForReview={toggleActiveMarkForReview}
+            markedForReview={activeIsMarkedForReview}
           />
         </div>
 
-        <AttemptQuestionNavigator
-          rows={rows}
-          activeIndex={activeIndex}
-          answers={answers}
-          visited={visited}
-          flagged={flagged}
-          markedForReview={markedForReview}
-          onSelectIndex={onSelectIndex}
-        />
+        <div className="order-1 lg:order-2 lg:sticky lg:top-6">
+          <AttemptQuestionNavigator
+            rows={rows}
+            activeIndex={activeIndex}
+            answers={answers}
+            visited={visited}
+            markedForReview={markedForReview}
+            onSelectIndex={onSelectIndex}
+          />
+        </div>
       </div>
 
       <StudentSubmitTestModal

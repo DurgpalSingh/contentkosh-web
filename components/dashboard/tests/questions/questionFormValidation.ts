@@ -10,6 +10,16 @@ export type QuestionFormErrors = {
   correctAnswer?: string
 }
 
+function getMeaningfulTextLength(input: string): number {
+  // Approximate server-side "empty after sanitization" check:
+  // strip tags and normalize whitespace.
+  return input
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim().length
+}
+
 export function validateQuestionForm(state: {
   questionTypeValue: number | null
   questionText: string
@@ -20,7 +30,7 @@ export function validateQuestionForm(state: {
 }): QuestionFormErrors {
   const errors: QuestionFormErrors = {}
 
-  if (!state.questionText.trim()) {
+  if (getMeaningfulTextLength(state.questionText) === 0) {
     errors.questionText = 'Question text is required'
   }
 

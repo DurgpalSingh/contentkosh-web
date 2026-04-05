@@ -1,8 +1,10 @@
 import { EXAM_DURATION_MIN, EXAM_DURATION_MAX } from './testConstants';
+import { TEST_KIND, type TestKind } from './testConstants';
 
 export type TestFormErrors = {
   name?: string;
   batchId?: string;
+  subjectId?: string;
   deadlineAt?: string;
   durationMinutes?: string;
   defaultMarksPerQuestion?: string;
@@ -11,12 +13,14 @@ export type TestFormErrors = {
 export function validateTestForm(values: {
   name: string;
   batchId?: number;
-  kind: 'practice' | 'exam';
+  subjectId?: number;
+  kind: TestKind;
   startAt?: string;
   deadlineAt?: string;
   durationMinutes?: number;
   defaultMarksPerQuestion?: number;
   requireBatch?: boolean;
+  requireSubject?: boolean;
 }): TestFormErrors {
   const errors: TestFormErrors = {};
 
@@ -28,7 +32,11 @@ export function validateTestForm(values: {
     errors.batchId = 'Please select a batch';
   }
 
-  if (values.kind === 'exam') {
+  if (values.requireSubject && !values.subjectId) {
+    errors.subjectId = 'Please select a subject';
+  }
+
+  if (values.kind === TEST_KIND.EXAM) {
     if (values.startAt && values.deadlineAt) {
       if (new Date(values.deadlineAt) <= new Date(values.startAt)) {
         errors.deadlineAt = 'Deadline must be after start time';

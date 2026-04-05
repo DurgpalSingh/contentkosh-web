@@ -17,6 +17,7 @@ import { EmptyState } from '@/components/common/EmptyState';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { createIndexedTextFilter } from '@/lib/indexedFiltering';
+import { buildSubjectsByCourseIndex } from '@/lib/subjectsByCourseIndex';
 
 export default function ContentsPage() {
   const { user, business, isAuthenticated, isLoading, isInitialized } = useAuthStore();
@@ -47,29 +48,10 @@ export default function ContentsPage() {
     return date ? new Date(date).getTime() : 0;
   }, []);
 
-  const { subjectsByCourseId, subjectIdsByCourseId } = useMemo(() => {
-    const subjectsByCourseIdMap = new Map<number, Subject[]>();
-    const subjectIdsByCourseIdMap = new Map<number, Set<number>>();
-
-    for (const subject of subjects) {
-      const courseId = subject.courseId;
-      if (typeof courseId !== 'number') continue;
-
-      const subjectsForCourse = subjectsByCourseIdMap.get(courseId) ?? [];
-      subjectsForCourse.push(subject);
-      subjectsByCourseIdMap.set(courseId, subjectsForCourse);
-
-      if (typeof subject.id !== 'number') continue;
-      const subjectIdsForCourse = subjectIdsByCourseIdMap.get(courseId) ?? new Set<number>();
-      subjectIdsForCourse.add(subject.id);
-      subjectIdsByCourseIdMap.set(courseId, subjectIdsForCourse);
-    }
-
-    return {
-      subjectsByCourseId: subjectsByCourseIdMap,
-      subjectIdsByCourseId: subjectIdsByCourseIdMap,
-    };
-  }, [subjects]);
+  const { subjectsByCourseId, subjectIdsByCourseId } = useMemo(
+    () => buildSubjectsByCourseIndex(subjects),
+    [subjects],
+  );
 
   const indexedContentFilter = useMemo(() => {
     return createIndexedTextFilter(contents, {

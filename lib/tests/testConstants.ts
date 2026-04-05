@@ -1,3 +1,46 @@
+export const TEACHER_TESTS_FILTER = {
+  ALL: 'all',
+} as const;
+
+export const TEACHER_TEST_PUBLISH_FILTER = {
+  ALL: 'all',
+  DRAFT: 'draft',
+  PUBLISHED: 'published',
+} as const;
+
+export type TeacherTestsKindFacet =
+  | (typeof TEACHER_TESTS_FILTER)['ALL']
+  | TestKind;
+
+export type TeacherTestsPublishFacet =
+  (typeof TEACHER_TEST_PUBLISH_FILTER)[keyof typeof TEACHER_TEST_PUBLISH_FILTER];
+
+  export const TEST_KIND = {
+  PRACTICE: 'practice',
+  EXAM: 'exam',
+} as const;
+
+/** Structural URL segments for dashboard test routes (excluding business slug and dynamic ids). */
+export const TEST_ROUTE_SEGMENT = {
+  DASHBOARD: 'dashboard',
+  TESTS: 'tests',
+  STUDENT: 'student',
+  MYTEST: 'mytest',
+  ATTEMPT: 'attempt',
+  RESULT: 'result',
+} as const;
+
+export type TestKind = (typeof TEST_KIND)[keyof typeof TEST_KIND];
+
+export const TEST_KIND_LABEL: Record<TestKind, string> = {
+  [TEST_KIND.PRACTICE]: 'Practice',
+  [TEST_KIND.EXAM]: 'Exam',
+};
+
+export function isTestKind(value: string): value is TestKind {
+  return value === TEST_KIND.PRACTICE || value === TEST_KIND.EXAM;
+}
+
 export const TEACHER_TEST_TAB = {
   QUESTIONS: 'questions',
   ANALYTICS: 'analytics',

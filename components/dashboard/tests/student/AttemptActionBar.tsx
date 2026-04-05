@@ -1,83 +1,95 @@
 'use client';
 
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-function buildPrimaryNextLabel(params: { hasAnswer: boolean; flagged: boolean; markedForReview: boolean }): string {
-  if (params.hasAnswer && params.flagged) return 'Save-Flag & Next';
+function buildPrimaryNextLabel(params: { hasAnswer: boolean; markedForReview: boolean }): string {
   if (params.hasAnswer && params.markedForReview) return 'Save & Review & Next';
   if (params.hasAnswer) return 'Save & Next';
   if (params.markedForReview) return 'Review & Next';
   return 'Next';
 }
 
-function buildPrimaryNextClass(params: { hasAnswer: boolean; flagged: boolean; markedForReview: boolean }): string {
-  if (params.hasAnswer && params.flagged) return 'bg-amber-600 hover:bg-amber-700 text-white';
-  if (params.hasAnswer && params.markedForReview) return 'bg-cyan-600 hover:bg-cyan-700 text-white';
-  if (params.hasAnswer) return 'bg-emerald-600 hover:bg-emerald-700 text-white';
-  if (params.markedForReview) return 'bg-indigo-600 hover:bg-indigo-700 text-white';
-  return 'bg-slate-900 hover:bg-slate-800 text-white';
+function buildPrimaryNextClass(params: { hasAnswer: boolean; markedForReview: boolean }): string {
+  if (params.hasAnswer && params.markedForReview) return 'bg-cyan-600 hover:bg-cyan-700 text-white shadow-md shadow-cyan-600/25';
+  if (params.hasAnswer) return 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/25';
+  if (params.markedForReview) return 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-600/25';
+  return 'bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-600/25';
 }
 
 export function AttemptActionBar({
   canGoPrev,
   canGoNext,
   hasAnswer,
-  flagged,
   onPrev,
   onNext,
   onClearAnswer,
-  onToggleFlag,
   onToggleMarkForReview,
   markedForReview,
 }: {
   canGoPrev: boolean;
   canGoNext: boolean;
   hasAnswer: boolean;
-  flagged: boolean;
   onPrev: () => void;
   onNext: () => void;
   onClearAnswer: () => void;
-  onToggleFlag: () => void;
   onToggleMarkForReview: () => void;
   markedForReview: boolean;
 }) {
-  const nextLabel = buildPrimaryNextLabel({ hasAnswer, flagged, markedForReview });
-  const nextClass = buildPrimaryNextClass({ hasAnswer, flagged, markedForReview });
+  const nextLabel = buildPrimaryNextLabel({ hasAnswer, markedForReview });
+  const nextClass = buildPrimaryNextClass({ hasAnswer, markedForReview });
   return (
-    <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-3 sm:p-4 flex flex-wrap items-center justify-between gap-2">
-      <div className="flex flex-wrap gap-2">
-        <Button type="button" variant="outline" disabled={!canGoPrev} onClick={onPrev}>
-          Previous
-        </Button>
-        <Button type="button" variant="outline" onClick={onClearAnswer} disabled={!hasAnswer}>
-          Clear answer
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          className={flagged ? 'border-amber-400 bg-amber-50 text-amber-900' : 'border-amber-200 text-amber-900 hover:bg-amber-50'}
-          onClick={onToggleFlag}
-        >
-          {flagged ? 'Flag: On' : 'Flag'}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          className={
-            markedForReview
-              ? 'border-violet-400 bg-violet-50 text-violet-900'
-              : 'border-violet-200 text-violet-800 hover:bg-violet-50'
-          }
-          onClick={onToggleMarkForReview}
-        >
-          {markedForReview ? 'Review: On' : 'Mark for review'}
-        </Button>
-      </div>
+    <div className="w-full shrink-0 rounded-2xl border border-slate-200/90 bg-gradient-to-b from-white to-slate-50/90 px-3 py-3.5 shadow-[0_2px_12px_-4px_rgba(15,23,42,0.08)] sm:px-4 sm:py-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-y-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="default"
+            className="h-10 border-slate-200 bg-white px-4 text-slate-800 shadow-sm hover:bg-slate-50 gap-1.5"
+            disabled={!canGoPrev}
+            onClick={onPrev}
+          >
+            <ChevronLeft className="h-4 w-4 opacity-70" aria-hidden />
+            Previous
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="default"
+            className="h-10 border-slate-200 bg-white px-4 text-slate-800 shadow-sm hover:bg-slate-50"
+            onClick={onClearAnswer}
+            disabled={!hasAnswer}
+          >
+            Clear answer
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="default"
+            className={`h-10 px-4 shadow-sm ${
+              markedForReview
+                ? 'border-violet-300 bg-violet-50 text-violet-900 hover:bg-violet-100/80'
+                : 'border-violet-200/80 text-violet-900 hover:bg-violet-50'
+            }`}
+            onClick={onToggleMarkForReview}
+          >
+            {markedForReview ? 'Review: On' : 'Mark for review'}
+          </Button>
+        </div>
 
-      <div className="flex flex-wrap gap-2 justify-end">
-        <Button type="button" className={nextClass} disabled={!canGoNext} onClick={onNext}>
-          {nextLabel}
-        </Button>
+        <div className="flex justify-end sm:pl-2">
+          <Button
+            type="button"
+            size="lg"
+            className={`h-11 min-w-[9rem] gap-1.5 px-5 ${nextClass}`}
+            disabled={!canGoNext}
+            onClick={onNext}
+          >
+            {nextLabel}
+            <ChevronRight className="h-4 w-4 opacity-90" aria-hidden />
+          </Button>
+        </div>
       </div>
     </div>
   );

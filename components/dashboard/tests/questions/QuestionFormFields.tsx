@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
+import { RichTextField } from '@/components/common/RichTextField'
 import { questionType, questionTypeLabel } from '@/lib/tests/testUiMappers'
 import { useTeacherQuestionForm } from './useTeacherQuestionForm'
 import { TestKind } from '@/lib/tests/testTeacherApi'
@@ -60,29 +60,26 @@ export const QuestionFormFields = ({ form, formId, kind }: QuestionFormFieldsPro
 
       <div className="space-y-2">
         <Label htmlFor={`${formId}-qtext`}>Question</Label>
-        <Textarea
-          id={`${formId}-qtext`}
+        <RichTextField
           value={questionText}
-          onChange={(e) => setQuestionText(e.target.value)}
-          rows={3}
-          required
+          onChange={setQuestionText}
+          placeholder="Write the question…"
+          ariaLabel={`${formId}-qtext`}
         />
       </div>
 
-      {kind === 'practice' && (
-        <div className="space-y-2">
-          <Label htmlFor={`${formId}-explanation`}>Explanation</Label>
-          <Textarea
-            id={`${formId}-explanation`}
-            value={explanation}
-            onChange={(e) => setExplanation(e.target.value)}
-            rows={3}
-            placeholder="Optional. Shown to students after the attempt when enabled on the test."
-          />
-          <p className="text-xs text-gray-500">
-            Explains the correct answer after submission (if the test allows explanations).
-          </p>
-        </div>)}
+      <div className="space-y-2">
+        <Label htmlFor={`${formId}-explanation`}>Explanation</Label>
+        <RichTextField
+          value={explanation}
+          onChange={setExplanation}
+          placeholder="Optional explanation shown to students (when enabled by test settings)."
+          ariaLabel={`${formId}-explanation`}
+        />
+        <p className="text-xs text-gray-500">
+          Explains the correct answer after submission (if the test allows explanations).
+        </p>
+      </div>
 
       {showOptions && (
         <div className="space-y-2">

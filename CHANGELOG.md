@@ -1,6 +1,14 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.2.3] - Subject linked with test + text editor
+**P.R Raised by** : shubh404-SE on **Date** : 2026-04-04
+
+### Added
+  - Added subject field in test mudule, updated all components to show subject name.
+  - added a filter component for test module. using same indexedFiltering function to filter items.
+  - added text editor for question text and explanation.
+---
 ## Version [1.2.2] - Subject linked with content
 **P.R Raised by** : shubh404-SE on **Date** : 2026-03-25
 

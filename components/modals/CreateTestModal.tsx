@@ -16,15 +16,25 @@ import {
 import { resultVisibilityExamLabel } from '@/lib/tests/testUiMappers';
 import { validateTestForm, type TestFormErrors } from '@/lib/tests/testFormValidation';
 import { toast } from 'sonner';
+import type { Subject } from '@/lib/api';
+import { Select } from '@/components/ui/select';
+import { TEST_KIND, TEST_KIND_LABEL, type TestKind } from '@/lib/tests/testConstants';
 
-export type TestKindForm = 'practice' | 'exam';
+export type { TestKind };
 
 interface CreateTestModalProps {
   isOpen: boolean;
   onClose: () => void;
   businessId: number;
-  batches: { id: number; displayName?: string; codeName?: string }[];
-  onCreated: (kind: TestKindForm, testId: string) => void;
+  batches: {
+    id: number
+    displayName?: string
+    codeName?: string
+    courseId?: number
+    examId?: number
+  }[]
+  subjects: Subject[]
+  onCreated: (kind: TestKind, testId: string) => void;
 }
 
 function defaultExamWindow(): { startAt: string; deadlineAt: string } {
@@ -42,10 +52,12 @@ export function CreateTestModal({
   onClose,
   businessId,
   batches,
+  subjects,
   onCreated,
 }: CreateTestModalProps) {
-  const [kind, setKind] = useState<TestKindForm>('practice');
-  const [batchId, setBatchId] = useState<number>(0);
+  const [kind, setKind] = useState<TestKind>(TEST_KIND.PRACTICE);
+  const [batchId, setBatchId] = useState<number>();
+  const [subjectId, setSubjectId] = useState<number>();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [durationMinutes, setDurationMinutes] = useState(60);
@@ -59,26 +71,44 @@ export function CreateTestModal({
 
   useEffect(() => {
     if (!isOpen) return;
-    const first = batches[0]?.id;
-    if (first) setBatchId(first);
+    setBatchId(0);
+    setSubjectId(0);
     setExamWindow(defaultExamWindow());
     setError(null);
     setFormErrors({});
   }, [isOpen, batches]);
 
+  const filteredSubjects = (() => {
+    const selectedBatch = batches.find((b) => b.id === batchId)
+    if (!selectedBatch?.courseId) return []
+    return subjects.filter((s) => s.courseId === selectedBatch?.courseId)
+  })()
+
+  useEffect(() => {
+    if (!isOpen) return
+    const nextList = filteredSubjects
+    setSubjectId((prev) => {
+      if (prev && nextList.some((s) => s.id === prev)) return prev
+      return nextList[0]?.id ?? 0
+    })
+  }, [batchId, filteredSubjects, isOpen])
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) onClose();
+      if (e.key !== 'Escape' || !isOpen) return;
+      if (e.defaultPrevented) return;
+      onClose();
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [isOpen, onClose]);
 
   const reset = () => {
-    setKind('practice');
+    setKind(TEST_KIND.PRACTICE);
     setName('');
     setDescription('');
     setDurationMinutes(60);
+    setSubjectId(0);
     setResultVisibility(ResultVisibilityExam._0);
     setExamWindow(defaultExamWindow());
     setError(null);
@@ -88,16 +118,18 @@ export function CreateTestModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const defaultMarksPerQuestion = kind === 'exam' ? 1 : undefined;
+    const defaultMarksPerQuestion = kind === TEST_KIND.EXAM ? 1 : undefined;
     const errors = validateTestForm({
       name,
       batchId: batchId || undefined,
+      subjectId: subjectId || undefined,
       kind,
-      startAt: kind === 'exam' ? examWindow.startAt : undefined,
-      deadlineAt: kind === 'exam' ? examWindow.deadlineAt : undefined,
-      durationMinutes: kind === 'exam' ? durationMinutes : undefined,
+      startAt: kind === TEST_KIND.EXAM ? examWindow.startAt : undefined,
+      deadlineAt: kind === TEST_KIND.EXAM ? examWindow.deadlineAt : undefined,
+      durationMinutes: kind === TEST_KIND.EXAM ? durationMinutes : undefined,
       defaultMarksPerQuestion,
       requireBatch: true,
+      requireSubject: true,
     });
 
     if (Object.keys(errors).length > 0) {
@@ -110,9 +142,10 @@ export function CreateTestModal({
     setError(null);
 
     try {
-      if (kind === 'practice') {
+      if (kind === TEST_KIND.PRACTICE) {
         const body = {
           batchId,
+          subjectId,
           name: name.trim(),
           ...(description.trim() ? { description: description.trim() } : {}),
         } as unknown as CreatePracticeTestDTO;
@@ -120,12 +153,13 @@ export function CreateTestModal({
         const id = res.data?.id;
         if (!id) throw new Error('No test id returned');
         toast.success('Practice test created');
-        onCreated('practice', id);
+        onCreated(TEST_KIND.PRACTICE, id);
         reset();
         onClose();
       } else {
         const body = {
           batchId,
+          subjectId,
           name: name.trim(),
           startAt: new Date(examWindow.startAt).toISOString(),
           deadlineAt: new Date(examWindow.deadlineAt).toISOString(),
@@ -138,7 +172,7 @@ export function CreateTestModal({
         const id = res.data?.id;
         if (!id) throw new Error('No test id returned');
         toast.success('Exam test created');
-        onCreated('exam', id);
+        onCreated(TEST_KIND.EXAM, id);
         reset();
         onClose();
       }
@@ -151,6 +185,12 @@ export function CreateTestModal({
     } finally {
       setLoading(false);
     }
+  };
+
+  const closeModal = () => {
+    if (loading) return;
+    reset();
+    onClose();
   };
 
   if (!isOpen) return null;
@@ -169,7 +209,7 @@ export function CreateTestModal({
           </h2>
           <button
             type="button"
-            onClick={onClose}
+            onClick={closeModal}
             className="rounded-lg p-2 text-gray-500 hover:bg-gray-100"
             aria-label="Close"
           >
@@ -179,58 +219,76 @@ export function CreateTestModal({
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           <div className="space-y-2">
-            <Label>Test type</Label>
+            <Label>Test type *</Label>
             <div className="flex gap-3">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="radio"
                   name="kind"
-                  checked={kind === 'practice'}
-                  onChange={() => setKind('practice')}
+                  checked={kind === TEST_KIND.PRACTICE}
+                  onChange={() => setKind(TEST_KIND.PRACTICE)}
                 />
-                <span>Practice</span>
+                <span>{TEST_KIND_LABEL[TEST_KIND.PRACTICE]}</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="radio"
                   name="kind"
-                  checked={kind === 'exam'}
-                  onChange={() => setKind('exam')}
+                  checked={kind === TEST_KIND.EXAM}
+                  onChange={() => setKind(TEST_KIND.EXAM)}
                 />
-                <span>Exam</span>
+                <span>{TEST_KIND_LABEL[TEST_KIND.EXAM]}</span>
               </label>
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="batch">Batch</Label>
-            <select
+            <Label htmlFor="batch">Batch *</Label>
+            <Select
               id="batch"
-              className="w-full border rounded-md h-10 px-3 text-sm"
-              value={batchId || ''}
-              onChange={(e) => setBatchId(Number(e.target.value))}
-            >
-              <option value="">Select batch</option>
-              {batches.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.displayName || b.codeName || `Batch ${b.id}`}
-                </option>
-              ))}
-            </select>
+              value={batchId ?? 0}
+              onChange={(v) => setBatchId(Number(v))}
+              options={batches.map((b) => ({
+                value: b.id,
+                label: b.displayName || b.codeName || `Batch ${b.id}`,
+              }))}
+              placeholder="Select batch"
+              triggerClassName="border-blue-200"
+            />
             {formErrors.batchId && (
               <p className="text-sm text-red-600 mt-1">{formErrors.batchId}</p>
             )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="name">Name</Label>
+            <Label htmlFor="subject">Subject *</Label>
+            <Select
+              id="subject"
+              value={subjectId ?? 0}
+              onChange={(v) => setSubjectId(Number(v))}
+              options={filteredSubjects.map((s) => ({
+                value: s.id ?? 0,
+                label: s.name ?? `Subject ${s.id ?? ''}`,
+              }))}
+              disabled={filteredSubjects.length === 0}
+              placeholder="Select subject"
+              triggerClassName="border-gray-200"
+            />
+            {formErrors.subjectId && (
+              <p className="text-sm text-red-600 mt-1">{formErrors.subjectId}</p>
+            )}
+          </div>
+
+          <div className="space-y-1 flex flex-col gap-1">
+            <Label htmlFor="name">Test Name *</Label>
             <Input
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Test title"
-              required
+              maxLength={50}
             />
+            <p className="text-xs text-gray-500">{name.length}/50 characters</p>
             {formErrors.name && (
               <p className="text-sm text-red-600 mt-1">{formErrors.name}</p>
             )}
@@ -247,7 +305,7 @@ export function CreateTestModal({
             />
           </div>
 
-          {kind === 'exam' && (
+          {kind === TEST_KIND.EXAM && (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-2">
@@ -291,19 +349,17 @@ export function CreateTestModal({
               </div>
               <div className="space-y-2">
                 <Label htmlFor="visibility">Result visibility</Label>
-                <select
+                <Select
                   id="visibility"
-                  className="w-full border rounded-md h-10 px-3 text-sm"
                   value={resultVisibility}
-                  onChange={(e) => setResultVisibility(Number(e.target.value))}
-                >
-                  <option value={ResultVisibilityExam._0}>
-                    {resultVisibilityExamLabel(0)}
-                  </option>
-                  <option value={ResultVisibilityExam._1}>
-                    {resultVisibilityExamLabel(1)}
-                  </option>
-                </select>
+                  onChange={(v) => setResultVisibility(Number(v))}
+                  options={[
+                    { value: ResultVisibilityExam._0, label: resultVisibilityExamLabel(0) },
+                    { value: ResultVisibilityExam._1, label: resultVisibilityExamLabel(1) },
+                  ]}
+                  placeholder="Select visibility"
+                  triggerClassName="border-gray-200"
+                />
               </div>
             </>
           )}

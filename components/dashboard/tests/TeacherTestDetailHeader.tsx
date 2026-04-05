@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import type { ExamTest, PracticeTest } from '@/lib/api'
-import type { TestKind } from '@/lib/tests/testTeacherApi'
+import { TEST_KIND, TEST_KIND_LABEL, type TestKind } from '@/lib/tests/testConstants'
 import {
   formatDurationMinutes,
   testStatus,
@@ -30,6 +30,9 @@ export const TeacherTestDetailHeader = ({
   isDraft,
   onPublish,
 }: TeacherTestDetailHeaderProps) => {
+  const batchName = (test as { batchName?: string }).batchName
+  const subjectName = (test as { subjectName?: string }).subjectName
+
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
       <div>
@@ -44,10 +47,10 @@ export const TeacherTestDetailHeader = ({
           <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
           <span
             className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-              kind === 'practice' ? 'bg-emerald-50 text-emerald-800' : 'bg-amber-50 text-amber-800'
+              kind === TEST_KIND.PRACTICE ? 'bg-emerald-50 text-emerald-800' : 'bg-amber-50 text-amber-800'
             }`}
           >
-            {kind === 'practice' ? 'Practice' : 'Exam'}
+            {TEST_KIND_LABEL[kind]}
           </span>
           <span
             className={`text-xs font-medium px-2 py-0.5 rounded-full ${
@@ -58,11 +61,16 @@ export const TeacherTestDetailHeader = ({
           </span>
         </div>
         <p className="text-sm text-gray-600 mt-1">
-          {test.batchName ? `${test.batchName} · ` : ''}
-          {kind === 'exam' && 'durationMinutes' in test
-            ? `Duration ${formatDurationMinutes(test.durationMinutes)} · `
-            : ''}
-          Questions {questionCount}
+          {[
+            batchName,
+            subjectName,
+            kind === TEST_KIND.EXAM && 'durationMinutes' in test
+              ? `Duration ${formatDurationMinutes(test.durationMinutes)}`
+              : '',
+            `Questions ${questionCount}`,
+          ]
+            .filter((s) => s !== '')
+            .join(' · ')}
         </p>
       </div>
       <div className="flex flex-wrap gap-2">

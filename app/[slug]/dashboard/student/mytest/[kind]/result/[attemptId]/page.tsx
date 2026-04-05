@@ -16,13 +16,15 @@ import { toast } from 'sonner';
 import { getApiErrorDetailMessage } from '@/lib/tests/getApiErrorDetailMessage';
 import { studentTestBasePath } from '@/lib/tests/studentTestCatalog';
 import { StudentTestResultView } from '@/components/dashboard/tests/student/StudentTestResultView';
+import { isTestKind, TEST_KIND, type TestKind } from '@/lib/tests/testConstants';
 
 type AttemptDetails = PracticeTestAttemptDetails | ExamTestAttemptDetails;
 
 export default function StudentMyTestResultPage() {
   const params = useParams();
   const slug = params.slug as string;
-  const kind = params.kind as 'practice' | 'exam';
+  const rawKind = String(params.kind ?? '');
+  const kind: TestKind | null = isTestKind(rawKind) ? rawKind : null;
   const attemptId = params.attemptId as string;
   const { business, isAuthenticated, isInitialized } = useAuthStore();
   const businessId = business?.id;
@@ -32,12 +34,12 @@ export default function StudentMyTestResultPage() {
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    if (typeof businessId !== 'number') return;
+    if (typeof businessId !== 'number' || !kind) return;
     setLoading(true);
     setError(null);
     try {
       const res =
-        kind === 'practice'
+        kind === TEST_KIND.PRACTICE
           ? await PracticeTestsService.getApiBusinessPracticeTestsAttempts(businessId, attemptId)
           : await ExamTestsService.getApiBusinessExamTestsAttempts(businessId, attemptId);
       const data = res.data;
@@ -70,6 +72,19 @@ export default function StudentMyTestResultPage() {
   }
 
   if (!isAuthenticated || typeof businessId !== 'number') return null;
+
+  if (!kind) {
+    return (
+      <div className="space-y-4">
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          Invalid test type in URL.
+        </div>
+        <Button variant="outline" asChild>
+          <Link href={studentTestBasePath(slug)}>Back to My Tests</Link>
+        </Button>
+      </div>
+    );
+  }
 
   if (error && !details) {
     return (

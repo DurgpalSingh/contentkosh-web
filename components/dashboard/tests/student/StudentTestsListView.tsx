@@ -6,7 +6,8 @@ import { FlaskConical } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Button } from '@/components/ui/button';
-import { ExamTestsService, PracticeTestsService } from '@/lib/api';
+import { ExamTestsService, PracticeTestsService, type Subject } from '@/lib/api';
+import { createIndexedTextFilter } from '@/lib/indexedFiltering';
 import { EmptyState } from '@/components/common/EmptyState';
 import type { PracticeCatalogRow, ExamCatalogRow, UnifiedStudentRow } from '@/lib/tests/studentTestCatalog';
 import {
@@ -16,24 +17,31 @@ import {
   studentExamResultPath,
   studentPracticeAttemptPath,
   studentPracticeResultPath,
+  TEST_CARD_ACTION,
 } from '@/lib/tests/studentTestCatalog';
 import { StartAttemptConfirmModal, type StartAttemptTestInfo } from '@/components/modals/StartAttemptConfirmModal';
-import { formatDateTime, formatDurationMinutes, testStatus } from '@/lib/tests/testUiMappers';
-import { TestsFiltersBar } from '@/components/dashboard/tests/TestsFiltersBar';
-import { STUDENT_TEST_STATUS } from '@/lib/tests/testConstants';
+import { formatDateTime, formatDurationMinutes, type TestListIndexedFacets } from '@/lib/tests/testUiMappers';
+import {
+  TestsFiltersBar,
+  type TestsKindFilter,
+} from '@/components/dashboard/tests/TestsFiltersBar';
+import { buildTestListSelectedFacets, useTestListSubjectIndex } from '@/lib/subjectsByCourseIndex';
+import { STUDENT_TEST_STATUS, TEACHER_TESTS_FILTER, TEACHER_TEST_PUBLISH_FILTER } from '@/lib/tests/testConstants';
 
 export function StudentTestsListView({
   slug,
   practiceRows,
   examRows,
   batches,
+  subjects,
   loading,
   error,
 }: {
   slug: string;
   practiceRows: PracticeCatalogRow[];
   examRows: ExamCatalogRow[];
-  batches: { id: number; displayName?: string; codeName?: string }[];
+  batches: { id: number; displayName?: string; codeName?: string; courseId?: number }[];
+  subjects: Subject[];
   loading: boolean;
   error: string | null;
 }) {
@@ -42,8 +50,14 @@ export function StudentTestsListView({
   const businessId = business?.id;
 
   const [search, setSearch] = useState('');
-  const [batchFilter, setBatchFilter] = useState<number | 'all'>('all');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'draft' | 'published'>('all');
+  const [batchFilter, setBatchFilter] = useState<number | typeof TEACHER_TESTS_FILTER.ALL>(
+    TEACHER_TESTS_FILTER.ALL,
+  );
+  const [subjectFilter, setSubjectFilter] = useState<number | typeof TEACHER_TESTS_FILTER.ALL>(
+    TEACHER_TESTS_FILTER.ALL,
+  );
+  const [kindFilter, setKindFilter] = useState<TestsKindFilter>(TEACHER_TESTS_FILTER.ALL);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'draft' | 'published'>(TEACHER_TEST_PUBLISH_FILTER.ALL);
 
   const [startConfirmOpen, setStartConfirmOpen] = useState(false);
   const [startConfirmPayload, setStartConfirmPayload] = useState<StartAttemptTestInfo | null>(null);
@@ -54,29 +68,64 @@ export function StudentTestsListView({
     return [...p, ...e].sort((a, b) => (a.row.name ?? '').localeCompare(b.row.name ?? ''));
   }, [practiceRows, examRows]);
 
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    const desiredStatus = statusFilter === 'all' ? null : statusFilter === 'draft' ? testStatus.draft : testStatus.published;
+  const subjectIndex = useTestListSubjectIndex(
+    subjects,
+    batches,
+    batchFilter,
+    subjectFilter,
+    setSubjectFilter,
+  );
 
-    return merged.filter((item) => {
-      const r = item.row;
-      if (q) {
-        const name = (r.name ?? '').toLowerCase();
-        const desc = (r.description ?? '').toLowerCase();
-        const batchName = (r.batchName ?? '').toLowerCase();
-        if (!name.includes(q) && !desc.includes(q) && !batchName.includes(q)) return false;
-      }
-      if (desiredStatus != null) {
-        const st = typeof r.status === 'number' ? r.status : null;
-        if (st == null || st !== desiredStatus) return false;
-      }
-      if (batchFilter !== 'all') {
-        const bid = Number(r.batchId);
-        if (Number.isNaN(bid) || bid !== batchFilter) return false;
-      }
-      return true;
+  const indexedTestFilter = useMemo(() => {
+    return createIndexedTextFilter<UnifiedStudentRow, string, TestListIndexedFacets>(merged, {
+      getId: (item) => `${item.kind}-${item.row.id}`,
+      getSearchText: (item) => {
+        const r = item.row;
+        const parts = [r.name, r.description, r.batchName, r.subjectName].filter(
+          (x): x is string => typeof x === 'string' && x.length > 0,
+        );
+        return parts.join(' ');
+      },
+      getCreatedAt: (item) => {
+        const r = item.row;
+        if ('lastAttemptAt' in r && r.lastAttemptAt) return r.lastAttemptAt;
+        return undefined;
+      },
+      getFacetValues: (item, id) => {
+        const r = item.row;
+        const batchId = Number(r.batchId);
+        const status = typeof r.status === 'number' ? r.status : 0;
+        const entries: Array<readonly [string, keyof TestListIndexedFacets, string | number]> = [
+          [id, 'batchId', batchId],
+          [id, 'status', status],
+          [id, 'kind', item.kind],
+        ];
+        const sid = r.subjectId;
+        if (typeof sid === 'number') entries.push([id, 'subjectId', sid]);
+        return entries;
+      },
+      ngramLength: 3,
     });
-  }, [merged, search, statusFilter, batchFilter]);
+  }, [merged]);
+
+  const filtered = useMemo(() => {
+    return indexedTestFilter.filter({
+      query: search,
+      selectedFacets: buildTestListSelectedFacets({
+        batchFilter,
+        subjectFilter,
+        statusFilter,
+        kindFilter,
+      }),
+    });
+  }, [
+    indexedTestFilter,
+    search,
+    batchFilter,
+    subjectFilter,
+    statusFilter,
+    kindFilter,
+  ]);
 
   const startPractice = async (testId: string): Promise<void> => {
     if (typeof businessId !== 'number') throw new Error('Not authorized');
@@ -168,11 +217,20 @@ export function StudentTestsListView({
         search={search}
         onSearchChange={setSearch}
         batches={batches}
-        batchFilter={batchFilter}
-        onBatchFilterChange={setBatchFilter}
-        statusFilter={statusFilter}
-        onStatusFilterChange={setStatusFilter}
-        searchPlaceholder="Search by title, batch, or description…"
+        subjectIndex={subjectIndex}
+        facets={{
+          batch: batchFilter,
+          subject: subjectFilter,
+          kind: kindFilter,
+          status: statusFilter,
+        }}
+        onFacetsChange={(f) => {
+          setBatchFilter(f.batch);
+          setSubjectFilter(f.subject);
+          setKindFilter(f.kind);
+          setStatusFilter(f.status);
+        }}
+        searchPlaceholder="Search by title, batch, description, or subject…"
       />
 
       {error && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</div>}
@@ -220,7 +278,9 @@ export function StudentTestsListView({
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <h3 className="font-semibold text-gray-900 line-clamp-2">{vm.name}</h3>
-                      <p className="text-xs text-gray-500 mt-1">{vm.batchName || 'Batch'}</p>
+                      <p className="text-xs text-gray-500 mt-1 truncate">
+                        {[vm.batchName || 'Batch', vm.subjectName].filter(Boolean).join(' · ')}
+                      </p>
                     </div>
                     <div className="flex items-end gap-1 shrink-0 justify-center">
                       <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${vm.badgeClass}`}>{vm.kindLabel}</span>
@@ -259,7 +319,7 @@ export function StudentTestsListView({
                     )}
                   </dl>
 
-                  {vm.actions.some((a) => a.type === 'locked') && er && (
+                  {vm.actions.some((a) => a.type === TEST_CARD_ACTION.LOCKED) && er && (
                     <div className="rounded-md bg-gray-50 border border-gray-200 px-3 py-2 text-sm text-gray-700">
                       {lockedReasonLabel(vm.lockedReason ?? undefined)}
                     </div>
@@ -268,7 +328,7 @@ export function StudentTestsListView({
 
                 <div className="flex flex-wrap gap-2 mt-auto pt-2">
                   {vm.actions.map((action, index) => {
-                    if (action.type === 'start') {
+                    if (action.type === TEST_CARD_ACTION.START) {
                       return (
                         <Button
                           key={index}
@@ -279,13 +339,14 @@ export function StudentTestsListView({
                         </Button>
                       );
                     }
-                    if (action.type === 'resume') {
+                    if (action.type === TEST_CARD_ACTION.RESUME) {
                       return (
                         <Button
                           key={index}
                           className="flex-1 bg-blue-600 hover:bg-blue-700 w-fit cursor-pointer"
                           onClick={() => {
-                            if (vm.kind === 'practice') router.push(studentPracticeAttemptPath(slug, action.attemptId));
+                            if (vm.kind === 'practice')
+                              router.push(studentPracticeAttemptPath(slug, action.attemptId));
                             else router.push(studentExamAttemptPath(slug, action.attemptId));
                           }}
                         >
@@ -293,7 +354,7 @@ export function StudentTestsListView({
                         </Button>
                       );
                     }
-                    if (action.type === 'view_result') {
+                    if (action.type === TEST_CARD_ACTION.VIEW_RESULT) {
                       return (
                         <Button
                           key={index}
@@ -301,7 +362,8 @@ export function StudentTestsListView({
                           className="flex-1 cursor-pointer"
                           onClick={() => {
                             const aid = action.attemptId;
-                            if (vm.kind === 'practice') router.push(studentPracticeResultPath(slug, vm.id, aid));
+                            if (vm.kind === 'practice')
+                              router.push(studentPracticeResultPath(slug, vm.id, aid));
                             else router.push(studentExamResultPath(slug, vm.id, aid));
                           }}
                         >
@@ -309,14 +371,14 @@ export function StudentTestsListView({
                         </Button>
                       );
                     }
-                    if (action.type === 'soon') {
+                    if (action.type === TEST_CARD_ACTION.SOON) {
                       return (
                         <Button key={index} disabled className="flex-1 w-fit">
                           Starts soon
                         </Button>
                       );
                     }
-                    if (action.type === 'expired') {
+                    if (action.type === TEST_CARD_ACTION.EXPIRED) {
                       return (
                         <Button key={index} disabled className="flex-1 w-fit">
                           Expired

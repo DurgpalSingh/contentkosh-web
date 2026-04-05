@@ -1,10 +1,26 @@
-
-import { TEST_STATUS } from './testConstants';
 import type { PracticeTest, ExamTest } from '@/lib/api';
+import { TEST_KIND } from '@/lib/tests/testConstants';
+
+/** Present on list API responses; generated OpenAPI models may omit these. */
+export type TestListSubjectFields = {
+  subjectId?: number | null;
+  subjectName?: string;
+};
+
+export type PracticeTestWithListFields = PracticeTest & TestListSubjectFields;
+export type ExamTestWithListFields = ExamTest & TestListSubjectFields;
 
 export type UnifiedRow =
-  | { kind: 'practice'; test: PracticeTest }
-  | { kind: 'exam'; test: ExamTest };
+  | { kind: typeof TEST_KIND.PRACTICE; test: PracticeTestWithListFields }
+  | { kind: typeof TEST_KIND.EXAM; test: ExamTestWithListFields };
+
+/** Facet keys for `createIndexedTextFilter` on teacher/student test lists. */
+export type TestListIndexedFacets = {
+  batchId: number;
+  subjectId: number;
+  status: number;
+  kind: string;
+};
 
 /** Mirrors backend `test-enums.ts` numeric values. */
 export const testStatus = {
@@ -66,26 +82,3 @@ export function formatDateTime(iso: string | undefined): string {
   }
 }
 
-export function filterTests(
-  rows: UnifiedRow[],
-  opts: { search: string; batchFilter: number | 'all'; statusFilter: 'all' | 'draft' | 'published' }
-): UnifiedRow[] {
-  const q = opts.search.trim().toLowerCase();
-  const desiredStatus =
-    opts.statusFilter === 'all' ? null
-    : opts.statusFilter === 'draft' ? TEST_STATUS.DRAFT
-    : TEST_STATUS.PUBLISHED;
-
-  return rows.filter((row) => {
-    const t = row.test;
-    if (opts.batchFilter !== 'all' && String(t.batchId) !== String(opts.batchFilter)) return false;
-    if (desiredStatus !== null && (t.status as number) !== desiredStatus) return false;
-    if (q) {
-      const name = (t.name ?? '').toLowerCase();
-      const desc = (t.description ?? '').toLowerCase();
-      const batch = (t.batchName ?? '').toLowerCase();
-      if (!name.includes(q) && !desc.includes(q) && !batch.includes(q)) return false;
-    }
-    return true;
-  });
-}

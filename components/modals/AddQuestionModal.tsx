@@ -7,7 +7,7 @@ import { QuestionFormFields } from '@/components/dashboard/tests/questions/Quest
 import { useTeacherQuestionForm } from '@/components/dashboard/tests/questions/useTeacherQuestionForm'
 import { CreateQuestionDTO, ExamTestsService, PracticeTestsService } from '@/lib/api'
 import { getApiErrorDetailMessage } from '@/lib/tests/getApiErrorDetailMessage'
-import type { TestKind } from '@/lib/tests/testTeacherApi'
+import { TEST_KIND, type TestKind } from '@/lib/tests/testConstants'
 import {
   validateQuestionForm,
   type QuestionFormErrors,
@@ -63,7 +63,7 @@ export const AddQuestionModal = ({
     setError(null)
     try {
       const payload = form.buildPayload() as CreateQuestionDTO
-      if (kind === 'practice') {
+      if (kind === TEST_KIND.PRACTICE) {
         await PracticeTestsService.postApiBusinessPracticeTestsQuestions(
           businessId,
           testId,

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { Clock, Play, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { TEST_KIND, TEST_KIND_LABEL, type TestKind } from '@/lib/tests/testConstants'
 
 export type StartAttemptConfirmModalTiming = {
   startAtLabel?: string
@@ -12,7 +13,7 @@ export type StartAttemptConfirmModalTiming = {
 }
 
 export type StartAttemptTestInfo = {
-  kind: 'practice' | 'exam'
+  kind: TestKind
   testId: string
   testName: string
   batchName?: string
@@ -70,8 +71,8 @@ export function StartAttemptConfirmModal({
       await onConfirm()
       onClose()
     } catch (err: unknown) {
-      const anyErr = err as any
-      setError(anyErr?.body?.message || anyErr?.message || 'Failed to start attempt')
+      const e = err as { body?: { message?: string }; message?: string }
+      setError(e?.body?.message || e?.message || 'Failed to start attempt')
     } finally {
       setLoading(false)
     }
@@ -89,7 +90,7 @@ export function StartAttemptConfirmModal({
               <Play className="h-5 w-5 text-violet-600" aria-hidden />
             </div>
             <h2 className="text-xl font-semibold text-gray-900">
-              Start {kind === 'exam' ? 'exam' : 'practice'}?
+              Start {TEST_KIND_LABEL[kind].toLowerCase()}?
             </h2>
           </div>
           <Button
@@ -142,7 +143,7 @@ export function StartAttemptConfirmModal({
             )}
           </dl>
 
-          {kind === 'exam' && timing && (
+          {kind === TEST_KIND.EXAM && timing && (
             <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
               <div className="flex items-center gap-2 text-sm font-medium text-gray-800">
                 <Clock className="h-4 w-4 text-gray-500" aria-hidden />
@@ -166,7 +167,7 @@ export function StartAttemptConfirmModal({
           )}
 
           <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700">
-            {kind === 'exam'
+            {kind === TEST_KIND.EXAM
               ? 'Your countdown and auto-submit will start once you confirm. You can still navigate questions after you begin.'
               : 'Your practice attempt will start once you confirm. You can begin answering right away.'}
           </div>
