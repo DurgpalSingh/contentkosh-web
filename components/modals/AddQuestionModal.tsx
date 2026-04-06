@@ -87,15 +87,15 @@ export const AddQuestionModal = ({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 overflow-y-auto">
       <div
-        className="bg-white rounded-xl shadow-xl max-w-lg w-full my-8"
+        className="bg-white rounded-2xl shadow-2xl border border-slate-200/80 max-w-5xl w-full max-h-[90vh] my-4 sm:my-6 flex flex-col overflow-hidden"
         role="dialog"
         aria-modal="true"
         aria-labelledby="add-q-title"
       >
-        <div className="flex items-center justify-between border-b px-5 py-4">
-          <h2 id="add-q-title" className="text-lg font-semibold">
+        <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-5 sm:px-8 py-4 sm:py-5">
+          <h2 id="add-q-title" className="text-xl font-semibold tracking-tight text-slate-900">
             Add question
           </h2>
           <button
@@ -108,33 +108,38 @@ export const AddQuestionModal = ({
           </button>
         </div>
 
-        <form onSubmit={(e) => void handleSubmit(e)} className="p-5 space-y-4">
-          <QuestionFormFields form={form} formId="add-question" kind={kind} />
-          {Object.keys(formErrors).length > 0 && (
-            <div className="space-y-1" role="alert">
-              {formErrors.questionText && (
-                <p className="text-sm text-red-600">{formErrors.questionText}</p>
-              )}
-              {formErrors.questionType && (
-                <p className="text-sm text-red-600">{formErrors.questionType}</p>
-              )}
-              {formErrors.options && (
-                <p className="text-sm text-red-600">{formErrors.options}</p>
-              )}
-              {formErrors.correctOption && (
-                <p className="text-sm text-red-600">{formErrors.correctOption}</p>
-              )}
-              {formErrors.correctAnswer && (
-                <p className="text-sm text-red-600">{formErrors.correctAnswer}</p>
-              )}
-            </div>
-          )}
-          {error && (
-            <p className="text-sm text-red-600" role="alert">
-              {error}
-            </p>
-          )}
-          <div className="flex justify-end gap-2 pt-2">
+        <form
+          onSubmit={(e) => void handleSubmit(e)}
+          className="flex min-h-0 flex-1 flex-col overflow-hidden"
+        >
+          <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-5 sm:p-8">
+            <QuestionFormFields form={form} formId="add-question" kind={kind} />
+            {Object.keys(formErrors).length > 0 && (
+              <div className="space-y-1" role="alert">
+                {formErrors.questionText && (
+                  <p className="text-sm text-red-600">{formErrors.questionText}</p>
+                )}
+                {formErrors.questionType && (
+                  <p className="text-sm text-red-600">{formErrors.questionType}</p>
+                )}
+                {formErrors.options && (
+                  <p className="text-sm text-red-600">{formErrors.options}</p>
+                )}
+                {formErrors.correctOption && (
+                  <p className="text-sm text-red-600">{formErrors.correctOption}</p>
+                )}
+                {formErrors.correctAnswer && (
+                  <p className="text-sm text-red-600">{formErrors.correctAnswer}</p>
+                )}
+              </div>
+            )}
+            {error && (
+              <p className="text-sm text-red-600" role="alert">
+                {error}
+              </p>
+            )}
+          </div>
+          <div className="flex shrink-0 justify-end gap-2 border-t border-slate-100 bg-slate-50/60 px-5 py-4 sm:px-8">
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>

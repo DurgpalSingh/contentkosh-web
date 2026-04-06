@@ -221,7 +221,7 @@ function ResultQuestionCard({
         <h3 className="font-semibold text-gray-900">Question {index}</h3>
         <span className="text-xs text-gray-500">{questionTypeLabel(q.type)}</span>
       </div>
-      <div className="mt-2 text-gray-800">
+      <div className="mt-2 text-gray-800 min-w-0">
         <HtmlContent html={body} />
       </div>
 

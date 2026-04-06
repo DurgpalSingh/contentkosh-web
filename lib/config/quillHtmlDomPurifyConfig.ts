@@ -1,5 +1,5 @@
 /**
- * DOMPurify allowlists for rendering Quill/rich HTML (e.g. `HtmlContent`).
+ * DOMPurify allowlists for rendering rich HTML (Quill/TipTap + math) in `HtmlContent`.
  * Keep tags and per-tag attributes aligned with
  * `contentkosh-backend/src/config/quillSanitizeConfig.ts`.
  */
@@ -23,13 +23,15 @@ export const QUIll_DOM_PURIFY_ALLOWED_TAGS = [
   'li',
   'a',
   'span',
+  'div',
 ] as const;
 
-/** Same shape as backend `QUIll_SANITIZE_ALLOWED_ATTRIBUTES` (for documentation parity; DOMPurify uses a flat `ALLOWED_ATTR`). */
+/** Same shape as backend `QUIll_SANITIZE_ALLOWED_ATTRIBUTES` (DOMPurify uses a flat `ALLOWED_ATTR` union). */
 export const QUIll_DOM_PURIFY_ALLOWED_ATTRIBUTES_BY_TAG: Readonly<Record<string, readonly string[]>> = {
   a: ['href', 'target', 'rel'],
-  span: ['class'],
+  span: ['class', 'data-type', 'data-latex'],
   p: ['class'],
+  div: ['class', 'data-type', 'data-latex'],
 } as const;
 
 /** Global attribute allowlist required by DOMPurify (union of per-tag attrs above). */
