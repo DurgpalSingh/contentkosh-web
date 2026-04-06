@@ -3,6 +3,7 @@
 import {
   useCallback,
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -14,6 +15,10 @@ import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Mathematics from '@tiptap/extension-mathematics';
 import Placeholder from '@tiptap/extension-placeholder';
+import { Table } from '@tiptap/extension-table';
+import TableRow from '@tiptap/extension-table-row';
+import TableCell from '@tiptap/extension-table-cell';
+import TableHeader from '@tiptap/extension-table-header';
 import katex from 'katex';
 import {
   Bold,
@@ -23,6 +28,7 @@ import {
   ListOrdered,
   Quote,
   Strikethrough,
+  Table2,
   Underline,
   Link2,
   Undo2,
@@ -31,21 +37,51 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { MATH_PALETTE_CATEGORIES } from '@/lib/richText/mathPaletteConstants';
 import {
   MATH_INSERT_PLACEHOLDER_LATEX,
+  MATH_PALETTE_CATEGORIES,
+  RICH_TEXT_TABLE_INSERT_COLS_DEFAULT,
+  RICH_TEXT_TABLE_INSERT_MAX,
+  RICH_TEXT_TABLE_INSERT_MIN,
+  RICH_TEXT_TABLE_INSERT_ROWS_DEFAULT,
+  RICH_TEXT_TOOLTIP,
   TIPTAP_BLOCK_MATH_NODE_NAME,
   TIPTAP_INLINE_MATH_NODE_NAME,
   TIPTAP_KATEX_OPTIONS,
-} from '@/lib/richText/tiptapKatexConstants';
-import { RICH_TEXT_TOOLTIP } from '@/lib/richText/tiptapKatexConstants';
+} from '@/lib/richText/richTextConstants';
 import { cn } from '@/lib/utils';
 
 import 'katex/dist/katex.min.css';
 
 const HEADING_LEVELS = [1, 2, 3] as const;
+
+const BLOCK_STYLE_OPTIONS = [
+  { value: 'paragraph', label: 'Paragraph' },
+  ...HEADING_LEVELS.map((l) => ({ value: String(l), label: `Heading ${l}` })),
+];
+
+/** TipTap root + lists + math placeholder + tables (Tailwind only, no separate CSS file) */
+const RICH_TEXT_EDITOR_ROOT_CLASS = cn(
+  'max-w-none min-h-[140px] px-3 py-2 text-sm leading-relaxed text-foreground focus:outline-none',
+  '[&_p]:mb-2 [&_p:last-child]:mb-0',
+  '[&_h1]:text-2xl [&_h1]:font-semibold [&_h2]:text-xl [&_h2]:font-semibold [&_h3]:text-lg [&_h3]:font-semibold',
+  '[&_blockquote]:border-l-[3px] [&_blockquote]:border-border [&_blockquote]:pl-3 [&_blockquote]:my-2 [&_blockquote]:text-muted-foreground',
+  '[&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-6 [&_ol]:pl-6 [&_ul]:my-2 [&_ol]:my-2 [&_li]:list-item',
+  '[&_ul_ul]:list-[circle] [&_ul_ul_ul]:list-[square]',
+  '[&_p.is-empty]:before:content-[attr(data-placeholder)]',
+  '[&_p.is-empty]:before:float-left',
+  '[&_p.is-empty]:before:text-muted-foreground',
+  '[&_p.is-empty]:before:pointer-events-none',
+  '[&_p.is-empty]:before:h-0',
+  '[&_table]:my-3 [&_table]:w-full [&_table]:border-collapse [&_table]:border [&_table]:border-border [&_table]:text-sm',
+  '[&_thead]:bg-muted/30',
+  '[&_th]:border [&_th]:border-border [&_th]:bg-muted/30 [&_th]:px-2 [&_th]:py-2 [&_th]:text-left [&_th]:font-medium',
+  '[&_td]:border [&_td]:border-border [&_td]:px-2 [&_td]:py-2 [&_td]:align-top',
+  '[&_td_p]:mb-0 [&_th_p]:mb-0',
+);
 
 /**
  * Toolbar buttons would otherwise take focus on mousedown, clearing the editor selection before click.
@@ -123,6 +159,11 @@ export function RichTextField({
   const linkSelectionRef = useRef<{ from: number; to: number } | null>(null);
   /** Captured when opening the math palette so symbol inserts work after the editor blurs */
   const mathPaletteSelectionRef = useRef<{ from: number; to: number } | null>(null);
+  const [tablePopoverOpen, setTablePopoverOpen] = useState(false);
+  const [tableRows, setTableRows] = useState(RICH_TEXT_TABLE_INSERT_ROWS_DEFAULT);
+  const [tableCols, setTableCols] = useState(RICH_TEXT_TABLE_INSERT_COLS_DEFAULT);
+  const [tableWithHeader, setTableWithHeader] = useState(true);
+  const blockStyleSelectId = useId();
 
   const extensions = useMemo(
     () => [
@@ -139,6 +180,15 @@ export function RichTextField({
           },
         },
       }),
+      Table.configure({
+        resizable: false,
+        HTMLAttributes: {
+          class: 'border-collapse border border-border w-full my-3 text-sm',
+        },
+      }),
+      TableRow,
+      TableHeader,
+      TableCell,
       Mathematics.configure({
         katexOptions: TIPTAP_KATEX_OPTIONS,
         inlineOptions: {
@@ -162,20 +212,23 @@ export function RichTextField({
     [placeholder],
   );
 
+  const editorProps = useMemo(
+    () => ({
+      attributes: {
+        class: cn(RICH_TEXT_EDITOR_ROOT_CLASS),
+        'aria-label': ariaLabel ?? 'Rich text',
+      },
+    }),
+    [ariaLabel],
+  );
+
   const editor = useEditor({
     immediatelyRender: false,
     /** Required so toolbar active states and Undo/Redo reflect selection and doc changes */
     shouldRerenderOnTransaction: true,
     extensions,
     content: value || '',
-    editorProps: {
-      attributes: {
-        class: cn(
-          'rich-text-field-editor prose prose-sm max-w-none min-h-[140px] px-3 py-2 focus:outline-none',
-        ),
-        'aria-label': ariaLabel ?? 'Rich text',
-      },
-    },
+    editorProps,
     onUpdate: ({ editor: ed }) => {
       onChange(ed.getHTML());
     },
@@ -218,6 +271,20 @@ export function RichTextField({
       })
       .run();
   }, [editor]);
+
+  const insertTableFromPopover = useCallback(() => {
+    if (!editor) return;
+    const rows = Math.min(
+      RICH_TEXT_TABLE_INSERT_MAX,
+      Math.max(RICH_TEXT_TABLE_INSERT_MIN, Math.floor(Number(tableRows)) || RICH_TEXT_TABLE_INSERT_ROWS_DEFAULT),
+    );
+    const cols = Math.min(
+      RICH_TEXT_TABLE_INSERT_MAX,
+      Math.max(RICH_TEXT_TABLE_INSERT_MIN, Math.floor(Number(tableCols)) || RICH_TEXT_TABLE_INSERT_COLS_DEFAULT),
+    );
+    editor.chain().focus().insertTable({ rows, cols, withHeaderRow: tableWithHeader }).run();
+    setTablePopoverOpen(false);
+  }, [editor, tableRows, tableCols, tableWithHeader]);
 
   const insertLatexSnippet = useCallback(
     (latex: string) => {
@@ -288,36 +355,35 @@ export function RichTextField({
   return (
     <div className="rounded-md border border-slate-200 bg-white overflow-hidden" aria-label={ariaLabel}>
       <div className="flex flex-wrap items-center gap-1 border-b border-slate-100 bg-slate-50/80 px-2 py-1.5">
-        <select
-          className="h-8 rounded border border-slate-200 bg-white px-1 text-xs max-w-[7rem]"
-          title={RICH_TEXT_TOOLTIP.styleSelect}
-          aria-label={RICH_TEXT_TOOLTIP.styleSelect}
-          onChange={(e) => {
-            const v = e.target.value;
-            if (v === 'paragraph') {
-              editor.chain().focus().setParagraph().run();
-            } else {
-              const level = Number(v) as 1 | 2 | 3;
-              editor.chain().focus().setHeading({ level }).run();
+        <div className="max-w-[7rem]" title={RICH_TEXT_TOOLTIP.styleSelect}>
+          <span id={`${blockStyleSelectId}-label`} className="sr-only">
+            {RICH_TEXT_TOOLTIP.styleSelect}
+          </span>
+          <Select
+            id={blockStyleSelectId}
+            aria-labelledby={`${blockStyleSelectId}-label`}
+            value={
+              editor.isActive('heading', { level: 1 })
+                ? '1'
+                : editor.isActive('heading', { level: 2 })
+                  ? '2'
+                  : editor.isActive('heading', { level: 3 })
+                    ? '3'
+                    : 'paragraph'
             }
-          }}
-          value={
-            editor.isActive('heading', { level: 1 })
-              ? '1'
-              : editor.isActive('heading', { level: 2 })
-                ? '2'
-                : editor.isActive('heading', { level: 3 })
-                  ? '3'
-                  : 'paragraph'
-          }
-        >
-          <option value="paragraph">Paragraph</option>
-          {HEADING_LEVELS.map((l) => (
-            <option key={l} value={String(l)}>
-              Heading {l}
-            </option>
-          ))}
-        </select>
+            onChange={(v) => {
+              if (v === 'paragraph') {
+                editor.chain().focus().setParagraph().run();
+              } else {
+                const level = Number(v) as 1 | 2 | 3;
+                editor.chain().focus().setHeading({ level }).run();
+              }
+            }}
+            options={BLOCK_STYLE_OPTIONS}
+            placeholder="Style"
+            triggerClassName="h-8 max-h-8 px-2 text-xs"
+          />
+        </div>
 
         <ToolbarIconButton
           tooltip={RICH_TEXT_TOOLTIP.bold}
@@ -368,6 +434,70 @@ export function RichTextField({
         >
           <ListOrdered className="h-4 w-4" />
         </ToolbarIconButton>
+
+        <Popover open={tablePopoverOpen} onOpenChange={setTablePopoverOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              type="button"
+              variant={editor.isActive('table') ? 'secondary' : 'ghost'}
+              size="sm"
+              className="h-8 w-8 p-0 shrink-0"
+              title={RICH_TEXT_TOOLTIP.tableInsert}
+              aria-label={RICH_TEXT_TOOLTIP.tableInsert}
+              aria-pressed={editor.isActive('table')}
+              onMouseDown={preventToolbarMouseDownStealingFocus}
+            >
+              <Table2 className="h-4 w-4" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-72" align="start">
+            <div className="space-y-3">
+              <p className="text-sm font-medium text-foreground">Insert table</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label htmlFor="rich-text-table-rows" className="text-xs">
+                    Rows
+                  </Label>
+                  <Input
+                    id="rich-text-table-rows"
+                    type="number"
+                    min={RICH_TEXT_TABLE_INSERT_MIN}
+                    max={RICH_TEXT_TABLE_INSERT_MAX}
+                    value={tableRows}
+                    onChange={(e) => setTableRows(Number(e.target.value))}
+                    className="h-9"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="rich-text-table-cols" className="text-xs">
+                    Columns
+                  </Label>
+                  <Input
+                    id="rich-text-table-cols"
+                    type="number"
+                    min={RICH_TEXT_TABLE_INSERT_MIN}
+                    max={RICH_TEXT_TABLE_INSERT_MAX}
+                    value={tableCols}
+                    onChange={(e) => setTableCols(Number(e.target.value))}
+                    className="h-9"
+                  />
+                </div>
+              </div>
+              <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-input accent-primary"
+                  checked={tableWithHeader}
+                  onChange={(e) => setTableWithHeader(e.target.checked)}
+                />
+                {RICH_TEXT_TOOLTIP.tableHeaderRow}
+              </label>
+              <Button type="button" size="sm" className="w-full" onClick={insertTableFromPopover}>
+                Insert table
+              </Button>
+            </div>
+          </PopoverContent>
+        </Popover>
 
         <Popover
           open={linkOpen}

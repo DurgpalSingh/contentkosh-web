@@ -1,5 +1,5 @@
 import katex from 'katex';
-import { TIPTAP_KATEX_OPTIONS } from '@/lib/richText/tiptapKatexConstants';
+import { TIPTAP_KATEX_OPTIONS } from '@/lib/richText/richTextConstants';
 
 /**
  * After DOMPurify, replace TipTap math placeholders (`data-type` + `data-latex`)

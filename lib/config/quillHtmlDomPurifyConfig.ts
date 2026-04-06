@@ -24,6 +24,16 @@ export const QUIll_DOM_PURIFY_ALLOWED_TAGS = [
   'a',
   'span',
   'div',
+  'table',
+  'thead',
+  'tbody',
+  'tfoot',
+  'tr',
+  'th',
+  'td',
+  'caption',
+  'colgroup',
+  'col',
 ] as const;
 
 /** Same shape as backend `QUIll_SANITIZE_ALLOWED_ATTRIBUTES` (DOMPurify uses a flat `ALLOWED_ATTR` union). */
@@ -32,6 +42,16 @@ export const QUIll_DOM_PURIFY_ALLOWED_ATTRIBUTES_BY_TAG: Readonly<Record<string,
   span: ['class', 'data-type', 'data-latex'],
   p: ['class'],
   div: ['class', 'data-type', 'data-latex'],
+  table: ['class', 'style', 'width'],
+  thead: ['class'],
+  tbody: ['class'],
+  tfoot: ['class'],
+  tr: ['class'],
+  th: ['class', 'style', 'colspan', 'rowspan', 'align', 'colwidth', 'width'],
+  td: ['class', 'style', 'colspan', 'rowspan', 'align', 'colwidth', 'width'],
+  caption: ['class'],
+  colgroup: ['class', 'span', 'width'],
+  col: ['class', 'span', 'width'],
 } as const;
 
 /** Global attribute allowlist required by DOMPurify (union of per-tag attrs above). */
