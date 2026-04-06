@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { Select } from '@/components/ui/select'
 import { DeleteConfirmModal } from '@/components/modals/DeleteConfirmModal'
 import {
   ExamTest,
@@ -85,10 +86,10 @@ const buildExamDraft = (t: ExamTest): UpdateExamWithSubject => ({
 })
 
 const inputClass =
-  'border-gray-200 bg-white focus-visible:ring-violet-500 focus-visible:border-violet-300'
+  'border-gray-200 bg-white focus-visible:ring-blue-500 focus-visible:border-blue-300'
 
 const selectClass =
-  'w-full border border-gray-200 rounded-md h-10 px-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-400'
+  'w-full border border-gray-200 rounded-md h-10 px-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400'
 
 export const TeacherTestSettingsTab = ({
   kind,
@@ -128,6 +129,7 @@ export const TeacherTestSettingsTab = ({
     const draft = kind === TEST_KIND.PRACTICE ? draftPractice : draftExam
     const errors = validateTestForm({
       name: draft.name ?? '',
+      description: draft.description ?? undefined,
       kind,
       startAt: kind === TEST_KIND.EXAM ? (draftExam.startAt ?? undefined) : undefined,
       deadlineAt: kind === TEST_KIND.EXAM ? (draftExam.deadlineAt ?? undefined) : undefined,
@@ -135,6 +137,7 @@ export const TeacherTestSettingsTab = ({
       defaultMarksPerQuestion: draft.defaultMarksPerQuestion ?? undefined,
       requireBatch: false,
       subjectId: draft.subjectId ?? undefined,
+      validateTextRules: true,
     })
 
     if (Object.keys(errors).length > 0) {
@@ -240,10 +243,10 @@ export const TeacherTestSettingsTab = ({
   return (
     <div className="max-w-3xl space-y-6">
       <div className="rounded-xl border border-gray-200/90 bg-white shadow-sm overflow-hidden">
-        <div className="border-b border-gray-100 bg-gradient-to-r from-violet-50/90 via-white to-slate-50/40 px-6 py-5">
+        <div className="border-b border-gray-100 bg-gradient-to-r from-blue-50/90 via-white to-slate-50/40 px-6 py-5">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex gap-3">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-violet-700">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-700">
                 <Settings2 className="h-5 w-5" aria-hidden />
               </div>
               <div>
@@ -260,7 +263,7 @@ export const TeacherTestSettingsTab = ({
                 type="button"
                 variant="outline"
                 onClick={handleStartEdit}
-                className="border-violet-200 text-violet-800 hover:bg-violet-50"
+                className="border-blue-200 text-blue-800 hover:bg-blue-50"
               >
                 Edit settings
               </Button>
@@ -273,7 +276,7 @@ export const TeacherTestSettingsTab = ({
                   type="submit"
                   form="teacher-test-settings-form"
                   disabled={saving}
-                  className="bg-violet-600 hover:bg-violet-700"
+                  className="bg-blue-600 hover:bg-blue-700"
                 >
                   {saving ? 'Saving…' : 'Save changes'}
                 </Button>
@@ -364,7 +367,7 @@ const SectionHeader = ({
 }) => (
   <div className="mb-4">
     <h4 className="flex items-center gap-2 text-sm font-semibold text-gray-900">
-      <span className="flex h-7 w-7 items-center justify-center rounded-md bg-violet-100 text-violet-700">
+      <span className="flex h-7 w-7 items-center justify-center rounded-md bg-blue-100 text-blue-700">
         <Icon className="h-4 w-4" aria-hidden />
       </span>
       {title}
@@ -569,10 +572,10 @@ const CheckboxRow = ({
   title: string
   description?: string
 }) => (
-  <label className="flex cursor-pointer gap-3 rounded-lg border border-gray-200 bg-white p-4 transition-colors hover:border-violet-200 hover:bg-violet-50/30 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-violet-500/40">
+  <label className="flex cursor-pointer gap-3 rounded-lg border border-gray-200 bg-white p-4 transition-colors hover:border-blue-200 hover:bg-blue-50/30 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-blue-500/40">
     <input
       type="checkbox"
-      className="mt-0.5 h-4 w-4 rounded border-gray-300 text-violet-600 focus:ring-violet-500"
+      className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
       checked={checked}
       onChange={(e) => onChange(e.target.checked)}
     />
@@ -605,21 +608,25 @@ const PracticeSettingsFields = ({
       <SectionHeader icon={FileText} title="General" />
       <div className="space-y-4">
         <Field label="Subject" error={errors.subjectId}>
-          <select
-            className={selectClass}
+          <Select
+            id="practice-subject"
             value={draft.subjectId ?? ''}
-            onChange={(e) =>
-              setDraft((s) => ({ ...s, subjectId: Number(e.target.value) }))
+            onChange={(value) =>
+              setDraft((s) => ({
+                ...s,
+                subjectId: value === '' ? undefined : Number(value),
+              }))
             }
+            options={[
+              { value: '', label: 'Select subject' },
+              ...subjects.map((s) => ({
+                value: s.id,
+                label: s.name ?? `Subject ${s.id}`,
+              })),
+            ]}
             disabled={subjectsLoading || subjects.length === 0}
-          >
-            <option value="">Select subject</option>
-            {subjects.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name ?? `Subject ${s.id}`}
-              </option>
-            ))}
-          </select>
+            triggerClassName={selectClass}
+          />
         </Field>
         <Field label="Test name" error={errors.name}>
           <Input
@@ -631,13 +638,15 @@ const PracticeSettingsFields = ({
           />
           <p className="text-xs text-gray-500">{draft.name?.length}/50 characters</p>
         </Field>
-        <Field label="Description">
+        <Field label="Description" error={errors.description}>
           <Textarea
             className={inputClass}
             value={draft.description ?? ''}
             onChange={(e) => setDraft((s) => ({ ...s, description: e.target.value }))}
             rows={3}
+            maxLength={200}
           />
+          <p className="text-xs text-gray-500">{draft.description?.length ?? 0}/200 characters</p>
         </Field>
       </div>
     </section>
@@ -706,21 +715,25 @@ const ExamSettingsFields = ({
       <SectionHeader icon={FileText} title="General" />
       <div className="space-y-4">
         <Field label="Subject" error={errors.subjectId}>
-          <select
-            className={selectClass}
+          <Select
+            id="exam-subject"
             value={draft.subjectId ?? ''}
-            onChange={(e) =>
-              setDraft((s) => ({ ...s, subjectId: Number(e.target.value) }))
+            onChange={(value) =>
+              setDraft((s) => ({
+                ...s,
+                subjectId: value === '' ? undefined : Number(value),
+              }))
             }
+            options={[
+              { value: '', label: 'Select subject' },
+              ...subjects.map((s) => ({
+                value: s.id,
+                label: s.name ?? `Subject ${s.id}`,
+              })),
+            ]}
             disabled={subjectsLoading || subjects.length === 0}
-          >
-            <option value="">Select subject</option>
-            {subjects.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name ?? `Subject ${s.id}`}
-              </option>
-            ))}
-          </select>
+            triggerClassName={selectClass}
+          />
         </Field>
         <Field label="Test name" error={errors.name}>
           <Input
@@ -732,13 +745,15 @@ const ExamSettingsFields = ({
           />
           <p className="text-xs text-gray-500">{draft.name?.length}/50 characters</p>
         </Field>
-        <Field label="Description">
+        <Field label="Description" error={errors.description}>
           <Textarea
             className={inputClass}
             value={draft.description ?? ''}
             onChange={(e) => setDraft((s) => ({ ...s, description: e.target.value }))}
             rows={3}
+            maxLength={200}
           />
+          <p className="text-xs text-gray-500">{draft.description?.length ?? 0}/200 characters</p>
         </Field>
       </div>
     </section>
@@ -807,19 +822,21 @@ const ExamSettingsFields = ({
     <section>
       <SectionHeader icon={Eye} title="Results" />
       <Field label="Result visibility">
-        <select
-          className={selectClass}
+        <Select
+          id="result-visibility"
           value={draft.resultVisibility ?? ResultVisibilityExam._0}
-          onChange={(e) =>
+          onChange={(value) =>
             setDraft((s) => ({
               ...s,
-              resultVisibility: Number(e.target.value) as UpdateExamTestDTO['resultVisibility'],
+              resultVisibility: Number(value) as UpdateExamTestDTO['resultVisibility'],
             }))
           }
-        >
-          <option value={ResultVisibilityExam._0}>{resultVisibilityExamLabel(0)}</option>
-          <option value={ResultVisibilityExam._1}>{resultVisibilityExamLabel(1)}</option>
-        </select>
+          options={[
+            { value: ResultVisibilityExam._0, label: resultVisibilityExamLabel(0) },
+            { value: ResultVisibilityExam._1, label: resultVisibilityExamLabel(1) },
+          ]}
+          triggerClassName={selectClass}
+        />
       </Field>
     </section>
 

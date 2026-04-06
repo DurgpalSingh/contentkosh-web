@@ -3,15 +3,41 @@ import { TEST_KIND, type TestKind } from './testConstants';
 
 export type TestFormErrors = {
   name?: string;
+  description?: string;
   batchId?: string;
   subjectId?: string;
+  startAt?: string;
   deadlineAt?: string;
   durationMinutes?: string;
   defaultMarksPerQuestion?: string;
 };
 
+const ALLOWED_TEST_NAME = /^[A-Za-z0-9\s()[\]_-]+$/;
+
+const hasLetter = (value: string) => /[A-Za-z]/.test(value);
+
+const getLocalNow = () => {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), now.getMinutes());
+};
+
+const getTestNameTextRuleError = (name: string): string | undefined => {
+  if (!ALLOWED_TEST_NAME.test(name)) {
+    return 'Only letters, numbers, spaces, brackets (), [], hyphen -, and underscore _ are allowed';
+  }
+  if (!hasLetter(name)) return 'Test name must include at least one letter';
+  return undefined;
+};
+
+const getDescriptionError = (description?: string): string | undefined => {
+  if (!description?.trim()) return undefined;
+  if (!hasLetter(description)) return 'Description must include at least one letter';
+  return undefined;
+};
+
 export function validateTestForm(values: {
   name: string;
+  description?: string;
   batchId?: number;
   subjectId?: number;
   kind: TestKind;
@@ -21,11 +47,21 @@ export function validateTestForm(values: {
   defaultMarksPerQuestion?: number;
   requireBatch?: boolean;
   requireSubject?: boolean;
+  validateTextRules?: boolean;
+  disallowPastStart?: boolean;
 }): TestFormErrors {
   const errors: TestFormErrors = {};
 
   if (!values.name.trim()) {
     errors.name = 'Test name is required';
+  }
+
+  if (values.validateTextRules && values.name.trim()) {
+    const nameRuleError = getTestNameTextRuleError(values.name);
+    if (nameRuleError) errors.name = nameRuleError;
+
+    const descriptionError = getDescriptionError(values.description);
+    if (descriptionError) errors.description = descriptionError;
   }
 
   if (values.requireBatch && !values.batchId) {
@@ -37,6 +73,13 @@ export function validateTestForm(values: {
   }
 
   if (values.kind === TEST_KIND.EXAM) {
+    if (values.startAt && values.disallowPastStart) {
+      const startTime = new Date(values.startAt);
+      if (startTime < getLocalNow()) {
+        errors.startAt = 'Start date can not be in past.';
+      }
+    }
+
     if (values.startAt && values.deadlineAt) {
       if (new Date(values.deadlineAt) <= new Date(values.startAt)) {
         errors.deadlineAt = 'Deadline must be after start time';

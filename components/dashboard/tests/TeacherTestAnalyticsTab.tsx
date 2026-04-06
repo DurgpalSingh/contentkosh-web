@@ -35,18 +35,21 @@ export const TeacherTestAnalyticsTab = ({
           onClick={onRefresh}
           disabled={analyticsLoading}
           aria-label="Refresh analytics"
+          className="border-blue-200 text-blue-800 hover:bg-blue-50"
         >
           <RefreshCw className="h-4 w-4 mr-1" />
           Refresh
         </Button>
-        <Button type="button" variant="outline" onClick={onExportCsv}>
+        <Button type="button" variant="outline" onClick={onExportCsv}
+          className="border-blue-200 text-blue-800 hover:bg-blue-50"
+        >
           Export CSV
         </Button>
       </div>
 
       {analyticsLoading ? (
         <div className="flex justify-center py-12">
-          <Loader2 className="h-7 w-7 animate-spin text-violet-600" aria-hidden />
+          <Loader2 className="h-7 w-7 animate-spin text-blue-600" aria-hidden />
         </div>
       ) : analytics && summary ? (
         <>

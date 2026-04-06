@@ -1,8 +1,15 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.2.5] - Add test modal validations
+**P.R Raised by** : shubh404-SE on **Date** : 2026-04-06
+
+### Changed
+  - UI improved + same color scheme for better user experience.
+  - Added validations for add test fields.
+---
 ## Version [1.2.4] - New Tiptap Editor
-**P.R Raised by** : shubh404-SE on **Date** : 2026-04-04
+**P.R Raised by** : shubh404-SE on **Date** : 2026-04-06
 
 ### Changed
   - Quill caused npm conflict error due to which we were not able to update it, now switched to tiptap editor which is more customizable and also support math equations using katex.

@@ -331,7 +331,7 @@ export function Select({
                 aria-selected={isSelected}
                 className={cn(
                   'cursor-pointer rounded-sm px-3 py-2 text-sm outline-none',
-                  isHighlighted && 'bg-accent text-accent-foreground',
+                  isHighlighted && 'bg-blue-100 text-accent-foreground',
                   !isHighlighted && isSelected && 'bg-muted/60',
                 )}
                 onMouseEnter={() => setHighlightIndex(index)}
