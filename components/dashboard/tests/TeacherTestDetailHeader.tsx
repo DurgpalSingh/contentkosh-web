@@ -75,7 +75,7 @@ export const TeacherTestDetailHeader = ({
       </div>
       <div className="flex flex-wrap gap-2">
         {isDraft && (
-          <Button className="bg-violet-600 hover:bg-violet-700" onClick={onPublish} type="button">
+          <Button className="bg-blue-600 hover:bg-blue-700" onClick={onPublish} type="button">
             Publish test
           </Button>
         )}

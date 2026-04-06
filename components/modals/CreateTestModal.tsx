@@ -37,14 +37,15 @@ interface CreateTestModalProps {
   onCreated: (kind: TestKind, testId: string) => void;
 }
 
+const toLocalDatetimeInputValue = (d: Date) => {
+  const offset = d.getTimezoneOffset() * 60000;
+  return new Date(d.getTime() - offset).toISOString().slice(0, 16);
+};
+
 function defaultExamWindow(): { startAt: string; deadlineAt: string } {
   const start = new Date();
   const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
-  const toLocalIso = (d: Date) => {
-    const offset = d.getTimezoneOffset() * 60000;
-    return new Date(d.getTime() - offset).toISOString().slice(0, 16);
-  };
-  return { startAt: toLocalIso(start), deadlineAt: toLocalIso(end) };
+  return { startAt: toLocalDatetimeInputValue(start), deadlineAt: toLocalDatetimeInputValue(end) };
 }
 
 export function CreateTestModal({
@@ -68,6 +69,7 @@ export function CreateTestModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formErrors, setFormErrors] = useState<TestFormErrors>({});
+  const minStartAt = toLocalDatetimeInputValue(new Date());
 
   useEffect(() => {
     if (!isOpen) return;
@@ -121,6 +123,7 @@ export function CreateTestModal({
     const defaultMarksPerQuestion = kind === TEST_KIND.EXAM ? 1 : undefined;
     const errors = validateTestForm({
       name,
+      description,
       batchId: batchId || undefined,
       subjectId: subjectId || undefined,
       kind,
@@ -130,6 +133,8 @@ export function CreateTestModal({
       defaultMarksPerQuestion,
       requireBatch: true,
       requireSubject: true,
+      validateTextRules: true,
+      disallowPastStart: true,
     });
 
     if (Object.keys(errors).length > 0) {
@@ -302,25 +307,34 @@ export function CreateTestModal({
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
               placeholder="Short description"
+              maxLength={200}
             />
+            <p className="text-xs text-gray-500">{description.length}/200 characters</p>
+            {formErrors.description && (
+              <p className="text-sm text-red-600 mt-1">{formErrors.description}</p>
+            )}
           </div>
 
           {kind === TEST_KIND.EXAM && (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <Label htmlFor="startAt">Start</Label>
+                  <Label htmlFor="startAt">Start *</Label>
                   <Input
                     id="startAt"
                     type="datetime-local"
                     value={examWindow.startAt}
+                    min={minStartAt}
                     onChange={(e) =>
                       setExamWindow((w) => ({ ...w, startAt: e.target.value }))
                     }
                   />
+                  {formErrors.startAt && (
+                    <p className="text-sm text-red-600 mt-1">{formErrors.startAt}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="deadlineAt">Deadline</Label>
+                  <Label htmlFor="deadlineAt">Deadline *</Label>
                   <Input
                     id="deadlineAt"
                     type="datetime-local"
@@ -335,7 +349,7 @@ export function CreateTestModal({
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="duration">Duration (minutes)</Label>
+                <Label htmlFor="duration">Duration (minutes) *</Label>
                 <Input
                   id="duration"
                   type="number"
@@ -348,7 +362,7 @@ export function CreateTestModal({
                 )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="visibility">Result visibility</Label>
+                <Label htmlFor="visibility">Result visibility *</Label>
                 <Select
                   id="visibility"
                   value={resultVisibility}

@@ -27,7 +27,7 @@ export const TeacherTestQuestionsTab = ({
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <Button type="button" onClick={onAddQuestion}>
+        <Button type="button" className="bg-blue-600 hover:bg-blue-700" onClick={onAddQuestion}>
           Add question
         </Button>
       </div>
@@ -42,7 +42,7 @@ export const TeacherTestQuestionsTab = ({
               <li key={q.id} className="p-4 flex flex-col sm:flex-row sm:items-start gap-3">
                 <div className="text-sm font-medium text-gray-500 w-8 shrink-0">{i + 1}.</div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs text-violet-700 font-medium mb-1">{questionTypeLabel(qt)}</p>
+                  <p className="text-xs text-blue-700 font-medium mb-1">{questionTypeLabel(qt)}</p>
                   <div className="text-gray-900 min-w-0">
                     <HtmlContent html={q.questionText ?? q.text ?? ''} />
                   </div>
@@ -58,6 +58,7 @@ export const TeacherTestQuestionsTab = ({
                     type="button"
                     variant="outline"
                     size="sm"
+                    className="border-blue-200 text-blue-800 hover:bg-blue-50"
                     onClick={() => onEditQuestion(toTeacherQuestion(q))}
                   >
                     Edit

@@ -8,6 +8,7 @@ import { FileUploadArea } from '../dashboard/contents/FileUploadArea';
 import { CONTENT_UPLOAD_ACCEPT, CONTENT_UPLOAD_INFO_ITEMS, CONTENT_UPLOAD_LABEL } from '@/lib/content-upload.config';
 import { validateEntityName } from '@/lib/validation';
 import { Input } from '../ui/input';
+import { Select } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { toast } from 'sonner';
 
@@ -158,40 +159,56 @@ export function AddContentModal({
 
           <div>
             <label className="block text-sm font-medium text-slate-700">Batch <span className="text-red-500">*</span></label>
-            <select
+            <Select
+              id="add-content-batch"
               value={selectedBatchId ?? ''}
-              onChange={(e) => onBatchChange(e.target.value ? Number(e.target.value) : undefined)}
-              className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              required
-            >
-              <option value="" disabled>Select a batch</option>
-              {batches.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.displayName || b.codeName || 'Unnamed Batch'}
-                  {b.courseName ? ` • ${b.courseName}` : ''}
-                </option>
-              ))}
-            </select>
+              onChange={(value) =>
+                onBatchChange(value === '' ? undefined : Number(value))
+              }
+              options={[
+                { value: '', label: 'Select a batch' },
+                ...batches.flatMap((b) =>
+                  typeof b.id === 'number'
+                    ? [
+                        {
+                          value: b.id,
+                          label: `${b.displayName || b.codeName || 'Unnamed Batch'}${b.courseName ? ` • ${b.courseName}` : ''}`,
+                        },
+                      ]
+                    : [],
+                ),
+              ]}
+              triggerClassName="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+            />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-slate-700">Subject <span className="text-red-500">*</span></label>
-            <select
+            <Select
+              id="add-content-subject"
               value={selectedSubjectId ?? ''}
-              onChange={(e) => setSelectedSubjectId(e.target.value ? Number(e.target.value) : undefined)}
-              className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              required
+              onChange={(value) =>
+                setSelectedSubjectId(value === '' ? undefined : Number(value))
+              }
+              options={[
+                {
+                  value: '',
+                  label: subjects.length === 0 ? 'No subjects available' : 'Select a subject',
+                },
+                ...subjects.flatMap((s) =>
+                  typeof s.id === 'number'
+                    ? [
+                        {
+                          value: s.id,
+                          label: s.name || 'Unnamed Subject',
+                        },
+                      ]
+                    : [],
+                ),
+              ]}
               disabled={subjects.length === 0}
-            >
-              <option value="" disabled>
-                {subjects.length === 0 ? 'No subjects available' : 'Select a subject'}
-              </option>
-              {subjects.map((s) => (
-                <option key={s.id!} value={s.id!}>
-                  {s.name || 'Unnamed Subject'}
-                </option>
-              ))}
-            </select>
+              triggerClassName="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+            />
           </div>
 
           <div>
