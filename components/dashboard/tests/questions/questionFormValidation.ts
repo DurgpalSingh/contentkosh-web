@@ -1,6 +1,5 @@
 import { MCQ_MIN_OPTIONS } from '@/lib/tests/testConstants'
 import { questionType } from '@/lib/tests/testUiMappers'
-import type { QuestionOptionRow } from './useTeacherQuestionForm'
 
 export type QuestionFormErrors = {
   questionText?: string
@@ -10,14 +9,24 @@ export type QuestionFormErrors = {
   correctAnswer?: string
 }
 
-function getMeaningfulTextLength(input: string): number {
-  // Approximate server-side "empty after sanitization" check:
-  // strip tags and normalize whitespace.
-  return input
+/**
+ * Mirrors server `getMeaningfulTextLength` in `sanitizeHtml.ts`:
+ * visible text after tags, plus LaTeX from `data-latex` (TipTap math nodes).
+ */
+export function getRichTextMeaningfulLength(html: string): number {
+  const textFromTags = html
     .replace(/<[^>]*>/g, '')
     .replace(/&nbsp;/g, ' ')
     .replace(/\s+/g, ' ')
-    .trim().length
+    .trim();
+  const latexParts = [...html.matchAll(/data-latex="([^"]*)"/g)]
+    .map((m) => m[1])
+    .join(' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const combined = `${textFromTags} ${latexParts}`.replace(/\s+/g, ' ').trim();
+  return combined.length;
 }
 
 export function validateQuestionForm(state: {
@@ -30,7 +39,7 @@ export function validateQuestionForm(state: {
 }): QuestionFormErrors {
   const errors: QuestionFormErrors = {}
 
-  if (getMeaningfulTextLength(state.questionText) === 0) {
+  if (getRichTextMeaningfulLength(state.questionText) === 0) {
     errors.questionText = 'Question text is required'
   }
 

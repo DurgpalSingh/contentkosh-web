@@ -43,13 +43,13 @@ export const TeacherTestQuestionsTab = ({
                 <div className="text-sm font-medium text-gray-500 w-8 shrink-0">{i + 1}.</div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs text-violet-700 font-medium mb-1">{questionTypeLabel(qt)}</p>
-                  <div className="text-gray-900">
+                  <div className="text-gray-900 min-w-0">
                     <HtmlContent html={q.questionText ?? q.text ?? ''} />
                   </div>
                   {teacherQ.explanation ? (
-                    <div className="text-xs text-gray-500 mt-1 line-clamp-2">
-                      <p className="font-medium text-gray-500">Explanation:</p>
-                      <HtmlContent html={teacherQ.explanation ?? ''} />
+                    <div className="text-xs text-gray-500 mt-2 min-w-0 max-h-40 overflow-y-auto rounded-md border border-gray-100 bg-gray-50/80 px-2 py-1.5">
+                      <p className="font-medium text-gray-600 mb-1">Explanation</p>
+                      <HtmlContent html={teacherQ.explanation ?? ''} className="text-gray-700" />
                     </div>
                   ) : null}
                 </div>

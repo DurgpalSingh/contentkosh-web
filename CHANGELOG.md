@@ -1,6 +1,12 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.2.4] - New Tiptap Editor
+**P.R Raised by** : shubh404-SE on **Date** : 2026-04-04
+
+### Changed
+  - Quill caused npm conflict error due to which we were not able to update it, now switched to tiptap editor which is more customizable and also support math equations using katex.
+---
 ## Version [1.2.3] - Subject linked with test + text editor
 **P.R Raised by** : shubh404-SE on **Date** : 2026-04-04
 

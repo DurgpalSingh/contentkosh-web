@@ -124,7 +124,7 @@ export function StudentQuestionBlock({
       </div>
 
       <div className="px-5 py-6 sm:px-8 sm:py-8">
-        <div className="text-base leading-relaxed text-slate-900 [&_p]:mb-3 [&_p:last-child]:mb-0 [&_ul]:my-2 [&_ol]:my-2 [&_li]:my-0.5">
+        <div className="text-base leading-relaxed text-slate-900 min-w-0">
           <HtmlContent html={body} />
         </div>
 

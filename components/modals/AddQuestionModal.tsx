@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { QuestionFormFields } from '@/components/dashboard/tests/questions/QuestionFormFields'
 import { useTeacherQuestionForm } from '@/components/dashboard/tests/questions/useTeacherQuestionForm'
@@ -13,6 +12,7 @@ import {
   type QuestionFormErrors,
 } from '@/components/dashboard/tests/questions/questionFormValidation'
 import { toast } from 'sonner'
+import { QuestionModalFrame } from '@/components/modals/QuestionModalFrame'
 
 interface AddQuestionModalProps {
   isOpen: boolean
@@ -84,66 +84,53 @@ export const AddQuestionModal = ({
     }
   }
 
-  if (!isOpen) return null
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 overflow-y-auto">
-      <div
-        className="bg-white rounded-xl shadow-xl max-w-lg w-full my-8"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="add-q-title"
+    <QuestionModalFrame
+      open={isOpen}
+      titleId="add-q-title"
+      title="Add question"
+      subtitle="Create a new question for this test."
+      onClose={onClose}
+    >
+      <form
+        onSubmit={(e) => void handleSubmit(e)}
+        className="flex min-h-0 flex-1 flex-col overflow-hidden"
       >
-        <div className="flex items-center justify-between border-b px-5 py-4">
-          <h2 id="add-q-title" className="text-lg font-semibold">
-            Add question
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg p-2 text-gray-500 hover:bg-gray-100"
-            aria-label="Close"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        <form onSubmit={(e) => void handleSubmit(e)} className="p-5 space-y-4">
-          <QuestionFormFields form={form} formId="add-question" kind={kind} />
+        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto bg-muted/15 px-5 py-6 sm:px-8 sm:py-8">
+          <QuestionFormFields form={form} formId="add-question" />
           {Object.keys(formErrors).length > 0 && (
-            <div className="space-y-1" role="alert">
-              {formErrors.questionText && (
-                <p className="text-sm text-red-600">{formErrors.questionText}</p>
-              )}
-              {formErrors.questionType && (
-                <p className="text-sm text-red-600">{formErrors.questionType}</p>
-              )}
-              {formErrors.options && (
-                <p className="text-sm text-red-600">{formErrors.options}</p>
-              )}
-              {formErrors.correctOption && (
-                <p className="text-sm text-red-600">{formErrors.correctOption}</p>
-              )}
-              {formErrors.correctAnswer && (
-                <p className="text-sm text-red-600">{formErrors.correctAnswer}</p>
-              )}
+            <div
+              className="rounded-xl border border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive shadow-sm"
+              role="alert"
+            >
+              <p className="mb-2 font-medium">Please fix the following</p>
+              <ul className="list-inside list-disc space-y-1 text-destructive/95">
+                {formErrors.questionText && <li>{formErrors.questionText}</li>}
+                {formErrors.questionType && <li>{formErrors.questionType}</li>}
+                {formErrors.options && <li>{formErrors.options}</li>}
+                {formErrors.correctOption && <li>{formErrors.correctOption}</li>}
+                {formErrors.correctAnswer && <li>{formErrors.correctAnswer}</li>}
+              </ul>
             </div>
           )}
           {error && (
-            <p className="text-sm text-red-600" role="alert">
+            <p
+              className="rounded-xl border border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive shadow-sm"
+              role="alert"
+            >
               {error}
             </p>
           )}
-          <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Saving…' : 'Add question'}
-            </Button>
-          </div>
-        </form>
-      </div>
-    </div>
+        </div>
+        <div className="flex shrink-0 flex-col gap-3 border-t border-border/80 bg-muted/40 px-5 py-4 backdrop-blur-sm sm:flex-row sm:justify-end sm:gap-3 sm:px-8">
+          <Button type="button" variant="outline" className="w-full sm:w-auto" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="submit" className="w-full min-w-[10rem] sm:w-auto" disabled={loading}>
+            {loading ? 'Saving…' : 'Add question'}
+          </Button>
+        </div>
+      </form>
+    </QuestionModalFrame>
   )
 }
