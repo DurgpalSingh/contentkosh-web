@@ -12,6 +12,7 @@ import {
   ExamTestsService,
   PracticeTestsService,
   ResultVisibilityExam,
+  TestLanguage,
 } from '@/lib/api';
 import { resultVisibilityExamLabel } from '@/lib/tests/testUiMappers';
 import { validateTestForm, type TestFormErrors } from '@/lib/tests/testFormValidation';
@@ -19,6 +20,7 @@ import { toast } from 'sonner';
 import type { Subject } from '@/lib/api';
 import { Select } from '@/components/ui/select';
 import { TEST_KIND, TEST_KIND_LABEL, type TestKind } from '@/lib/tests/testConstants';
+import { TEST_LANGUAGE_OPTIONS } from '@/lib/tests/testLanguage';
 
 export type { TestKind };
 
@@ -66,6 +68,7 @@ export function CreateTestModal({
     ResultVisibilityExam._0,
   );
   const [examWindow, setExamWindow] = useState(defaultExamWindow);
+  const [language, setLanguage] = useState<TestLanguage>(TestLanguage.EN);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formErrors, setFormErrors] = useState<TestFormErrors>({});
@@ -111,6 +114,7 @@ export function CreateTestModal({
     setDescription('');
     setDurationMinutes(60);
     setSubjectId(0);
+    setLanguage(TestLanguage.EN);
     setResultVisibility(ResultVisibilityExam._0);
     setExamWindow(defaultExamWindow());
     setError(null);
@@ -152,6 +156,7 @@ export function CreateTestModal({
           batchId,
           subjectId,
           name: name.trim(),
+          language,
           ...(description.trim() ? { description: description.trim() } : {}),
         } as unknown as CreatePracticeTestDTO;
         const res = await PracticeTestsService.postApiBusinessPracticeTests(businessId, body);
@@ -170,6 +175,7 @@ export function CreateTestModal({
           durationMinutes,
           defaultMarksPerQuestion,
           resultVisibility,
+          language,
           ...(description.trim() ? { description: description.trim() } : {}),
         } as unknown as CreateExamTestDTO;
         const res = await ExamTestsService.postApiBusinessExamTests(businessId, body);
@@ -278,6 +284,20 @@ export function CreateTestModal({
             {formErrors.subjectId && (
               <p className="text-sm text-red-600 mt-1">{formErrors.subjectId}</p>
             )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="test-language">Test language *</Label>
+            <Select
+              id="test-language"
+              value={language}
+              onChange={(v) => setLanguage(v as TestLanguage)}
+              options={TEST_LANGUAGE_OPTIONS.map((o) => ({
+                value: o.value,
+                label: o.label,
+              }))}
+              placeholder="Select language"
+            />
           </div>
 
           <div className="space-y-1 flex flex-col gap-1">

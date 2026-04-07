@@ -3,6 +3,10 @@
 import { useEffect, useState } from 'react'
 import { Clock, Play, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
+import { Select } from '@/components/ui/select'
+import { TestLanguage } from '@/lib/api/models/TestLanguage'
+import { TEST_LANGUAGE_OPTIONS } from '@/lib/tests/testLanguage'
 import { cn } from '@/lib/utils'
 import { TEST_KIND, TEST_KIND_LABEL, type TestKind } from '@/lib/tests/testConstants'
 
@@ -22,12 +26,14 @@ export type StartAttemptTestInfo = {
   marksPerQuestion?: number
   negativeMarksPerQuestion?: number
   timing?: StartAttemptConfirmModalTiming
+  /** Language configured for this test; the student must confirm the same language to start. */
+  testLanguage: TestLanguage
 }
 
 export interface StartAttemptConfirmModalProps {
   isOpen: boolean
   onClose: () => void
-  onConfirm: () => Promise<void>
+  onConfirm: (language: TestLanguage) => Promise<void>
   testInfo: StartAttemptTestInfo
 }
 
@@ -46,9 +52,17 @@ export function StartAttemptConfirmModal({
     marksPerQuestion,
     negativeMarksPerQuestion,
     timing,
+    testLanguage,
   } = testInfo
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [selectedLanguage, setSelectedLanguage] = useState<TestLanguage>(testLanguage)
+
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedLanguage(testLanguage)
+    }
+  }, [isOpen, testLanguage])
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -68,7 +82,7 @@ export function StartAttemptConfirmModal({
     setLoading(true)
     setError(null)
     try {
-      await onConfirm()
+      await onConfirm(selectedLanguage)
       onClose()
     } catch (err: unknown) {
       const e = err as { body?: { message?: string }; message?: string }
@@ -123,6 +137,23 @@ export function StartAttemptConfirmModal({
               <p className="text-sm text-gray-600 whitespace-pre-wrap">{rulesDescription}</p>
             </div>
           )}
+
+          <div className="space-y-2">
+            <Label htmlFor="attempt-language">Test language</Label>
+            <Select
+              id="attempt-language"
+              value={selectedLanguage}
+              onChange={(v) => setSelectedLanguage(v as TestLanguage)}
+              options={TEST_LANGUAGE_OPTIONS.map((o) => ({
+                value: o.value,
+                label: o.label,
+              }))}
+              placeholder="Select language"
+            />
+            <p className="text-xs text-gray-500">
+              Must match the language of this test. If it does not match, starting will fail.
+            </p>
+          </div>
 
           <dl className="grid grid-cols-2 gap-3 text-sm">
             <div>

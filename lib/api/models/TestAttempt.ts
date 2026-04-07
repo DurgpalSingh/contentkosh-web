@@ -3,6 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { AttemptStatus } from './AttemptStatus';
+import type { TestLanguage } from './TestLanguage';
 export type TestAttempt = {
     id: string;
     /**
@@ -13,6 +14,7 @@ export type TestAttempt = {
     practiceTestId?: string;
     examTestId?: string;
     userId?: string;
+    language: TestLanguage;
     status: AttemptStatus;
     startedAt: string;
     submittedAt?: string;

@@ -2,6 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { TestLanguage } from './TestLanguage';
 import type { TestStatus } from './TestStatus';
 export type CreatePracticeTestDTO = {
     batchId: string;
@@ -12,5 +13,6 @@ export type CreatePracticeTestDTO = {
     shuffleQuestions?: boolean;
     shuffleOptions?: boolean;
     status?: TestStatus;
+    language: TestLanguage;
 };
 

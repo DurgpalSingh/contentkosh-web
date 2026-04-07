@@ -81,6 +81,7 @@ export { TestDetailsForAttempt } from './models/TestDetailsForAttempt';
 export type { TestOption } from './models/TestOption';
 export type { TestQuestion } from './models/TestQuestion';
 export { TestStatus } from './models/TestStatus';
+export { TestLanguage } from './models/TestLanguage';
 export type { UpdateAnnouncementRequest } from './models/UpdateAnnouncementRequest';
 export type { UpdateBatchRequest } from './models/UpdateBatchRequest';
 export type { UpdateBatchUserRequest } from './models/UpdateBatchUserRequest';

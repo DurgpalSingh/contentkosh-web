@@ -3,6 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { ResultVisibilityExam } from './ResultVisibilityExam';
+import type { TestLanguage } from './TestLanguage';
 import type { TestStatus } from './TestStatus';
 export type ExamTest = {
     id: string;
@@ -23,6 +24,7 @@ export type ExamTest = {
     resultVisibility?: ResultVisibilityExam;
     shuffleQuestions?: boolean;
     shuffleOptions?: boolean;
+    language: TestLanguage;
     totalQuestions?: number;
     totalMarks?: number;
     createdBy: string;

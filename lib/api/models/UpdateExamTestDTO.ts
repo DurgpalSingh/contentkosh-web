@@ -3,6 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { ResultVisibilityExam } from './ResultVisibilityExam';
+import type { TestLanguage } from './TestLanguage';
 import type { TestStatus } from './TestStatus';
 export type UpdateExamTestDTO = {
     name?: string;
@@ -16,5 +17,6 @@ export type UpdateExamTestDTO = {
     shuffleQuestions?: boolean;
     shuffleOptions?: boolean;
     status?: TestStatus;
+    language?: TestLanguage;
 };
 

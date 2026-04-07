@@ -1,5 +1,7 @@
 import type { ExamAvailableTest } from '@/lib/api/models/ExamAvailableTest';
 import type { PracticeAvailableTest } from '@/lib/api/models/PracticeAvailableTest';
+import type { TestLanguage } from '@/lib/api/models/TestLanguage';
+import { TEST_LANGUAGE_LABEL } from '@/lib/tests/testLanguage';
 import { TEST_KIND } from './testConstants';
 import { TEST_ROUTE_SEGMENT as SEG } from '@/lib/tests/testConstants';
 import type { TestListSubjectFields } from '@/lib/tests/testUiMappers';
@@ -187,6 +189,7 @@ export type StudentTestCardViewModel = {
   deadlineAt?: string;
   bestScore?: number | null;
   lockedReason?: number | null;
+  languageLabel: string;
   displayStatus: StudentTestDisplayStatus;
   actions: TestCardAction[];
 };
@@ -216,6 +219,7 @@ export function buildCardViewModel(item: UnifiedStudentRow, now?: Date): Student
     deadlineAt: 'deadlineAt' in row ? (row as ExamCatalogRow).deadlineAt ?? undefined : undefined,
     bestScore: isPractice ? (row as PracticeCatalogRow).bestScore ?? undefined : undefined,
     lockedReason: !isPractice ? (row as ExamCatalogRow).lockedReason ?? undefined : undefined,
+    languageLabel: TEST_LANGUAGE_LABEL[row.language as TestLanguage],
     displayStatus,
     actions,
   };

@@ -2,6 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { TestLanguage } from './TestLanguage';
 import type { TestStatus } from './TestStatus';
 export type PracticeAvailableTest = {
     id: string;
@@ -14,6 +15,7 @@ export type PracticeAvailableTest = {
     name: string;
     description?: string;
     status?: TestStatus;
+    language: TestLanguage;
     totalQuestions: number;
     totalMarks: number;
     defaultMarksPerQuestion?: number;

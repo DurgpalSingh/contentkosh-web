@@ -4,6 +4,7 @@
 /* eslint-disable */
 import type { ResultVisibilityExam } from './ResultVisibilityExam';
 import type { ResultVisibilityPractice } from './ResultVisibilityPractice';
+import type { TestLanguage } from './TestLanguage';
 import type { TestStatus } from './TestStatus';
 export type TestDetailsForAttempt = {
     id: string;
@@ -32,6 +33,7 @@ export type TestDetailsForAttempt = {
     resultVisibility?: (ResultVisibilityPractice | ResultVisibilityExam);
     attemptsAllowed?: number;
     attemptsUsed?: number;
+    language?: TestLanguage;
 };
 export namespace TestDetailsForAttempt {
     /**

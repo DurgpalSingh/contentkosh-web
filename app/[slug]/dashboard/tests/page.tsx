@@ -33,6 +33,7 @@ import {
   type TeacherTestsPublishFacet,
 } from '@/lib/tests/testConstants';
 import { TEST_KIND, TEST_KIND_LABEL, type TestKind } from '@/lib/tests/testConstants';
+import { TEST_LANGUAGE_LABEL } from '@/lib/tests/testLanguage';
 import { buildTestListSelectedFacets, useTestListSubjectIndex } from '@/lib/subjectsByCourseIndex';
 import { teacherExamTestPath, teacherPracticeTestPath } from '@/lib/tests/testPaths';
 import {
@@ -330,6 +331,14 @@ export default function TestsListPage() {
                     <span className="font-medium text-gray-900">{t.totalMarks ?? '—'}</span>
                     <span>marks</span>
                   </div>
+                  {'language' in t && t.language != null && (
+                    <div className="flex items-center gap-1.5 text-gray-500">
+                      <span className="font-medium text-gray-900">
+                        {TEST_LANGUAGE_LABEL[t.language]}
+                      </span>
+                      <span>Language</span>
+                    </div>
+                  )}
                   {row.kind === TEST_KIND.EXAM && 'durationMinutes' in t && (
                     <div className="flex items-center gap-1.5 text-gray-500">
                       <span className="font-medium text-gray-900">

@@ -2,6 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { TestLanguage } from './TestLanguage';
 import type { TestStatus } from './TestStatus';
 export type UpdatePracticeTestDTO = {
     name?: string;
@@ -11,5 +12,6 @@ export type UpdatePracticeTestDTO = {
     shuffleQuestions?: boolean;
     shuffleOptions?: boolean;
     status?: TestStatus;
+    language?: TestLanguage;
 };
 
