@@ -350,20 +350,22 @@ export function StudentAttemptWorkspace({
 
   return (
     <div className="flex flex-col flex-1 min-h-0 w-full min-w-0 gap-6 lg:gap-8">
-      <AttemptHeader
-        backHref={studentTestBasePath(slug)}
-        kindLabel={isExam ? 'Exam' : 'Practice'}
-        testName={testName}
-        metaLine={metaLine}
-        timerSlot={timerSlot}
-        answeredCount={answeredCount}
-        totalQuestions={rows.length}
-        onSubmit={() => setSubmitOpen(true)}
-        submitDisabled={submitting}
-      />
+      <div className="sticky top-0 z-30 bg-white/95 backdrop-blur-sm">
+        <AttemptHeader
+          backHref={studentTestBasePath(slug)}
+          kindLabel={isExam ? 'Exam' : 'Practice'}
+          testName={testName}
+          metaLine={metaLine}
+          timerSlot={timerSlot}
+          answeredCount={answeredCount}
+          totalQuestions={rows.length}
+          onSubmit={() => setSubmitOpen(true)}
+          submitDisabled={submitting}
+        />
+      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-6 lg:gap-8 items-start lg:pb-4">
-        <div className="flex flex-col gap-5 min-w-0 order-2 lg:order-1">
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-6 lg:gap-8 items-start lg:pb-4 min-h-0">
+        <div className="flex flex-col gap-5 min-w-0 order-2 lg:order-1 min-h-0 overflow-hidden">
           <StudentQuestionBlock
             displayIndex={activeIndex + 1}
             totalQuestions={rows.length}
@@ -384,7 +386,7 @@ export function StudentAttemptWorkspace({
           />
         </div>
 
-        <div className="order-1 lg:order-2 lg:sticky lg:top-6">
+        <div className="order-1 lg:order-2 lg:sticky lg:top-28 lg:self-start min-h-0">
           <AttemptQuestionNavigator
             rows={rows}
             activeIndex={activeIndex}
