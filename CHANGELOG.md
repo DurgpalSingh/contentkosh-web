@@ -1,6 +1,12 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.2.6] - Improved test attempt screen
+**P.R Raised by** : shubh404-SE on **Date** : 2026-04-07
+
+### Changed
+  - Test Attempt screen fixed and scroll in questions list and question block.
+---
 ## Version [1.2.5] - Add test modal validations
 **P.R Raised by** : shubh404-SE on **Date** : 2026-04-06
 

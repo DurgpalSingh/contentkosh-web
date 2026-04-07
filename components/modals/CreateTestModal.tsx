@@ -160,7 +160,6 @@ export function CreateTestModal({
         toast.success('Practice test created');
         onCreated(TEST_KIND.PRACTICE, id);
         reset();
-        onClose();
       } else {
         const body = {
           batchId,
@@ -179,7 +178,6 @@ export function CreateTestModal({
         toast.success('Exam test created');
         onCreated(TEST_KIND.EXAM, id);
         reset();
-        onClose();
       }
     } catch (err: unknown) {
       const message =
@@ -208,14 +206,14 @@ export function CreateTestModal({
         aria-modal="true"
         aria-labelledby="create-test-title"
       >
-        <div className="flex items-center justify-between border-b px-5 py-4">
-          <h2 id="create-test-title" className="text-lg font-semibold text-gray-900">
+        <div className="flex items-center justify-between border-b px-5 py-4 bg-blue-600 rounded-tl-xl rounded-tr-xl text-white">
+          <h2 id="create-test-title" className="text-lg font-semibold">
             Create test
           </h2>
           <button
             type="button"
             onClick={closeModal}
-            className="rounded-lg p-2 text-gray-500 hover:bg-gray-100"
+            className="rounded-lg p-2 text-gray-100 hover:bg-blue-500"
             aria-label="Close"
           >
             <X className="h-5 w-5" />
@@ -258,7 +256,6 @@ export function CreateTestModal({
                 label: b.displayName || b.codeName || `Batch ${b.id}`,
               }))}
               placeholder="Select batch"
-              triggerClassName="border-blue-200"
             />
             {formErrors.batchId && (
               <p className="text-sm text-red-600 mt-1">{formErrors.batchId}</p>
@@ -277,7 +274,6 @@ export function CreateTestModal({
               }))}
               disabled={filteredSubjects.length === 0}
               placeholder="Select subject"
-              triggerClassName="border-gray-200"
             />
             {formErrors.subjectId && (
               <p className="text-sm text-red-600 mt-1">{formErrors.subjectId}</p>
@@ -292,6 +288,8 @@ export function CreateTestModal({
               onChange={(e) => setName(e.target.value)}
               placeholder="Test title"
               maxLength={50}
+              className='focus-visible:ring-1 focus-visible:ring-blue-200 focus-visible:border-blue-400'
+
             />
             <p className="text-xs text-gray-500">{name.length}/50 characters</p>
             {formErrors.name && (
@@ -308,6 +306,7 @@ export function CreateTestModal({
               rows={3}
               placeholder="Short description"
               maxLength={200}
+              className='focus-visible:ring-1 focus-visible:ring-blue-200 focus-visible:border-blue-400'
             />
             <p className="text-xs text-gray-500">{description.length}/200 characters</p>
             {formErrors.description && (
@@ -324,7 +323,6 @@ export function CreateTestModal({
                     id="startAt"
                     type="datetime-local"
                     value={examWindow.startAt}
-                    min={minStartAt}
                     onChange={(e) =>
                       setExamWindow((w) => ({ ...w, startAt: e.target.value }))
                     }
@@ -372,7 +370,6 @@ export function CreateTestModal({
                     { value: ResultVisibilityExam._1, label: resultVisibilityExamLabel(1) },
                   ]}
                   placeholder="Select visibility"
-                  triggerClassName="border-gray-200"
                 />
               </div>
             </>
@@ -388,7 +385,7 @@ export function CreateTestModal({
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" variant="default" className='bg-blue-600' disabled={loading}>
               {loading ? 'Creating…' : 'Create'}
             </Button>
           </div>

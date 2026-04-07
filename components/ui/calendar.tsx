@@ -2,12 +2,78 @@
 
 import * as React from "react"
 import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from "lucide-react"
-import { DayPicker } from "react-day-picker"
+import { DayPicker, useDayPicker } from "react-day-picker"
 
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>
+
+function InlineMonthCaption({
+    children,
+    className,
+    style,
+    calendarMonth: _calendarMonth,
+    displayIndex: _displayIndex,
+    ...divProps
+}: {
+    children?: React.ReactNode
+    className?: string
+    style?: React.CSSProperties
+    calendarMonth?: unknown
+    displayIndex?: number
+    [key: string]: unknown
+}) {
+    const { previousMonth, nextMonth, goToMonth, labels, components, dayPickerProps } = useDayPicker()
+    const prevDisabled = !previousMonth || Boolean(dayPickerProps.disableNavigation)
+    const nextDisabled = !nextMonth || Boolean(dayPickerProps.disableNavigation)
+    const Chevron = components.Chevron
+    const dir = dayPickerProps.dir
+
+    return (
+        <div
+            className={cn("flex items-center justify-center gap-2", className)}
+            style={style}
+            {...divProps}
+        >
+            <components.PreviousMonthButton
+                type="button"
+                className="h-8 w-8 rounded-lg bg-white p-0 border border-slate-200 text-slate-600 shadow-sm hover:bg-slate-50 hover:text-slate-900"
+                tabIndex={prevDisabled ? -1 : undefined}
+                aria-disabled={prevDisabled ? true : undefined}
+                aria-label={labels.labelPrevious(previousMonth)}
+                onClick={() => {
+                    if (previousMonth) goToMonth(previousMonth)
+                }}
+            >
+                <Chevron
+                    disabled={prevDisabled ? true : undefined}
+                    className="h-4 w-4"
+                    orientation={dir === "rtl" ? "right" : "left"}
+                />
+            </components.PreviousMonthButton>
+
+            <div className="flex items-center gap-2">{children}</div>
+
+            <components.NextMonthButton
+                type="button"
+                className="h-8 w-8 rounded-lg bg-white p-0 border border-slate-200 text-slate-600 shadow-sm hover:bg-slate-50 hover:text-slate-900"
+                tabIndex={nextDisabled ? -1 : undefined}
+                aria-disabled={nextDisabled ? true : undefined}
+                aria-label={labels.labelNext(nextMonth)}
+                onClick={() => {
+                    if (nextMonth) goToMonth(nextMonth)
+                }}
+            >
+                <Chevron
+                    disabled={nextDisabled ? true : undefined}
+                    className="h-4 w-4"
+                    orientation={dir === "rtl" ? "left" : "right"}
+                />
+            </components.NextMonthButton>
+        </div>
+    )
+}
 
 function Calendar({
     className,
@@ -22,19 +88,13 @@ function Calendar({
             classNames={{
                 months: "flex flex-col space-y-3",
                 month: "space-y-3",
-                caption: "flex items-center justify-between gap-3",
-                caption_dropdowns: "flex items-center gap-2",
+                month_caption: "flex items-center justify-center gap-2",
+                dropdowns: "flex items-center gap-2",
                 caption_label: "sr-only",
                 dropdown: "rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-cyan-200",
-                dropdown_month: "min-w-[9.5rem]",
-                dropdown_year: "min-w-[6.5rem]",
-                nav: "space-x-1 flex items-center",
-                nav_button: cn(
-                    buttonVariants({ variant: "outline" }),
-                    "h-8 w-8 rounded-lg bg-white p-0 border border-slate-200 text-slate-600 shadow-sm hover:bg-slate-50 hover:text-slate-900"
-                ),
-                nav_button_previous: "absolute left-1",
-                nav_button_next: "absolute right-1",
+                months_dropdown: "min-w-[9.5rem]",
+                years_dropdown: "min-w-[6.5rem]",
+                nav: "hidden",
                 table: "w-full border-collapse space-y-1",
                 weekdays: "flex justify-between",
                 weekday: "text-slate-400 rounded-md w-9 font-medium text-[0.75rem] uppercase tracking-wide",
@@ -61,6 +121,7 @@ function Calendar({
                 ...classNames,
             }}
             components={{
+                MonthCaption: InlineMonthCaption,
                 Chevron: ({ orientation, ...props }) => {
                     switch (orientation) {
                         case "left":
@@ -76,6 +137,7 @@ function Calendar({
                     }
                 }
             }}
+            hideNavigation
             {...props}
         />
     )

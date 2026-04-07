@@ -10,7 +10,15 @@ type QuestionRow = {
   question: TestQuestion;
 };
 
-const NavigatorItem = memo(function NavigatorItem(props: {
+const NavigatorItem = memo(function NavigatorItem({
+  index,
+  row,
+  isActive,
+  answer,
+  visited,
+  markedForReview,
+  onSelectIndex,
+}: {
   index: number;
   row: QuestionRow;
   isActive: boolean;
@@ -19,13 +27,13 @@ const NavigatorItem = memo(function NavigatorItem(props: {
   markedForReview: boolean;
   onSelectIndex: (index: number) => void;
 }) {
-  const onSelect = useCallback(() => props.onSelectIndex(props.index), [props.index, props.onSelectIndex]);
+  const onSelect = useCallback(() => onSelectIndex(index), [index, onSelectIndex]);
   const state = getQuestionUiState({
-    qType: props.row.question.type,
-    answer: props.answer,
-    visited: props.visited,
-    markedForReview: props.markedForReview,
-    isActive: props.isActive,
+    qType: row.question.type,
+    answer,
+    visited,
+    markedForReview,
+    isActive,
   });
   const cls = getQuestionUiClass(state);
 
@@ -34,10 +42,10 @@ const NavigatorItem = memo(function NavigatorItem(props: {
       type="button"
       onClick={onSelect}
       className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border text-sm font-bold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${cls}`}
-      aria-label={`Question ${props.index + 1}`}
-      aria-current={props.isActive ? 'true' : undefined}
+      aria-label={`Question ${index + 1}`}
+      aria-current={isActive ? 'true' : undefined}
     >
-      {props.index + 1}
+      {index + 1}
     </button>
   );
 });
@@ -79,10 +87,10 @@ export function AttemptQuestionNavigator({
   }, [rows, answers, markedForReview]);
 
   return (
-    <aside className="w-full">
-      <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-[0_2px_16px_-6px_rgba(15,23,42,0.1)]">
+    <aside className="w-full min-h-0 max-h-[90vh] overflow-auto scrollbar-hide lg:max-h-[60vh]">
+      <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-[0_2px_16px_-6px_rgba(15,23,42,0.1)] h-full">
         <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-4">Questions</p>
-        <div className="flex flex-wrap gap-2.5">
+        <div className="flex flex-wrap gap-2">
           {rows.map((row, i) => (
             <NavigatorItem
               key={row.question.id}

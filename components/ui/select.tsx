@@ -288,7 +288,7 @@ export function Select({
           disabled={disabled || itemCount === 0}
           className={cn(
             'flex h-10 w-full items-center justify-between gap-2 rounded-md border border-input bg-background px-3 text-left text-sm ring-offset-background',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+            'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-200  focus:border-blue-400',
             'disabled:cursor-not-allowed disabled:opacity-50',
             triggerClassName,
           )}
@@ -321,7 +321,6 @@ export function Select({
         >
           {options.map((opt, index) => {
             const optionId = `${id}-opt-${index}`;
-            const isHighlighted = index === highlightIndex;
             const isSelected = opt.value === value;
             return (
               <div
@@ -331,10 +330,8 @@ export function Select({
                 aria-selected={isSelected}
                 className={cn(
                   'cursor-pointer rounded-sm px-3 py-2 text-sm outline-none',
-                  isHighlighted && 'bg-blue-100 text-accent-foreground',
-                  !isHighlighted && isSelected && 'bg-muted/60',
+                  'aria-selected:bg-blue-100 aria-selected:text-slate-900',
                 )}
-                onMouseEnter={() => setHighlightIndex(index)}
                 onMouseDown={(e) => {
                   e.preventDefault();
                   onOptionPointerDown(index);
