@@ -1,6 +1,13 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.2.7] - Multi language support in test module
+**P.R Raised by** : shubh404-SE on **Date** : 2026-04-07
+
+### Added
+  - support multi language in test module, added language field in test module.
+  - Student can select language before start test, and test will be in selected language.
+---
 ## Version [1.2.6] - Improved test attempt screen
 **P.R Raised by** : shubh404-SE on **Date** : 2026-04-07
 
