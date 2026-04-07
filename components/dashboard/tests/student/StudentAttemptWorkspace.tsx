@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { List, X } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import {
@@ -94,6 +95,7 @@ export function StudentAttemptWorkspace({
   const [submitOpen, setSubmitOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [timerSec, setTimerSec] = useState<number | null>(null);
+  const [navigatorOpen, setNavigatorOpen] = useState(true);
   const draftStorageKey = useMemo(
     () => `studentAttemptDraft:${kind}:${attemptId}`,
     [kind, attemptId],
@@ -142,6 +144,15 @@ export function StudentAttemptWorkspace({
       setTimerSec(null);
     }
   }, [detailsProp, kind, attemptId, draftStorageKey, uiStorageKey]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mq = window.matchMedia('(min-width: 1024px)');
+    const update = () => setNavigatorOpen(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
 
   useEffect(() => {
     if (!details || !slug) return;
@@ -300,6 +311,8 @@ export function StudentAttemptWorkspace({
   const goPrev = useCallback(() => setActiveIndex((i) => Math.max(0, i - 1)), []);
   const goNext = useCallback(() => setActiveIndex((i) => Math.min(rows.length - 1, i + 1)), [rows.length]);
   const onSelectIndex = useCallback((i: number) => setActiveIndex(i), []);
+  const toggleNavigator = useCallback(() => setNavigatorOpen((v) => !v), []);
+  const closeNavigator = useCallback(() => setNavigatorOpen(false), []);
 
   useEffect(() => {
     if (!details) return;
@@ -364,7 +377,20 @@ export function StudentAttemptWorkspace({
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-6 lg:gap-8 items-start lg:pb-4 min-h-0">
+      <div className="flex items-center justify-end">
+        <button
+          type="button"
+          onClick={toggleNavigator}
+          className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-900"
+          aria-expanded={navigatorOpen}
+          aria-controls="attempt-question-navigator"
+          aria-label={navigatorOpen ? 'Hide question list' : 'Show question list'}
+        >
+          {navigatorOpen ? <X className="h-4 w-4" aria-hidden /> : <List className="h-4 w-4" aria-hidden />}
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 lg:gap-8 items-start lg:pb-4 min-h-0 lg:grid-cols-[minmax(0,1fr)_300px]">
         <div className="flex flex-col gap-5 min-w-0 order-2 lg:order-1 min-h-0 overflow-hidden">
           <StudentQuestionBlock
             displayIndex={activeIndex + 1}
@@ -386,17 +412,61 @@ export function StudentAttemptWorkspace({
           />
         </div>
 
-        <div className="order-1 lg:order-2 lg:sticky lg:top-28 lg:self-start min-h-0">
-          <AttemptQuestionNavigator
-            rows={rows}
-            activeIndex={activeIndex}
-            answers={answers}
-            visited={visited}
-            markedForReview={markedForReview}
-            onSelectIndex={onSelectIndex}
-          />
+        <div className="order-1 lg:order-2 lg:sticky lg:top-28 lg:self-start min-h-0 hidden lg:block">
+          {navigatorOpen ? (
+            <div id="attempt-question-navigator">
+              <AttemptQuestionNavigator
+                rows={rows}
+                activeIndex={activeIndex}
+                answers={answers}
+                visited={visited}
+                markedForReview={markedForReview}
+                onSelectIndex={onSelectIndex}
+              />
+            </div>
+          ) : (
+            <div className="h-10 w-full" aria-hidden />
+          )}
         </div>
       </div>
+
+          {/* Mobile view */}
+      {navigatorOpen ? (
+        <div className="fixed inset-0 z-40 flex lg:hidden" role="dialog" aria-modal="true">
+          <button
+            type="button"
+            aria-label="Close question list"
+            className="absolute inset-0 bg-slate-900/40"
+            onClick={closeNavigator}
+          />
+          <div className="relative ml-auto h-full w-[min(85vw,340px)] bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+              <p className="text-sm font-semibold text-slate-700">Questions</p>
+              <button
+                type="button"
+                onClick={closeNavigator}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-slate-600"
+                aria-label="Close"
+              >
+                <X className="h-4 w-4" aria-hidden />
+              </button>
+            </div>
+            <div id="attempt-question-navigator" className="h-[calc(100%-48px)] overflow-auto px-4 py-4">
+              <AttemptQuestionNavigator
+                rows={rows}
+                activeIndex={activeIndex}
+                answers={answers}
+                visited={visited}
+                markedForReview={markedForReview}
+                onSelectIndex={(i) => {
+                  onSelectIndex(i);
+                  closeNavigator();
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <StudentSubmitTestModal
         isOpen={submitOpen}

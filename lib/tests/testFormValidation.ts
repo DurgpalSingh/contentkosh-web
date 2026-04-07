@@ -73,10 +73,32 @@ export function validateTestForm(values: {
   }
 
   if (values.kind === TEST_KIND.EXAM) {
+    if (!values.startAt) {
+      errors.startAt = 'Start date is required';
+    }
+
+    if (!values.deadlineAt) {
+      errors.deadlineAt = 'Deadline is required';
+    }
+
+    if (values.startAt) {
+      const startTime = new Date(values.startAt);
+      if (Number.isNaN(startTime.getTime())) {
+        errors.startAt = 'Start date is invalid';
+      }
+    }
+
+    if (values.deadlineAt) {
+      const deadlineTime = new Date(values.deadlineAt);
+      if (Number.isNaN(deadlineTime.getTime())) {
+        errors.deadlineAt = 'Deadline is invalid';
+      }
+    }
+
     if (values.startAt && values.disallowPastStart) {
       const startTime = new Date(values.startAt);
       if (startTime < getLocalNow()) {
-        errors.startAt = 'Start date can not be in past.';
+        errors.startAt = "Start date-time can't be in past.";
       }
     }
 
