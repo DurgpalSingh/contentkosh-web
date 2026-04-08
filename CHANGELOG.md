@@ -1,6 +1,12 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.2.8] - Test Attempt ui fix
+**P.R Raised by** : shubh404-SE on **Date** : 2026-04-08
+
+### Changed
+  - Test attempt screen UI fixed for better user experience.
+---
 ## Version [1.2.7] - Multi language support in test module
 **P.R Raised by** : shubh404-SE on **Date** : 2026-04-07
 

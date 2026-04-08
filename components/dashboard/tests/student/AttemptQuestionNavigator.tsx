@@ -87,54 +87,56 @@ export function AttemptQuestionNavigator({
   }, [rows, answers, markedForReview]);
 
   return (
-    <aside className="w-full min-h-0 max-h-[90vh] overflow-auto scrollbar-hide lg:max-h-[60vh]">
+    <aside className="w-full min-h-0 max-h-[90vh] lg:max-h-[60vh]">
       <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-[0_2px_16px_-6px_rgba(15,23,42,0.1)] h-full">
         <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-4">Questions</p>
-        <div className="flex flex-wrap gap-2">
-          {rows.map((row, i) => (
-            <NavigatorItem
-              key={row.question.id}
-              index={i}
-              row={row}
-              isActive={i === activeIndex}
-              answer={answers[row.question.id]}
-              visited={visited.has(row.question.id)}
-              markedForReview={markedForReview.has(row.question.id)}
-              onSelectIndex={onSelectIndex}
-            />
-          ))}
+        <div className='flex flex-col gap-2'>
+          <ul className="mb-6 space-y-2.5 border-b border-slate-100 pb-5 text-xs text-slate-600">
+            <li className="flex items-center justify-between gap-2">
+              <span className="flex items-center gap-2.5 min-w-0">
+                <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-500" />
+                <span>Answered</span>
+              </span>
+              <span className="tabular-nums font-medium text-slate-500">{stats.answered}</span>
+            </li>
+            <li className="flex items-center justify-between gap-2">
+              <span className="flex items-center gap-2.5 min-w-0">
+                <span className="h-2.5 w-2.5 shrink-0 rounded-full border-2 border-violet-400 bg-violet-100" />
+                <span>Review (no answer)</span>
+              </span>
+              <span className="tabular-nums font-medium text-slate-500">{stats.reviewNoAnswer}</span>
+            </li>
+            <li className="flex items-center justify-between gap-2">
+              <span className="flex items-center gap-2.5 min-w-0">
+                <span className="h-2.5 w-2.5 shrink-0 rounded-full border-2 border-cyan-500 bg-cyan-100" />
+                <span>Review + answered</span>
+              </span>
+              <span className="tabular-nums font-medium text-slate-500">{stats.reviewWithAnswer}</span>
+            </li>
+            <li className="flex items-center justify-between gap-2">
+              <span className="flex items-center gap-2.5 min-w-0">
+                <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-slate-300" />
+                <span>Unanswered</span>
+              </span>
+              <span className="tabular-nums font-medium text-slate-500">{stats.unanswered}</span>
+            </li>
+          </ul>
+          <div className="flex flex-wrap gap-2 overflow-auto scrollbar-hide max-h-[30vh]">
+            {rows.map((row, i) => (
+              <NavigatorItem
+                key={row.question.id}
+                index={i}
+                row={row}
+                isActive={i === activeIndex}
+                answer={answers[row.question.id]}
+                visited={visited.has(row.question.id)}
+                markedForReview={markedForReview.has(row.question.id)}
+                onSelectIndex={onSelectIndex}
+              />
+            ))}
+          </div>
         </div>
-
-        <ul className="mt-6 space-y-2.5 border-t border-slate-100 pt-5 text-xs text-slate-600">
-          <li className="flex items-center justify-between gap-2">
-            <span className="flex items-center gap-2.5 min-w-0">
-              <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-500" />
-              <span>Answered</span>
-            </span>
-            <span className="tabular-nums font-medium text-slate-500">{stats.answered}</span>
-          </li>
-          <li className="flex items-center justify-between gap-2">
-            <span className="flex items-center gap-2.5 min-w-0">
-              <span className="h-2.5 w-2.5 shrink-0 rounded-full border-2 border-violet-400 bg-violet-100" />
-              <span>Review (no answer)</span>
-            </span>
-            <span className="tabular-nums font-medium text-slate-500">{stats.reviewNoAnswer}</span>
-          </li>
-          <li className="flex items-center justify-between gap-2">
-            <span className="flex items-center gap-2.5 min-w-0">
-              <span className="h-2.5 w-2.5 shrink-0 rounded-full border-2 border-cyan-500 bg-cyan-100" />
-              <span>Review + answered</span>
-            </span>
-            <span className="tabular-nums font-medium text-slate-500">{stats.reviewWithAnswer}</span>
-          </li>
-          <li className="flex items-center justify-between gap-2">
-            <span className="flex items-center gap-2.5 min-w-0">
-              <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-slate-300" />
-              <span>Unanswered</span>
-            </span>
-            <span className="tabular-nums font-medium text-slate-500">{stats.unanswered}</span>
-          </li>
-        </ul>
+        
       </div>
     </aside>
   );

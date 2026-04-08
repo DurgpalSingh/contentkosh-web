@@ -109,10 +109,10 @@ export function StudentQuestionBlock({
 
   return (
     <section
-      className="rounded-2xl border border-slate-200/90 bg-white shadow-[0_2px_16px_-6px_rgba(15,23,42,0.1)] overflow-auto scrollbar-hide max-h-[calc(100vh-24rem)] min-h-0"
+      className="rounded-2xl border border-slate-200/90 bg-white shadow-[0_2px_16px_-6px_rgba(15,23,42,0.1)] overflow-hidden max-h-[calc(100vh-24rem)] min-h-0 flex flex-col"
       aria-labelledby={`q-heading-${question.id}`}
     >
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 bg-gradient-to-b from-slate-50/90 to-white px-5 py-3.5 sm:px-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 bg-gradient-to-b from-slate-50/90 to-white px-5 py-3.5 sm:px-6 sticky top-0 z-10">
         <div className="flex flex-wrap items-center gap-2.5 min-w-0">
           <h2 id={`q-heading-${question.id}`} className="text-sm font-medium text-slate-500">
             Question {displayIndex} of {totalQuestions}
@@ -123,7 +123,7 @@ export function StudentQuestionBlock({
         </div>
       </div>
 
-      <div className="px-5 py-6 sm:px-8 sm:py-8">
+      <div className="px-5 py-6 sm:px-8 sm:py-8 overflow-auto scrollbar-hide flex-1">
         <div className="text-base leading-relaxed text-slate-900 min-w-0">
           <HtmlContent html={body} />
         </div>

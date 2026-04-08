@@ -362,7 +362,7 @@ export function StudentAttemptWorkspace({
     ) : null;
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 w-full min-w-0 gap-6 lg:gap-8">
+    <div className="flex flex-col flex-1 min-h-0 w-full min-w-0 gap-2">
       <div className="sticky top-0 z-30 bg-white/95 backdrop-blur-sm">
         <AttemptHeader
           backHref={studentTestBasePath(slug)}
@@ -377,21 +377,23 @@ export function StudentAttemptWorkspace({
         />
       </div>
 
-      <div className="flex items-center justify-end">
-        <button
-          type="button"
-          onClick={toggleNavigator}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-900"
-          aria-expanded={navigatorOpen}
-          aria-controls="attempt-question-navigator"
-          aria-label={navigatorOpen ? 'Hide question list' : 'Show question list'}
-        >
-          {navigatorOpen ? <X className="h-4 w-4" aria-hidden /> : <List className="h-4 w-4" aria-hidden />}
-        </button>
-      </div>
 
       <div className="grid grid-cols-1 gap-6 lg:gap-8 items-start lg:pb-4 min-h-0 lg:grid-cols-[minmax(0,1fr)_300px]">
         <div className="flex flex-col gap-5 min-w-0 order-2 lg:order-1 min-h-0 overflow-hidden">
+          {!navigatorOpen ? (
+            <div className="flex justify-end lg:hidden">
+              <button
+                type="button"
+                onClick={toggleNavigator}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-900"
+                aria-expanded={navigatorOpen}
+                aria-controls="attempt-question-navigator"
+                aria-label="Show question list"
+              >
+                <List className="h-4 w-4" aria-hidden />
+              </button>
+            </div>
+          ) : null}
           <StudentQuestionBlock
             displayIndex={activeIndex + 1}
             totalQuestions={rows.length}
@@ -413,6 +415,18 @@ export function StudentAttemptWorkspace({
         </div>
 
         <div className="order-1 lg:order-2 lg:sticky lg:top-28 lg:self-start min-h-0 hidden lg:block">
+          <div className="absolute right-0">
+            <button
+              type="button"
+              onClick={toggleNavigator}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-900"
+              aria-expanded={navigatorOpen}
+              aria-controls="attempt-question-navigator"
+              aria-label={navigatorOpen ? 'Hide question list' : 'Show question list'}
+            >
+              {navigatorOpen ? <X className="h-4 w-4" aria-hidden /> : <List className="h-4 w-4" aria-hidden />}
+            </button>
+          </div>
           {navigatorOpen ? (
             <div id="attempt-question-navigator">
               <AttemptQuestionNavigator
@@ -440,7 +454,7 @@ export function StudentAttemptWorkspace({
             onClick={closeNavigator}
           />
           <div className="relative ml-auto h-full w-[min(85vw,340px)] bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-2">
               <p className="text-sm font-semibold text-slate-700">Questions</p>
               <button
                 type="button"
