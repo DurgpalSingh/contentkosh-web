@@ -26,11 +26,13 @@ import {
   PracticeTest,
   PracticeTestsService,
   ResultVisibilityExam,
+  TestLanguage,
   UpdateExamTestDTO,
   UpdatePracticeTestDTO,
 } from '@/lib/api'
 import type { Subject } from '@/lib/api'
 import { TEST_KIND, type TestKind } from '@/lib/tests/testConstants'
+import { TEST_LANGUAGE_LABEL, TEST_LANGUAGE_OPTIONS } from '@/lib/tests/testLanguage'
 import { resultVisibilityExamLabel } from '@/lib/tests/testUiMappers'
 import { validateTestForm, type TestFormErrors } from '@/lib/tests/testFormValidation'
 import { toast } from 'sonner'
@@ -64,6 +66,7 @@ const buildPracticeDraft = (t: PracticeTest): UpdatePracticeWithSubject => ({
   showExplanations: t.showExplanations,
   shuffleQuestions: t.shuffleQuestions,
   shuffleOptions: t.shuffleOptions,
+  language: t.language,
   ...(typeof (t as PracticeWithSubject).subjectId === 'number'
     ? { subjectId: (t as PracticeWithSubject).subjectId }
     : {}),
@@ -80,6 +83,7 @@ const buildExamDraft = (t: ExamTest): UpdateExamWithSubject => ({
   resultVisibility: t.resultVisibility,
   shuffleQuestions: t.shuffleQuestions,
   shuffleOptions: t.shuffleOptions,
+  language: t.language,
   ...(typeof (t as ExamWithSubject).subjectId === 'number'
     ? { subjectId: (t as ExamWithSubject).subjectId }
     : {}),
@@ -432,6 +436,9 @@ const ReadOnlySettings = ({
             <ReadOnlyValueCard label="Subject">
               <span className="text-gray-800">{subjectName ?? '—'}</span>
             </ReadOnlyValueCard>
+            <ReadOnlyValueCard label="Language">
+              {TEST_LANGUAGE_LABEL[t.language as TestLanguage] ?? '—'}
+            </ReadOnlyValueCard>
           </div>
         </section>
 
@@ -483,6 +490,9 @@ const ReadOnlySettings = ({
           </ReadOnlyValueCard>
           <ReadOnlyValueCard label="Subject">
             <span className="text-gray-800">{subjectName ?? '—'}</span>
+          </ReadOnlyValueCard>
+          <ReadOnlyValueCard label="Language">
+            {TEST_LANGUAGE_LABEL[t.language as TestLanguage] ?? '—'}
           </ReadOnlyValueCard>
         </div>
       </section>
@@ -648,6 +658,20 @@ const PracticeSettingsFields = ({
           />
           <p className="text-xs text-gray-500">{draft.description?.length ?? 0}/200 characters</p>
         </Field>
+        <Field label="Test language">
+          <Select
+            id="practice-language"
+            value={draft.language ?? TestLanguage.EN}
+            onChange={(value) =>
+              setDraft((s) => ({ ...s, language: value as TestLanguage }))
+            }
+            options={TEST_LANGUAGE_OPTIONS.map((o) => ({
+              value: o.value,
+              label: o.label,
+            }))}
+            triggerClassName={selectClass}
+          />
+        </Field>
       </div>
     </section>
 
@@ -754,6 +778,20 @@ const ExamSettingsFields = ({
             maxLength={200}
           />
           <p className="text-xs text-gray-500">{draft.description?.length ?? 0}/200 characters</p>
+        </Field>
+        <Field label="Test language">
+          <Select
+            id="exam-language"
+            value={draft.language ?? TestLanguage.EN}
+            onChange={(value) =>
+              setDraft((s) => ({ ...s, language: value as TestLanguage }))
+            }
+            options={TEST_LANGUAGE_OPTIONS.map((o) => ({
+              value: o.value,
+              label: o.label,
+            }))}
+            triggerClassName={selectClass}
+          />
         </Field>
       </div>
     </section>

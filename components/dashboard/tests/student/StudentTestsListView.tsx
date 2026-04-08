@@ -6,7 +6,7 @@ import { FlaskConical } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Button } from '@/components/ui/button';
-import { ExamTestsService, PracticeTestsService, type Subject } from '@/lib/api';
+import { ExamTestsService, PracticeTestsService, type Subject, TestLanguage } from '@/lib/api';
 import { createIndexedTextFilter } from '@/lib/indexedFiltering';
 import { EmptyState } from '@/components/common/EmptyState';
 import type { PracticeCatalogRow, ExamCatalogRow, UnifiedStudentRow } from '@/lib/tests/studentTestCatalog';
@@ -127,17 +127,23 @@ export function StudentTestsListView({
     kindFilter,
   ]);
 
-  const startPractice = async (testId: string): Promise<void> => {
+  const startPractice = async (testId: string, language: TestLanguage): Promise<void> => {
     if (typeof businessId !== 'number') throw new Error('Not authorized');
-    const res = await PracticeTestsService.postApiBusinessPracticeTestsAttempts(businessId, { practiceTestId: testId });
+    const res = await PracticeTestsService.postApiBusinessPracticeTestsAttempts(businessId, {
+      practiceTestId: testId,
+      language,
+    });
     const aid = res.data?.attemptId;
     if (!aid) throw new Error('Could not start attempt');
     router.push(studentPracticeAttemptPath(slug, aid));
   };
 
-  const startExam = async (testId: string): Promise<void> => {
+  const startExam = async (testId: string, language: TestLanguage): Promise<void> => {
     if (typeof businessId !== 'number') throw new Error('Not authorized');
-    const res = await ExamTestsService.postApiBusinessExamTestsAttempts(businessId, { examTestId: testId });
+    const res = await ExamTestsService.postApiBusinessExamTestsAttempts(businessId, {
+      examTestId: testId,
+      language,
+    });
     const aid = res.data?.attemptId;
     if (!aid) throw new Error('Could not start attempt');
     router.push(studentExamAttemptPath(slug, aid));
@@ -160,6 +166,7 @@ export function StudentTestsListView({
         rulesDescription: pr.description,
         questionCount: pr.totalQuestions ?? 0,
         marksPerQuestion: pr.defaultMarksPerQuestion,
+        testLanguage: pr.language,
       });
     } else {
       const er = row as ExamCatalogRow;
@@ -172,6 +179,7 @@ export function StudentTestsListView({
         questionCount: er.totalQuestions ?? 0,
         marksPerQuestion: er.defaultMarksPerQuestion,
         negativeMarksPerQuestion: er.negativeMarksPerQuestion,
+        testLanguage: er.language,
         timing: {
           startAtLabel: formatDateTime(er.startAt),
           deadlineAtLabel: formatDateTime(er.deadlineAt),
@@ -292,6 +300,10 @@ export function StudentTestsListView({
 
                   <dl className="flex flex-wrap gap-x-6 gap-y-2 mt-2 text-sm">
                     <div className="flex gap-3">
+                      <dt className="text-gray-400">Language</dt>
+                      <dd className="font-medium text-gray-900">{vm.languageLabel}</dd>
+                    </div>
+                    <div className="flex gap-3">
                       <dt className="text-gray-400">Questions</dt>
                       <dd className="font-medium text-gray-900">{vm.totalQuestions ?? '—'}</dd>
                     </div>
@@ -398,12 +410,12 @@ export function StudentTestsListView({
         <StartAttemptConfirmModal
           isOpen={startConfirmOpen}
           onClose={closeStartConfirm}
-          onConfirm={async () => {
+          onConfirm={async (language) => {
             if (!startConfirmPayload) return;
             if (startConfirmPayload.kind === 'practice') {
-              await startPractice(startConfirmPayload.testId);
+              await startPractice(startConfirmPayload.testId, language);
             } else {
-              await startExam(startConfirmPayload.testId);
+              await startExam(startConfirmPayload.testId, language);
             }
           }}
           testInfo={startConfirmPayload}

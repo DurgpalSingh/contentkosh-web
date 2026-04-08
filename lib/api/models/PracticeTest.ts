@@ -2,6 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { TestLanguage } from './TestLanguage';
 import type { TestStatus } from './TestStatus';
 export type PracticeTest = {
     id: string;
@@ -18,6 +19,7 @@ export type PracticeTest = {
     showExplanations: boolean;
     shuffleQuestions: boolean;
     shuffleOptions: boolean;
+    language: TestLanguage;
     totalQuestions?: number;
     totalMarks?: number;
     createdBy?: string;

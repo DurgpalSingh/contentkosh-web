@@ -4,6 +4,7 @@
 /* eslint-disable */
 import type { LockedReason } from './LockedReason';
 import type { ResultVisibilityExam } from './ResultVisibilityExam';
+import type { TestLanguage } from './TestLanguage';
 import type { TestStatus } from './TestStatus';
 export type ExamAvailableTest = {
     id: string;
@@ -16,6 +17,7 @@ export type ExamAvailableTest = {
     name: string;
     description?: string;
     status?: TestStatus;
+    language: TestLanguage;
     startAt: string;
     deadlineAt: string;
     durationMinutes: number;
