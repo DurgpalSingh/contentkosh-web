@@ -52,9 +52,91 @@ import {
   TIPTAP_INLINE_MATH_NODE_NAME,
   TIPTAP_KATEX_OPTIONS,
 } from '@/lib/richText/richTextConstants';
+import { EDITOR_FONTS, EDITOR_FONT_DEFAULT, type EditorFont } from '@/lib/richText/richTextFonts';
 import { cn } from '@/lib/utils';
 
 import 'katex/dist/katex.min.css';
+
+/** Dropdown font picker — shows each font rendered in its own typeface */
+function FontPicker({
+  value,
+  onChange,
+}: {
+  value: EditorFont;
+  onChange: (font: EditorFont) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={() => setOpen((o) => !o)}
+        className="flex h-8 items-center gap-1.5 rounded-md border border-input bg-background px-2 text-xs hover:bg-accent hover:text-accent-foreground min-w-[7rem] max-w-[9rem] truncate"
+        title="Font family"
+        aria-label="Font family"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+      >
+        <span className="truncate" style={{ fontFamily: value.value }}>
+          {value.label}
+        </span>
+        <svg className="ml-auto h-3 w-3 shrink-0 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+      {open && (
+        <div
+          className="absolute left-0 top-full z-50 mt-1 w-52 rounded-md border border-border bg-popover shadow-md max-h-32 overflow-auto"
+          role="listbox"
+          aria-label="Font family options"
+        >
+          {/* Latin fonts */}
+          <div className="px-2 pt-2 pb-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Latin</div>
+          {EDITOR_FONTS.filter((f) => f.script === 'latin').map((font) => (
+            <button
+              key={font.value}
+              type="button"
+              role="option"
+              aria-selected={value.value === font.value}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => { onChange(font); setOpen(false); }}
+              className={cn(
+                'flex w-full flex-col px-3 py-1.5 text-left hover:bg-accent hover:text-accent-foreground',
+                value.value === font.value && 'bg-accent text-accent-foreground',
+              )}
+            >
+              <span className="text-xs font-medium">{font.label}</span>
+              <span className="text-[11px] text-muted-foreground" style={{ fontFamily: font.value }}>
+                {font.previewText}
+              </span>
+            </button>
+          ))}
+          {/* Devanagari fonts */}
+          <div className="px-2 pt-2 pb-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground border-t border-border mt-1">Hindi / Devanagari</div>
+          {EDITOR_FONTS.filter((f) => f.script === 'devanagari').map((font) => (
+            <button
+              key={font.value}
+              type="button"
+              role="option"
+              aria-selected={value.value === font.value}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => { onChange(font); setOpen(false); }}
+              className={cn(
+                'flex w-full flex-col px-3 py-1.5 text-left hover:bg-accent hover:text-accent-foreground',
+                value.value === font.value && 'bg-accent text-accent-foreground',
+              )}
+            >
+              <span className="text-xs font-medium">{font.label}</span>
+              <span className="text-[11px] text-muted-foreground" style={{ fontFamily: font.value }}>
+                {font.previewText}
+              </span>
+            </button>
+          ))}
+          <div className="pb-1" />
+        </div>
+      )}
+    </div>
+  );
+}
 
 const HEADING_LEVELS = [1, 2, 3] as const;
 
@@ -159,6 +241,10 @@ export function RichTextField({
   const linkSelectionRef = useRef<{ from: number; to: number } | null>(null);
   /** Captured when opening the math palette so symbol inserts work after the editor blurs */
   const mathPaletteSelectionRef = useRef<{ from: number; to: number } | null>(null);
+  /** Tracks whether an IME composition session is active — used to guard the Mathematics InputRule */
+  const isComposingRef = useRef(false);
+  /** Currently selected editor font */
+  const [selectedFont, setSelectedFont] = useState<EditorFont>(EDITOR_FONT_DEFAULT);
   const [tablePopoverOpen, setTablePopoverOpen] = useState(false);
   const [tableRows, setTableRows] = useState(RICH_TEXT_TABLE_INSERT_ROWS_DEFAULT);
   const [tableCols, setTableCols] = useState(RICH_TEXT_TABLE_INSERT_COLS_DEFAULT);
@@ -203,6 +289,16 @@ export function RichTextField({
             setMathDraft(String(node.attrs.latex ?? ''));
           },
         },
+      }).extend({
+        addInputRules() {
+          return (this.parent?.() ?? []).map((rule) => ({
+            ...rule,
+            handler: (props: Parameters<typeof rule.handler>[0]) => {
+              if (isComposingRef.current) return null;
+              return rule.handler(props);
+            },
+          }));
+        },
       }),
       Placeholder.configure({
         placeholder: placeholder ?? '',
@@ -217,6 +313,19 @@ export function RichTextField({
       attributes: {
         class: cn(RICH_TEXT_EDITOR_ROOT_CLASS),
         'aria-label': ariaLabel ?? 'Rich text',
+      },
+      handleDOMEvents: {
+        compositionstart: () => { isComposingRef.current = true; return false; },
+        compositionend: () => { isComposingRef.current = false; return false; },
+      },
+      // During active IME composition, return true to tell ProseMirror to
+      // skip its own keydown handling and let the browser/IME handle it natively.
+      // Without this, ProseMirror intercepts keydown events mid-composition and
+      // drops or corrupts Devanagari characters.
+      handleKeyDown: (_view: unknown, event: KeyboardEvent) => {
+        if (isComposingRef.current) return true;
+        if (event.isComposing) return true;
+        return false;
       },
     }),
     [ariaLabel],
@@ -248,6 +357,12 @@ export function RichTextField({
     }
   }, [mathEdit]);
 
+  // Apply selected font to the editor's contenteditable element
+  useEffect(() => {
+    if (!editor) return;
+    const el = editor.view.dom as HTMLElement;
+    el.style.fontFamily = selectedFont.value;
+  }, [editor, selectedFont]);
   const insertInlineEquation = useCallback(() => {
     if (!editor) return;
     editor
@@ -384,6 +499,9 @@ export function RichTextField({
             triggerClassName="h-8 max-h-8 px-2 text-xs"
           />
         </div>
+
+        {/* Font family picker */}
+        <FontPicker value={selectedFont} onChange={setSelectedFont} />
 
         <ToolbarIconButton
           tooltip={RICH_TEXT_TOOLTIP.bold}
