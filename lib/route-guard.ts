@@ -18,6 +18,7 @@ const roleRouteRules: RoleRouteRule[] = [
   { prefix: '/dashboard/courses', allowedRoles: ['ADMIN', 'SUPERADMIN'] },
   { prefix: '/dashboard/students', allowedRoles: ['ADMIN', 'SUPERADMIN'] },
   { prefix: '/dashboard/batches', allowedRoles: ['ADMIN', 'SUPERADMIN', 'TEACHER'] },
+  { prefix: '/dashboard/announcement', allowedRoles: ['ADMIN', 'SUPERADMIN', 'TEACHER', 'STUDENT'] },
   { prefix: '/dashboard/contents', allowedRoles: ['ADMIN', 'SUPERADMIN', 'TEACHER', 'STUDENT'] },
   { prefix: '/dashboard/tests', allowedRoles: ['ADMIN', 'SUPERADMIN', 'TEACHER'] },
   { prefix: '/dashboard/student/mytest', allowedRoles: ['STUDENT'] },

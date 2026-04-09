@@ -184,7 +184,7 @@ function QuickActions() {
         <Button
           variant="outline"
           className="w-full text-left p-3 h-auto justify-start border-gray-200 hover:bg-gray-50 transition-colors"
-          onClick={() => router.push(ROUTES.ADMIN.ANNOUNCEMENTS)}
+          onClick={() => router.push(ROUTES.ANNOUNCEMENT)}
         >
           <div>
             <div className="font-medium text-gray-900">Send Announcement</div>

@@ -4,6 +4,8 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useAnnouncementSocketBridge } from '@/lib/hooks/useAnnouncementSocketBridge';
+import { AnnouncementBell } from '@/components/dashboard/AnnouncementBell';
 import { isStudentAttemptFullscreenPath } from '@/lib/tests/testPaths';
 import { getNavigationItems } from '@/lib/rbac';
 import {
@@ -11,7 +13,6 @@ import {
   X,
   User,
   LogOut,
-  Bell,
   Building2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -24,7 +25,13 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { user, business, logout, permissions } = useAuthStore();
+  const { user, business, logout, permissions, isInitialized } = useAuthStore();
+
+  useAnnouncementSocketBridge(
+    Boolean(isInitialized && user && business?.id),
+    business?.id,
+    user?.id,
+  );
   const router = useRouter();
   const pathname = usePathname();
   const displayName = business?.instituteName || 'Contentkosh';
@@ -234,9 +241,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
 
           <div className="flex items-center gap-x-4 lg:gap-x-6">
-            <Button variant="ghost" size="icon" className="-m-2.5 p-2.5 text-slate-400 hover:text-slate-500">
-              <Bell className="h-6 w-6" />
-            </Button>
+            {business?.slug ? <AnnouncementBell businessSlug={business.slug} /> : null}
           </div>
         </div>
 
