@@ -5,17 +5,18 @@ export const ROUTES = {
   REGISTER: '/register',
   DASHBOARD: '/dashboard',
   TESTS: '/dashboard/tests',
+  ANNOUNCEMENTS: '/dashboard/announcements',
   ADMIN: {
     USERS: '/dashboard/admin/users',
-    ANNOUNCEMENTS: '/dashboard/admin/announcements',
+    ANNOUNCEMENTS: '/dashboard/announcements',
   },
   TEACHER: {
     CLASSES: '/dashboard/teacher/classes',
-    ANNOUNCEMENTS: '/dashboard/teacher/announcements',
+    ANNOUNCEMENTS: '/dashboard/announcements',
   },
   STUDENT: {
     CLASSES: '/dashboard/student/classes',
-    ANNOUNCEMENTS: '/dashboard/student/announcements',
+    ANNOUNCEMENTS: '/dashboard/announcements',
     MYTEST: '/dashboard/student/mytest',
   },
 } as const;

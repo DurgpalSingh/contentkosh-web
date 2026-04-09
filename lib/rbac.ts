@@ -42,9 +42,9 @@ export const NAVIGATION_CONFIG: NavigationItem[] = [
     },
     {
         name: 'Announcements',
-        href: ROUTES.ADMIN.ANNOUNCEMENTS,
+        href: ROUTES.ANNOUNCEMENTS,
         icon: Bell,
-        roles: [USER_ROLES.ADMIN],
+        roles: [USER_ROLES.ADMIN, USER_ROLES.TEACHER, USER_ROLES.STUDENT],
     },
 
     // Teacher View
@@ -54,24 +54,12 @@ export const NAVIGATION_CONFIG: NavigationItem[] = [
         icon: BookOpen,
         roles: [USER_ROLES.TEACHER],
     },
-    {
-        name: 'Announcements',
-        href: ROUTES.TEACHER.ANNOUNCEMENTS,
-        icon: Bell,
-        roles: [USER_ROLES.TEACHER],
-    },
 
     // Student View
     {
         name: 'My Classes',
         href: ROUTES.STUDENT.CLASSES,
         icon: BookOpen,
-        roles: [USER_ROLES.STUDENT],
-    },
-    {
-        name: 'Announcements',
-        href: ROUTES.STUDENT.ANNOUNCEMENTS,
-        icon: Bell,
         roles: [USER_ROLES.STUDENT],
     },
     {
