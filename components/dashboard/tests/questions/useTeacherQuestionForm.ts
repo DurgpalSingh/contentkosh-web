@@ -16,6 +16,8 @@ export type TeacherQuestionFormPayload = Omit<CreateQuestionDTO, 'correctOptionI
 const defaultOptions = (): QuestionOptionRow[] => [
   { id: createOptionId(), text: '' },
   { id: createOptionId(), text: '' },
+  { id: createOptionId(), text: '' },
+  { id: createOptionId(), text: '' },
 ]
 
 const emptyMultiCorrect = (): Record<string, boolean> => ({})

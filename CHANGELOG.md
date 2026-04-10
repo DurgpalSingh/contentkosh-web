@@ -1,6 +1,13 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.2.8] - hindi font
+**P.R Raised by** : shubh404-SE on **Date** : 2026-04-09
+
+### Changed
+  - Added few hindi fonts for better hindi letters visuals,
+  - initial 4 required options for question.
+---
 ## Version [1.2.8] - Test Attempt ui fix
 **P.R Raised by** : shubh404-SE on **Date** : 2026-04-08
 
