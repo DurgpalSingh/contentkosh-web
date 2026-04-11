@@ -211,8 +211,9 @@ export const QuestionFormFields = ({ form, formId }: QuestionFormFieldsProps) =>
               id={`${formId}-correctText`}
               value={correctText}
               onChange={(e) => setCorrectText(e.target.value)}
-              type={questionTypeValue === questionType.numerical ? 'number' : 'text'}
-              required
+              type="text"
+              inputMode={questionTypeValue === questionType.numerical ? 'decimal' : undefined}
+              autoComplete="off"
             />
             {questionTypeValue === questionType.fillInTheBlank && (
               <p className={helperClass}>Matching is case-insensitive on the server.</p>

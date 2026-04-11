@@ -45,6 +45,14 @@ export const RICH_TEXT_TOOLTIP = {
   linkUrlField: 'Full web address, starting with https://',
   tableInsert: 'Insert a table — choose rows and columns',
   tableHeaderRow: 'Use first row as header',
+  tableAddRowBefore: 'Insert row above',
+  tableAddRowAfter: 'Insert row below',
+  tableDeleteRow: 'Delete this row',
+  tableAddColumnBefore: 'Insert column left',
+  tableAddColumnAfter: 'Insert column right',
+  tableDeleteColumn: 'Delete this column',
+  tableToggleHeaderRow: 'Toggle header row',
+  tableDelete: 'Delete entire table',
 } as const
 
 export type MathPaletteSnippet = {

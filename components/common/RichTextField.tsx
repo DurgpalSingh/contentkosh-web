@@ -12,6 +12,7 @@ import {
 } from 'react';
 import type { Editor } from '@tiptap/core';
 import { EditorContent, useEditor } from '@tiptap/react';
+import { BubbleMenu } from '@tiptap/react/menus';
 import StarterKit from '@tiptap/starter-kit';
 import Mathematics from '@tiptap/extension-mathematics';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -21,18 +22,26 @@ import TableCell from '@tiptap/extension-table-cell';
 import TableHeader from '@tiptap/extension-table-header';
 import katex from 'katex';
 import {
+  ArrowDownToLine,
+  ArrowLeftToLine,
+  ArrowRightToLine,
+  ArrowUpToLine,
   Bold,
   Calculator,
   Italic,
   List,
   ListOrdered,
+  PanelTop,
   Quote,
+  Redo2,
   Strikethrough,
   Table2,
+  TableColumnsSplit,
+  TableRowsSplit,
+  Trash2,
   Underline,
-  Link2,
   Undo2,
-  Redo2,
+  Link2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -52,91 +61,18 @@ import {
   TIPTAP_INLINE_MATH_NODE_NAME,
   TIPTAP_KATEX_OPTIONS,
 } from '@/lib/richText/richTextConstants';
-import { EDITOR_FONTS, EDITOR_FONT_DEFAULT, type EditorFont } from '@/lib/richText/richTextFonts';
+import { normalizePastedHtmlForEditor } from '@/lib/richText/normalizePastedHtmlForEditor';
 import { cn } from '@/lib/utils';
 
 import 'katex/dist/katex.min.css';
 
-/** Dropdown font picker — shows each font rendered in its own typeface */
-function FontPicker({
-  value,
-  onChange,
-}: {
-  value: EditorFont;
-  onChange: (font: EditorFont) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="relative">
-      <button
-        type="button"
-        onMouseDown={(e) => e.preventDefault()}
-        onClick={() => setOpen((o) => !o)}
-        className="flex h-8 items-center gap-1.5 rounded-md border border-input bg-background px-2 text-xs hover:bg-accent hover:text-accent-foreground min-w-[7rem] max-w-[9rem] truncate"
-        title="Font family"
-        aria-label="Font family"
-        aria-haspopup="listbox"
-        aria-expanded={open}
-      >
-        <span className="truncate" style={{ fontFamily: value.value }}>
-          {value.label}
-        </span>
-        <svg className="ml-auto h-3 w-3 shrink-0 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m6 9 6 6 6-6"/></svg>
-      </button>
-      {open && (
-        <div
-          className="absolute left-0 top-full z-50 mt-1 w-52 rounded-md border border-border bg-popover shadow-md max-h-32 overflow-auto"
-          role="listbox"
-          aria-label="Font family options"
-        >
-          {/* Latin fonts */}
-          <div className="px-2 pt-2 pb-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Latin</div>
-          {EDITOR_FONTS.filter((f) => f.script === 'latin').map((font) => (
-            <button
-              key={font.value}
-              type="button"
-              role="option"
-              aria-selected={value.value === font.value}
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => { onChange(font); setOpen(false); }}
-              className={cn(
-                'flex w-full flex-col px-3 py-1.5 text-left hover:bg-accent hover:text-accent-foreground',
-                value.value === font.value && 'bg-accent text-accent-foreground',
-              )}
-            >
-              <span className="text-xs font-medium">{font.label}</span>
-              <span className="text-[11px] text-muted-foreground" style={{ fontFamily: font.value }}>
-                {font.previewText}
-              </span>
-            </button>
-          ))}
-          {/* Devanagari fonts */}
-          <div className="px-2 pt-2 pb-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground border-t border-border mt-1">Hindi / Devanagari</div>
-          {EDITOR_FONTS.filter((f) => f.script === 'devanagari').map((font) => (
-            <button
-              key={font.value}
-              type="button"
-              role="option"
-              aria-selected={value.value === font.value}
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => { onChange(font); setOpen(false); }}
-              className={cn(
-                'flex w-full flex-col px-3 py-1.5 text-left hover:bg-accent hover:text-accent-foreground',
-                value.value === font.value && 'bg-accent text-accent-foreground',
-              )}
-            >
-              <span className="text-xs font-medium">{font.label}</span>
-              <span className="text-[11px] text-muted-foreground" style={{ fontFamily: font.value }}>
-                {font.previewText}
-              </span>
-            </button>
-          ))}
-          <div className="pb-1" />
-        </div>
-      )}
-    </div>
-  );
+/** Stable reference for BubbleMenu — inline functions/objects retrigger plugin option updates every render (see tiptap BubbleMenu useEffect deps). */
+function shouldShowRichTextTableBubbleMenu(props: { editor: Editor }) {
+  const { editor } = props;
+  return editor.isEditable && editor.isActive('table');
 }
+
+const TABLE_BUBBLE_MENU_OPTIONS = { placement: 'top' as const };
 
 const HEADING_LEVELS = [1, 2, 3] as const;
 
@@ -171,6 +107,38 @@ const RICH_TEXT_EDITOR_ROOT_CLASS = cn(
  */
 function preventToolbarMouseDownStealingFocus(e: MouseEvent) {
   e.preventDefault();
+}
+
+function ToolbarIconButton({
+  children,
+  tooltip,
+  pressed,
+  disabled,
+  onClick,
+}: {
+  children: ReactNode;
+  /** Shown on hover (`title`) and for screen readers (`aria-label`) */
+  tooltip: string;
+  pressed?: boolean;
+  disabled?: boolean;
+  onClick: (e: MouseEvent) => void;
+}) {
+  return (
+    <Button
+      type="button"
+      variant={pressed ? 'secondary' : 'ghost'}
+      size="sm"
+      className="h-8 w-8 p-0 shrink-0"
+      title={tooltip}
+      aria-label={tooltip}
+      aria-pressed={pressed}
+      disabled={disabled}
+      onMouseDown={disabled ? undefined : preventToolbarMouseDownStealingFocus}
+      onClick={onClick}
+    >
+      {children}
+    </Button>
+  );
 }
 
 function toggleBulletListWithHeadingFallback(editor: Editor | null) {
@@ -241,13 +209,9 @@ export function RichTextField({
   const linkSelectionRef = useRef<{ from: number; to: number } | null>(null);
   /** Captured when opening the math palette so symbol inserts work after the editor blurs */
   const mathPaletteSelectionRef = useRef<{ from: number; to: number } | null>(null);
-  /** Tracks whether an IME composition session is active — used to guard the Mathematics InputRule */
-  const isComposingRef = useRef(false);
-  /** Currently selected editor font */
-  const [selectedFont, setSelectedFont] = useState<EditorFont>(EDITOR_FONT_DEFAULT);
   const [tablePopoverOpen, setTablePopoverOpen] = useState(false);
-  const [tableRows, setTableRows] = useState(RICH_TEXT_TABLE_INSERT_ROWS_DEFAULT);
-  const [tableCols, setTableCols] = useState(RICH_TEXT_TABLE_INSERT_COLS_DEFAULT);
+  const [tableRows, setTableRows] = useState<number>(RICH_TEXT_TABLE_INSERT_ROWS_DEFAULT);
+  const [tableCols, setTableCols] = useState<number>(RICH_TEXT_TABLE_INSERT_COLS_DEFAULT);
   const [tableWithHeader, setTableWithHeader] = useState(true);
   const blockStyleSelectId = useId();
 
@@ -268,6 +232,7 @@ export function RichTextField({
       }),
       Table.configure({
         resizable: false,
+        allowTableNodeSelection: true,
         HTMLAttributes: {
           class: 'border-collapse border border-border w-full my-3 text-sm',
         },
@@ -289,16 +254,6 @@ export function RichTextField({
             setMathDraft(String(node.attrs.latex ?? ''));
           },
         },
-      }).extend({
-        addInputRules() {
-          return (this.parent?.() ?? []).map((rule) => ({
-            ...rule,
-            handler: (props: Parameters<typeof rule.handler>[0]) => {
-              if (isComposingRef.current) return null;
-              return rule.handler(props);
-            },
-          }));
-        },
       }),
       Placeholder.configure({
         placeholder: placeholder ?? '',
@@ -314,19 +269,7 @@ export function RichTextField({
         class: cn(RICH_TEXT_EDITOR_ROOT_CLASS),
         'aria-label': ariaLabel ?? 'Rich text',
       },
-      handleDOMEvents: {
-        compositionstart: () => { isComposingRef.current = true; return false; },
-        compositionend: () => { isComposingRef.current = false; return false; },
-      },
-      // During active IME composition, return true to tell ProseMirror to
-      // skip its own keydown handling and let the browser/IME handle it natively.
-      // Without this, ProseMirror intercepts keydown events mid-composition and
-      // drops or corrupts Devanagari characters.
-      handleKeyDown: (_view: unknown, event: KeyboardEvent) => {
-        if (isComposingRef.current) return true;
-        if (event.isComposing) return true;
-        return false;
-      },
+      transformPastedHTML: normalizePastedHtmlForEditor,
     }),
     [ariaLabel],
   );
@@ -357,12 +300,6 @@ export function RichTextField({
     }
   }, [mathEdit]);
 
-  // Apply selected font to the editor's contenteditable element
-  useEffect(() => {
-    if (!editor) return;
-    const el = editor.view.dom as HTMLElement;
-    el.style.fontFamily = selectedFont.value;
-  }, [editor, selectedFont]);
   const insertInlineEquation = useCallback(() => {
     if (!editor) return;
     editor
@@ -469,6 +406,75 @@ export function RichTextField({
 
   return (
     <div className="rounded-md border border-slate-200 bg-white overflow-hidden" aria-label={ariaLabel}>
+      <BubbleMenu
+        editor={editor}
+        pluginKey="richTextTableBubbleMenu"
+        shouldShow={shouldShowRichTextTableBubbleMenu}
+        options={TABLE_BUBBLE_MENU_OPTIONS}
+      >
+        <div
+          className="flex flex-wrap items-center gap-0.5 rounded-lg border border-border bg-card px-1 py-1 shadow-md"
+          role="toolbar"
+          aria-label="Table"
+        >
+          <ToolbarIconButton
+            tooltip={RICH_TEXT_TOOLTIP.tableAddRowBefore}
+            disabled={!editor.can().addRowBefore()}
+            onClick={() => editor.chain().focus().addRowBefore().run()}
+          >
+            <ArrowUpToLine className="h-4 w-4" />
+          </ToolbarIconButton>
+          <ToolbarIconButton
+            tooltip={RICH_TEXT_TOOLTIP.tableAddRowAfter}
+            disabled={!editor.can().addRowAfter()}
+            onClick={() => editor.chain().focus().addRowAfter().run()}
+          >
+            <ArrowDownToLine className="h-4 w-4" />
+          </ToolbarIconButton>
+          <ToolbarIconButton
+            tooltip={RICH_TEXT_TOOLTIP.tableDeleteRow}
+            disabled={!editor.can().deleteRow()}
+            onClick={() => editor.chain().focus().deleteRow().run()}
+          >
+            <TableRowsSplit className="h-4 w-4" />
+          </ToolbarIconButton>
+          <ToolbarIconButton
+            tooltip={RICH_TEXT_TOOLTIP.tableAddColumnBefore}
+            disabled={!editor.can().addColumnBefore()}
+            onClick={() => editor.chain().focus().addColumnBefore().run()}
+          >
+            <ArrowLeftToLine className="h-4 w-4" />
+          </ToolbarIconButton>
+          <ToolbarIconButton
+            tooltip={RICH_TEXT_TOOLTIP.tableAddColumnAfter}
+            disabled={!editor.can().addColumnAfter()}
+            onClick={() => editor.chain().focus().addColumnAfter().run()}
+          >
+            <ArrowRightToLine className="h-4 w-4" />
+          </ToolbarIconButton>
+          <ToolbarIconButton
+            tooltip={RICH_TEXT_TOOLTIP.tableDeleteColumn}
+            disabled={!editor.can().deleteColumn()}
+            onClick={() => editor.chain().focus().deleteColumn().run()}
+          >
+            <TableColumnsSplit className="h-4 w-4" />
+          </ToolbarIconButton>
+          <ToolbarIconButton
+            tooltip={RICH_TEXT_TOOLTIP.tableToggleHeaderRow}
+            disabled={!editor.can().toggleHeaderRow()}
+            onClick={() => editor.chain().focus().toggleHeaderRow().run()}
+          >
+            <PanelTop className="h-4 w-4" />
+          </ToolbarIconButton>
+          <ToolbarIconButton
+            tooltip={RICH_TEXT_TOOLTIP.tableDelete}
+            disabled={!editor.can().deleteTable()}
+            onClick={() => editor.chain().focus().deleteTable().run()}
+          >
+            <Trash2 className="h-4 w-4" />
+          </ToolbarIconButton>
+        </div>
+      </BubbleMenu>
       <div className="flex flex-wrap items-center gap-1 border-b border-slate-100 bg-slate-50/80 px-2 py-1.5">
         <div className="max-w-[7rem]" title={RICH_TEXT_TOOLTIP.styleSelect}>
           <span id={`${blockStyleSelectId}-label`} className="sr-only">
@@ -499,9 +505,6 @@ export function RichTextField({
             triggerClassName="h-8 max-h-8 px-2 text-xs"
           />
         </div>
-
-        {/* Font family picker */}
-        <FontPicker value={selectedFont} onChange={setSelectedFont} />
 
         <ToolbarIconButton
           tooltip={RICH_TEXT_TOOLTIP.bold}
@@ -808,37 +811,5 @@ export function RichTextField({
 
       <EditorContent editor={editor} />
     </div>
-  );
-}
-
-function ToolbarIconButton({
-  children,
-  tooltip,
-  pressed,
-  disabled,
-  onClick,
-}: {
-  children: ReactNode;
-  /** Shown on hover (`title`) and for screen readers (`aria-label`) */
-  tooltip: string;
-  pressed?: boolean;
-  disabled?: boolean;
-  onClick: (e: MouseEvent) => void;
-}) {
-  return (
-    <Button
-      type="button"
-      variant={pressed ? 'secondary' : 'ghost'}
-      size="sm"
-      className="h-8 w-8 p-0 shrink-0"
-      title={tooltip}
-      aria-label={tooltip}
-      aria-pressed={pressed}
-      disabled={disabled}
-      onMouseDown={disabled ? undefined : preventToolbarMouseDownStealingFocus}
-      onClick={onClick}
-    >
-      {children}
-    </Button>
   );
 }
