@@ -23,6 +23,15 @@ export const MATH_INSERT_PLACEHOLDER_LATEX = '\\,' as const
 export const TIPTAP_INLINE_MATH_NODE_NAME = 'inlineMath' as const;
 export const TIPTAP_BLOCK_MATH_NODE_NAME = 'blockMath' as const;
 
+/** Regexes used to clean pasted HTML before TipTap parsing. */
+export const PASTED_HTML_CLEANUP_REGEX = {
+  officeConditionalComments: /<!--\[if[^\]]*\]>[\s\S]*?<!\[endif\]-->/gi,
+  startFragmentComment: /<!--StartFragment-->/gi,
+  endFragmentComment: /<!--EndFragment-->/gi,
+  officeEmptyParagraph: /<o:p[^>]*>\s*<\/o:p>/gi,
+  officeSelfClosingParagraph: /<o:p[^>]*\/>/gi,
+} as const;
+
 /**
  * Hover (`title`) copy for the TipTap rich text toolbar — keep in sync with RichTextField actions.
  */

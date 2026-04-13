@@ -1,3 +1,5 @@
+import { PASTED_HTML_CLEANUP_REGEX } from './richTextConstants';
+
 /**
  * Normalizes HTML pasted from Word or Google Docs so TipTap can parse tables and blocks reliably.
  * Strips Office conditional comments, empty Office paragraph tags, and non-content head noise.
@@ -8,11 +10,11 @@ export function normalizePastedHtmlForEditor(html: string): string {
   }
 
   const working = html
-    .replace(/<!--\[if[^\]]*\]>[\s\S]*?<!\[endif\]-->/gi, '')
-    .replace(/<!--StartFragment-->/gi, '')
-    .replace(/<!--EndFragment-->/gi, '')
-    .replace(/<o:p[^>]*>\s*<\/o:p>/gi, '')
-    .replace(/<o:p[^>]*\/>/gi, '');
+    .replace(PASTED_HTML_CLEANUP_REGEX.officeConditionalComments, '')
+    .replace(PASTED_HTML_CLEANUP_REGEX.startFragmentComment, '')
+    .replace(PASTED_HTML_CLEANUP_REGEX.endFragmentComment, '')
+    .replace(PASTED_HTML_CLEANUP_REGEX.officeEmptyParagraph, '')
+    .replace(PASTED_HTML_CLEANUP_REGEX.officeSelfClosingParagraph, '');
 
   try {
     const parser = new DOMParser();
