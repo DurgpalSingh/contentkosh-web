@@ -12,6 +12,7 @@ import {
 } from 'react';
 import type { Editor } from '@tiptap/core';
 import { EditorContent, useEditor } from '@tiptap/react';
+import { BubbleMenu } from '@tiptap/react/menus';
 import StarterKit from '@tiptap/starter-kit';
 import Mathematics from '@tiptap/extension-mathematics';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -21,18 +22,26 @@ import TableCell from '@tiptap/extension-table-cell';
 import TableHeader from '@tiptap/extension-table-header';
 import katex from 'katex';
 import {
+  ArrowDownToLine,
+  ArrowLeftToLine,
+  ArrowRightToLine,
+  ArrowUpToLine,
   Bold,
   Calculator,
   Italic,
   List,
   ListOrdered,
+  PanelTop,
   Quote,
+  Redo2,
   Strikethrough,
   Table2,
+  TableColumnsSplit,
+  TableRowsSplit,
+  Trash2,
   Underline,
-  Link2,
   Undo2,
-  Redo2,
+  Link2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -53,6 +62,7 @@ import {
   TIPTAP_KATEX_OPTIONS,
 } from '@/lib/richText/richTextConstants';
 import { EDITOR_FONTS, EDITOR_FONT_DEFAULT, type EditorFont } from '@/lib/richText/richTextFonts';
+import { normalizePastedHtmlForEditor } from '@/lib/richText/normalizePastedHtmlForEditor';
 import { cn } from '@/lib/utils';
 
 import 'katex/dist/katex.min.css';
@@ -138,6 +148,14 @@ function FontPicker({
   );
 }
 
+/** Stable reference for BubbleMenu — inline functions/objects retrigger plugin option updates every render (see tiptap BubbleMenu useEffect deps). */
+function shouldShowRichTextTableBubbleMenu(props: { editor: Editor }) {
+  const { editor } = props;
+  return editor.isEditable && editor.isActive('table');
+}
+
+const TABLE_BUBBLE_MENU_OPTIONS = { placement: 'top' as const };
+
 const HEADING_LEVELS = [1, 2, 3] as const;
 
 const BLOCK_STYLE_OPTIONS = [
@@ -171,6 +189,38 @@ const RICH_TEXT_EDITOR_ROOT_CLASS = cn(
  */
 function preventToolbarMouseDownStealingFocus(e: MouseEvent) {
   e.preventDefault();
+}
+
+function ToolbarIconButton({
+  children,
+  tooltip,
+  pressed,
+  disabled,
+  onClick,
+}: {
+  children: ReactNode;
+  /** Shown on hover (`title`) and for screen readers (`aria-label`) */
+  tooltip: string;
+  pressed?: boolean;
+  disabled?: boolean;
+  onClick: (e: MouseEvent) => void;
+}) {
+  return (
+    <Button
+      type="button"
+      variant={pressed ? 'secondary' : 'ghost'}
+      size="sm"
+      className="h-8 w-8 p-0 shrink-0"
+      title={tooltip}
+      aria-label={tooltip}
+      aria-pressed={pressed}
+      disabled={disabled}
+      onMouseDown={disabled ? undefined : preventToolbarMouseDownStealingFocus}
+      onClick={onClick}
+    >
+      {children}
+    </Button>
+  );
 }
 
 function toggleBulletListWithHeadingFallback(editor: Editor | null) {
@@ -246,8 +296,8 @@ export function RichTextField({
   /** Currently selected editor font */
   const [selectedFont, setSelectedFont] = useState<EditorFont>(EDITOR_FONT_DEFAULT);
   const [tablePopoverOpen, setTablePopoverOpen] = useState(false);
-  const [tableRows, setTableRows] = useState(RICH_TEXT_TABLE_INSERT_ROWS_DEFAULT);
-  const [tableCols, setTableCols] = useState(RICH_TEXT_TABLE_INSERT_COLS_DEFAULT);
+  const [tableRows, setTableRows] = useState<number>(RICH_TEXT_TABLE_INSERT_ROWS_DEFAULT);
+  const [tableCols, setTableCols] = useState<number>(RICH_TEXT_TABLE_INSERT_COLS_DEFAULT);
   const [tableWithHeader, setTableWithHeader] = useState(true);
   const blockStyleSelectId = useId();
 
@@ -268,6 +318,7 @@ export function RichTextField({
       }),
       Table.configure({
         resizable: false,
+        allowTableNodeSelection: true,
         HTMLAttributes: {
           class: 'border-collapse border border-border w-full my-3 text-sm',
         },
@@ -327,6 +378,7 @@ export function RichTextField({
         if (event.isComposing) return true;
         return false;
       },
+      transformPastedHTML: normalizePastedHtmlForEditor,
     }),
     [ariaLabel],
   );
@@ -469,6 +521,75 @@ export function RichTextField({
 
   return (
     <div className="rounded-md border border-slate-200 bg-white overflow-hidden" aria-label={ariaLabel}>
+      <BubbleMenu
+        editor={editor}
+        pluginKey="richTextTableBubbleMenu"
+        shouldShow={shouldShowRichTextTableBubbleMenu}
+        options={TABLE_BUBBLE_MENU_OPTIONS}
+      >
+        <div
+          className="flex flex-wrap items-center gap-0.5 rounded-lg border border-border bg-card px-1 py-1 shadow-md"
+          role="toolbar"
+          aria-label="Table"
+        >
+          <ToolbarIconButton
+            tooltip={RICH_TEXT_TOOLTIP.tableAddRowBefore}
+            disabled={!editor.can().addRowBefore()}
+            onClick={() => editor.chain().focus().addRowBefore().run()}
+          >
+            <ArrowUpToLine className="h-4 w-4" />
+          </ToolbarIconButton>
+          <ToolbarIconButton
+            tooltip={RICH_TEXT_TOOLTIP.tableAddRowAfter}
+            disabled={!editor.can().addRowAfter()}
+            onClick={() => editor.chain().focus().addRowAfter().run()}
+          >
+            <ArrowDownToLine className="h-4 w-4" />
+          </ToolbarIconButton>
+          <ToolbarIconButton
+            tooltip={RICH_TEXT_TOOLTIP.tableDeleteRow}
+            disabled={!editor.can().deleteRow()}
+            onClick={() => editor.chain().focus().deleteRow().run()}
+          >
+            <TableRowsSplit className="h-4 w-4" />
+          </ToolbarIconButton>
+          <ToolbarIconButton
+            tooltip={RICH_TEXT_TOOLTIP.tableAddColumnBefore}
+            disabled={!editor.can().addColumnBefore()}
+            onClick={() => editor.chain().focus().addColumnBefore().run()}
+          >
+            <ArrowLeftToLine className="h-4 w-4" />
+          </ToolbarIconButton>
+          <ToolbarIconButton
+            tooltip={RICH_TEXT_TOOLTIP.tableAddColumnAfter}
+            disabled={!editor.can().addColumnAfter()}
+            onClick={() => editor.chain().focus().addColumnAfter().run()}
+          >
+            <ArrowRightToLine className="h-4 w-4" />
+          </ToolbarIconButton>
+          <ToolbarIconButton
+            tooltip={RICH_TEXT_TOOLTIP.tableDeleteColumn}
+            disabled={!editor.can().deleteColumn()}
+            onClick={() => editor.chain().focus().deleteColumn().run()}
+          >
+            <TableColumnsSplit className="h-4 w-4" />
+          </ToolbarIconButton>
+          <ToolbarIconButton
+            tooltip={RICH_TEXT_TOOLTIP.tableToggleHeaderRow}
+            disabled={!editor.can().toggleHeaderRow()}
+            onClick={() => editor.chain().focus().toggleHeaderRow().run()}
+          >
+            <PanelTop className="h-4 w-4" />
+          </ToolbarIconButton>
+          <ToolbarIconButton
+            tooltip={RICH_TEXT_TOOLTIP.tableDelete}
+            disabled={!editor.can().deleteTable()}
+            onClick={() => editor.chain().focus().deleteTable().run()}
+          >
+            <Trash2 className="h-4 w-4" />
+          </ToolbarIconButton>
+        </div>
+      </BubbleMenu>
       <div className="flex flex-wrap items-center gap-1 border-b border-slate-100 bg-slate-50/80 px-2 py-1.5">
         <div className="max-w-[7rem]" title={RICH_TEXT_TOOLTIP.styleSelect}>
           <span id={`${blockStyleSelectId}-label`} className="sr-only">
@@ -808,37 +929,5 @@ export function RichTextField({
 
       <EditorContent editor={editor} />
     </div>
-  );
-}
-
-function ToolbarIconButton({
-  children,
-  tooltip,
-  pressed,
-  disabled,
-  onClick,
-}: {
-  children: ReactNode;
-  /** Shown on hover (`title`) and for screen readers (`aria-label`) */
-  tooltip: string;
-  pressed?: boolean;
-  disabled?: boolean;
-  onClick: (e: MouseEvent) => void;
-}) {
-  return (
-    <Button
-      type="button"
-      variant={pressed ? 'secondary' : 'ghost'}
-      size="sm"
-      className="h-8 w-8 p-0 shrink-0"
-      title={tooltip}
-      aria-label={tooltip}
-      aria-pressed={pressed}
-      disabled={disabled}
-      onMouseDown={disabled ? undefined : preventToolbarMouseDownStealingFocus}
-      onClick={onClick}
-    >
-      {children}
-    </Button>
   );
 }

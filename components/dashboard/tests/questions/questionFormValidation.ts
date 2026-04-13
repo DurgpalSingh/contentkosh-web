@@ -64,7 +64,7 @@ export function validateQuestionForm(state: {
         : Object.values(state.correctMultiIds).some(Boolean)
 
     if (!hasCorrect) {
-      errors.correctOption = 'At least one correct option must be selected'
+      errors.correctOption = 'Please select at least one correct option.'
     }
   }
 
@@ -75,6 +75,14 @@ export function validateQuestionForm(state: {
 
   if (isTextAnswer && !state.correctText.trim()) {
     errors.correctAnswer = 'Correct answer is required'
+  }
+
+  if (
+    state.questionTypeValue === questionType.numerical &&
+    state.correctText.trim() &&
+    !Number.isFinite(Number(state.correctText.trim()))
+  ) {
+    errors.correctAnswer = 'Enter a valid number for the correct answer.'
   }
 
   return errors

@@ -23,6 +23,17 @@ export const MATH_INSERT_PLACEHOLDER_LATEX = '\\,' as const
 export const TIPTAP_INLINE_MATH_NODE_NAME = 'inlineMath' as const;
 export const TIPTAP_BLOCK_MATH_NODE_NAME = 'blockMath' as const;
 
+/** Regexes used to clean pasted HTML before TipTap parsing. */
+export const PASTED_HTML_CLEANUP_REGEX = {
+  officeConditionalComments: /<!--\[if[^\]]*\]>[\s\S]*?<!\[endif\]-->/gi,
+  startFragmentComment: /<!--StartFragment-->/gi,
+  endFragmentComment: /<!--EndFragment-->/gi,
+  officeEmptyParagraph: /<o:p[^>]*>\s*<\/o:p>/gi,
+  officeSelfClosingParagraph: /<o:p[^>]*\/>/gi,
+} as const;
+
+export const PASTED_HTML_FULL_DOC_REGEX = /^\s*<(!DOCTYPE|html)/i;
+
 /**
  * Hover (`title`) copy for the TipTap rich text toolbar — keep in sync with RichTextField actions.
  */
@@ -45,6 +56,14 @@ export const RICH_TEXT_TOOLTIP = {
   linkUrlField: 'Full web address, starting with https://',
   tableInsert: 'Insert a table — choose rows and columns',
   tableHeaderRow: 'Use first row as header',
+  tableAddRowBefore: 'Insert row above',
+  tableAddRowAfter: 'Insert row below',
+  tableDeleteRow: 'Delete this row',
+  tableAddColumnBefore: 'Insert column left',
+  tableAddColumnAfter: 'Insert column right',
+  tableDeleteColumn: 'Delete this column',
+  tableToggleHeaderRow: 'Toggle header row',
+  tableDelete: 'Delete entire table',
 } as const
 
 export type MathPaletteSnippet = {

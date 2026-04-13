@@ -103,7 +103,6 @@ export const AddQuestionModal = ({
               className="rounded-xl border border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive shadow-sm"
               role="alert"
             >
-              <p className="mb-2 font-medium">Please fix the following</p>
               <ul className="list-inside list-disc space-y-1 text-destructive/95">
                 {formErrors.questionText && <li>{formErrors.questionText}</li>}
                 {formErrors.questionType && <li>{formErrors.questionType}</li>}
