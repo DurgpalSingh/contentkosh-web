@@ -1,4 +1,4 @@
-import { PASTED_HTML_CLEANUP_REGEX } from './richTextConstants';
+import { PASTED_HTML_CLEANUP_REGEX, PASTED_HTML_FULL_DOC_REGEX } from './richTextConstants';
 
 /**
  * Normalizes HTML pasted from Word or Google Docs so TipTap can parse tables and blocks reliably.
@@ -18,7 +18,7 @@ export function normalizePastedHtmlForEditor(html: string): string {
 
   try {
     const parser = new DOMParser();
-    const isFullDoc = /^\s*<(!DOCTYPE|html)/i.test(working);
+    const isFullDoc = PASTED_HTML_FULL_DOC_REGEX.test(working);
     const doc = isFullDoc
       ? parser.parseFromString(working, 'text/html')
       : parser.parseFromString(`<div id="ck-paste-wrap">${working}</div>`, 'text/html');

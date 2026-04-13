@@ -32,6 +32,8 @@ export const PASTED_HTML_CLEANUP_REGEX = {
   officeSelfClosingParagraph: /<o:p[^>]*\/>/gi,
 } as const;
 
+export const PASTED_HTML_FULL_DOC_REGEX = /^\s*<(!DOCTYPE|html)/i;
+
 /**
  * Hover (`title`) copy for the TipTap rich text toolbar — keep in sync with RichTextField actions.
  */
