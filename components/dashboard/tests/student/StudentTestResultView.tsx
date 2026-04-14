@@ -1,11 +1,15 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useAuthStore } from '@/store/useAuthStore';
 import { ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { StartAttemptConfirmModal, type StartAttemptTestInfo } from '@/components/modals/StartAttemptConfirmModal';
+import type { TestLanguage } from '@/lib/api/models/TestLanguage';
 import type { PracticeTestAttemptDetails, ExamTestAttemptDetails } from '@/lib/api';
+import { PracticeTestsService } from '@/lib/api';
 import { AttemptStatus } from '@/lib/api/models/AttemptStatus';
 import { ResultVisibilityExam } from '@/lib/api/models/ResultVisibilityExam';
 import type { StudentAttemptQuestion } from '@/lib/api/models/StudentAttemptQuestion';
@@ -32,6 +36,9 @@ export function StudentTestResultView({
   details: AttemptDetails;
 }) {
   const router = useRouter();
+  const { business } = useAuthStore();
+  const businessId = business?.id;
+  const [startConfirmOpen, setStartConfirmOpen] = useState(false);
 
   const safeAttempt = details.attempt;
   const safeTest = details.test;
@@ -76,6 +83,22 @@ export function StudentTestResultView({
 
   const attempt = details.attempt;
   const test = details.test;
+  const practiceTestId = attempt.practiceTestId;
+  const practiceLanguage = (test as { language: TestLanguage }).language;
+
+  const startPracticeAttempt = async (language: TestLanguage) => {
+    if (kind !== TEST_KIND.PRACTICE) return;
+    if (typeof businessId !== 'number') throw new Error('Not authorized');
+    if (!practiceTestId) throw new Error('Missing practice test id');
+
+    const res = await PracticeTestsService.postApiBusinessPracticeTestsAttempts(businessId, {
+      practiceTestId,
+      language,
+    });
+    const aid = res.data?.attemptId;
+    if (!aid) throw new Error('Could not start attempt');
+    router.push(studentPracticeAttemptPath(slug, aid));
+  };
   const questions = safeQuestions;
   const hiddenByPolicy = derived.hiddenByPolicy;
   const isExam = kind === TEST_KIND.EXAM;
@@ -121,6 +144,17 @@ export function StudentTestResultView({
           <p className="text-sm text-gray-500 mt-2">
             Submitted {new Date(attempt.submittedAt).toLocaleString()}
           </p>
+        )}
+        {!attemptInProgress && kind === TEST_KIND.PRACTICE && practiceTestId && (
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <Button
+              type="button"
+              className="bg-violet-600 hover:bg-violet-700 text-white"
+              onClick={() => setStartConfirmOpen(true)}
+            >
+              Reattempt
+            </Button>
+          </div>
         )}
         {attemptInProgress && (
           <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 flex flex-wrap items-center justify-between gap-3">
@@ -169,6 +203,21 @@ export function StudentTestResultView({
           </div>
         </div>
       </div>
+      <StartAttemptConfirmModal
+        isOpen={startConfirmOpen}
+        onClose={() => setStartConfirmOpen(false)}
+        onConfirm={startPracticeAttempt}
+        testInfo={{
+          kind: TEST_KIND.PRACTICE,
+          testId: practiceTestId ?? '',
+          testName: test.name,
+          batchName: test.batchName,
+          rulesDescription: test.description,
+          questionCount: test.totalQuestions ?? 0,
+          marksPerQuestion: test.defaultMarksPerQuestion,
+          testLanguage: practiceLanguage,
+        }}
+      />
     </div>
   );
 }

@@ -228,7 +228,7 @@ export function CreateTestModal({
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           <div className="space-y-2">
-            <Label>Test type *</Label>
+            <Label>Test type <span className="text-red-400">*</span></Label>
             <div className="flex gap-3">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -252,7 +252,7 @@ export function CreateTestModal({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="batch">Batch *</Label>
+            <Label htmlFor="batch">Batch <span className="text-red-400">*</span></Label>
             <Select
               id="batch"
               value={batchId ?? 0}
@@ -269,7 +269,7 @@ export function CreateTestModal({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="subject">Subject *</Label>
+            <Label htmlFor="subject">Subject <span className="text-red-400">*</span></Label>
             <Select
               id="subject"
               value={subjectId ?? 0}
@@ -287,7 +287,7 @@ export function CreateTestModal({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="test-language">Test language *</Label>
+            <Label htmlFor="test-language">Test language <span className="text-red-400">*</span></Label>
             <Select
               id="test-language"
               value={language}
@@ -301,7 +301,7 @@ export function CreateTestModal({
           </div>
 
           <div className="space-y-1 flex flex-col gap-1">
-            <Label htmlFor="name">Test Name *</Label>
+            <Label htmlFor="name">Test Name <span className="text-red-400">*</span></Label>
             <Input
               id="name"
               value={name}
@@ -338,7 +338,7 @@ export function CreateTestModal({
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <Label htmlFor="startAt">Start *</Label>
+                  <Label htmlFor="startAt">Start <span className="text-red-400">*</span></Label>
                   <Input
                     id="startAt"
                     type="datetime-local"
@@ -352,7 +352,7 @@ export function CreateTestModal({
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="deadlineAt">Deadline *</Label>
+                  <Label htmlFor="deadlineAt">Deadline <span className="text-red-400">*</span></Label>
                   <Input
                     id="deadlineAt"
                     type="datetime-local"
@@ -367,7 +367,7 @@ export function CreateTestModal({
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="duration">Duration (minutes) *</Label>
+                <Label htmlFor="duration">Duration (minutes) <span className="text-red-400">*</span></Label>
                 <Input
                   id="duration"
                   type="number"
@@ -380,7 +380,7 @@ export function CreateTestModal({
                 )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="visibility">Result visibility *</Label>
+                <Label htmlFor="visibility">Result visibility <span className="text-red-400">*</span></Label>
                 <Select
                   id="visibility"
                   value={resultVisibility}
