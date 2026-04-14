@@ -21,8 +21,7 @@ import type { Subject } from '@/lib/api';
 import { Select } from '@/components/ui/select';
 import { TEST_KIND, TEST_KIND_LABEL, type TestKind } from '@/lib/tests/testConstants';
 import { TEST_LANGUAGE_OPTIONS } from '@/lib/tests/testLanguage';
-
-export type { TestKind };
+import { toISODateTime } from '@/lib/utils';
 
 interface CreateTestModalProps {
   isOpen: boolean;
@@ -38,16 +37,15 @@ interface CreateTestModalProps {
   subjects: Subject[]
   onCreated: (kind: TestKind, testId: string) => void;
 }
-
-const toLocalDatetimeInputValue = (d: Date) => {
-  const offset = d.getTimezoneOffset() * 60000;
-  return new Date(d.getTime() - offset).toISOString().slice(0, 16);
-};
+export type { TestKind };
 
 function defaultExamWindow(): { startAt: string; deadlineAt: string } {
   const start = new Date();
   const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
-  return { startAt: toLocalDatetimeInputValue(start), deadlineAt: toLocalDatetimeInputValue(end) };
+  return {
+    startAt: toISODateTime(start, { format: 'datetimeLocal' }) ?? '',
+    deadlineAt: toISODateTime(end, { format: 'datetimeLocal' }) ?? '',
+  };
 }
 
 export function CreateTestModal({
@@ -72,7 +70,7 @@ export function CreateTestModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formErrors, setFormErrors] = useState<TestFormErrors>({});
-  const minStartAt = toLocalDatetimeInputValue(new Date());
+  const minStartAt = toISODateTime(new Date(), { format: 'datetimeLocal' }) ?? '';
 
   useEffect(() => {
     if (!isOpen) return;

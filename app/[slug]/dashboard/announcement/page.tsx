@@ -109,22 +109,16 @@ export default function AnnouncementPage() {
     if (!businessId) return;
     setLoading(true);
     try {
-      const receivedAnnounceRes = await AnnouncementsService.getMyAnnouncements();
-      setReceivedAnnouncements(receivedAnnounceRes.data ?? []);
-
-      if (isAdmin || isTeacher) {
-        const managedAnnounceRes = await AnnouncementsService.getManagedAnnouncements();
-        setManagedAnnouncements(managedAnnounceRes.data ?? []);
-      } else {
-        setManagedAnnouncements([]);
-      }
+      const res = await AnnouncementsService.getUserAnnouncementBundle();
+      setReceivedAnnouncements(res.data?.received ?? []);
+      setManagedAnnouncements(res.data?.managed ?? []);
     } catch (e) {
       console.error(e);
       toast.error(getErrorMessage(e, 'Failed to load announcements'));
     } finally {
       setLoading(false);
     }
-  }, [businessId, isAdmin, isTeacher]);
+  }, [businessId]);
 
   useEffect(() => {
     if (!isInitialized || !businessId) return;

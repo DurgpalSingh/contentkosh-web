@@ -7,6 +7,17 @@ import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
 
 export class AnnouncementsService {
+  public static getUserAnnouncementBundle(): CancelablePromise<
+    ApiResponse & {
+      data?: { received?: Announcement[]; managed?: Announcement[] };
+    }
+  > {
+    return __request(OpenAPI, {
+      method: 'GET',
+      url: '/api/announcements/user',
+    });
+  }
+
   public static getMyAnnouncements(): CancelablePromise<
     ApiResponse & { data?: Announcement[] }
   > {

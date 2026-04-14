@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { fromDatetimeLocalInputValue, toDatetimeLocalInputValue } from '@/components/announcements/announcementDateUtils';
+import { toISODateTime } from '@/lib/utils';
 import { getErrorMessage, defaultEndDate, toggleSetItem } from '@/components/announcements/announcementHelpers';
 import { toast } from 'sonner';
 
@@ -58,8 +58,8 @@ export function AdminAnnouncementModal({
     const now = new Date().toISOString();
     setHeading('');
     setContent('');
-    setStartLocal(toDatetimeLocalInputValue(now));
-    setEndLocal(toDatetimeLocalInputValue(defaultEndDate()));
+    setStartLocal(toISODateTime(now, { format: 'datetimeLocal' }) ?? '');
+    setEndLocal(toISODateTime(defaultEndDate(), { format: 'datetimeLocal' }) ?? '');
     setScope('BATCH');
     setVisibleToAdmins(true);
     setVisibleToTeachers(true);
@@ -76,8 +76,8 @@ export function AdminAnnouncementModal({
     if (initial?.id) {
       setHeading(initial.heading ?? '');
       setContent(initial.content ?? '');
-      setStartLocal(toDatetimeLocalInputValue(initial.startDate));
-      setEndLocal(toDatetimeLocalInputValue(initial.endDate));
+      setStartLocal(toISODateTime(initial.startDate, { format: 'datetimeLocal' }) ?? '');
+      setEndLocal(toISODateTime(initial.endDate, { format: 'datetimeLocal' }) ?? '');
       setScope((initial.scope as AnnouncementScope) ?? 'BATCH');
       setVisibleToAdmins(initial.visibleToAdmins ?? false);
       setVisibleToTeachers(initial.visibleToTeachers ?? false);
@@ -170,8 +170,12 @@ export function AdminAnnouncementModal({
       toast.error('Start and end dates are required');
       return;
     }
-    const startIso = fromDatetimeLocalInputValue(startLocal);
-    const endIso = fromDatetimeLocalInputValue(endLocal);
+    const startIso = toISODateTime(startLocal);
+    const endIso = toISODateTime(endLocal);
+    if (!startIso || !endIso) {
+      toast.error('Start and end dates are invalid');
+      return;
+    }
     if (new Date(endIso).getTime() <= new Date(startIso).getTime()) {
       toast.error('End time must be after start time');
       return;
