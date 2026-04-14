@@ -1,6 +1,14 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.2.11] - UI fixed text attempt screen + create test modal
+**P.R Raised by** : shubh404-SE on **Date** : 2026-04-14
+
+### Changed
+  - Reattempt button in prectice test result screen.
+  - Popup alert before user back from attempt screen without submit test.
+  - Highlighted mandatory fields in create test modal.
+---
 ## Version [1.2.10] - Table edit feature.
 **P.R Raised by** : shubh404-SE on **Date** : 2026-04-11
 

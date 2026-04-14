@@ -5,6 +5,7 @@ import type { TestQuestion } from '@/lib/api'
 import type { TeacherTestQuestion } from '@/lib/tests/teacherQuestionTypes'
 import { questionTypeLabel } from '@/lib/tests/testUiMappers'
 import { HtmlContent } from '@/components/common/HtmlContent'
+import { EmptyState } from '@/components/common/EmptyState'
 
 interface TeacherTestQuestionsTabProps {
   questions: TestQuestion[]
@@ -32,7 +33,10 @@ export const TeacherTestQuestionsTab = ({
         </Button>
       </div>
       {questions.length === 0 ? (
-        <p className="text-sm text-gray-600">No questions yet.</p>
+        <EmptyState
+          title="No questions yet"
+          description="Create a set of questions for this test."
+        />
       ) : (
         <ul className="divide-y divide-gray-200 border border-gray-200 rounded-lg bg-white">
           {questions.map((q, i) => {

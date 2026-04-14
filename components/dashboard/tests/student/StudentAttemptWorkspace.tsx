@@ -10,6 +10,7 @@ import {
   type PracticeTestAttemptDetails,
   type ExamTestAttemptDetails,
 } from '@/lib/api';
+import { AttemptLeaveConfirmModal } from '@/components/dashboard/tests/student/AttemptLeaveConfirmModal';
 import { AttemptStatus } from '@/lib/api/models/AttemptStatus';
 import { toast } from 'sonner';
 import { getApiErrorDetailMessage } from '@/lib/tests/getApiErrorDetailMessage';
@@ -96,6 +97,9 @@ export function StudentAttemptWorkspace({
   const [submitting, setSubmitting] = useState(false);
   const [timerSec, setTimerSec] = useState<number | null>(null);
   const [navigatorOpen, setNavigatorOpen] = useState(true);
+  const [leavePromptOpen, setLeavePromptOpen] = useState(false);
+  const leaveNavigationAllowedRef = useRef(false);
+  const leaveGuardMountedRef = useRef(false);
   const draftStorageKey = useMemo(
     () => `studentAttemptDraft:${kind}:${attemptId}`,
     [kind, attemptId],
@@ -326,6 +330,39 @@ export function StudentAttemptWorkspace({
     });
   }, [details, rows, activeIndex]);
 
+  useEffect(() => {
+    if (!details || details.attempt.status !== AttemptStatus._0) return;
+    if (typeof window === 'undefined') return;
+    if (leaveGuardMountedRef.current) return;
+    leaveGuardMountedRef.current = true;
+
+    const guardState = { isAttemptGuard: true };
+    window.history.pushState(guardState, '', window.location.href);
+
+    const onPopState = () => {
+      if (leaveNavigationAllowedRef.current) return;
+      setLeavePromptOpen(true);
+      window.history.pushState(guardState, '', window.location.href);
+    };
+
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, [details]);
+
+  const handleLeaveAttempt = useCallback(() => {
+    setLeavePromptOpen(true);
+  }, []);
+
+  const confirmLeaveAttempt = useCallback(() => {
+    leaveNavigationAllowedRef.current = true;
+    setLeavePromptOpen(false);
+    router.push(studentTestBasePath(slug));
+  }, [router, slug]);
+
+  const cancelLeaveAttempt = useCallback(() => {
+    setLeavePromptOpen(false);
+  }, []);
+
   const formatClock = (sec: number) => {
     const m = Math.floor(sec / 60);
     const s = sec % 60;
@@ -366,6 +403,7 @@ export function StudentAttemptWorkspace({
       <div className="sticky top-0 z-30 bg-white/95 backdrop-blur-sm">
         <AttemptHeader
           backHref={studentTestBasePath(slug)}
+          onBack={handleLeaveAttempt}
           kindLabel={isExam ? 'Exam' : 'Practice'}
           testName={testName}
           metaLine={metaLine}
@@ -488,6 +526,11 @@ export function StudentAttemptWorkspace({
         onConfirm={finalizeSubmit}
         unansweredCount={unanswered}
         loading={submitting}
+      />
+      <AttemptLeaveConfirmModal
+        isOpen={leavePromptOpen}
+        onClose={cancelLeaveAttempt}
+        onLeaveAttempt={confirmLeaveAttempt}
       />
     </div>
   );

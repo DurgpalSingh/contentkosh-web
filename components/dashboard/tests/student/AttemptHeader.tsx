@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 
 export function AttemptHeader({
   backHref,
+  onBack,
   kindLabel,
   testName,
   metaLine,
@@ -16,6 +17,7 @@ export function AttemptHeader({
   submitDisabled,
 }: {
   backHref: string;
+  onBack?: () => void;
   kindLabel: string;
   testName: string;
   metaLine?: string;
@@ -28,13 +30,24 @@ export function AttemptHeader({
   return (
     <header className="w-full shrink-0 rounded-2xl border border-slate-200/90 bg-white shadow-[0_2px_12px_-4px_rgba(15,23,42,0.08)]">
       <div className="px-4 py-3 sm:px-5 sm:py-3.5 border-b border-slate-100/90">
-        <Link
-          href={backHref}
-          className="inline-flex items-center gap-1 text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors"
-        >
-          <ChevronLeft className="h-4 w-4 shrink-0 opacity-80" aria-hidden />
-          My Tests
-        </Link>
+        {onBack ? (
+          <button
+            type="button"
+            onClick={onBack}
+            className="inline-flex items-center gap-1 text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors"
+          >
+            <ChevronLeft className="h-4 w-4 shrink-0 opacity-80" aria-hidden />
+            My Tests
+          </button>
+        ) : (
+          <Link
+            href={backHref}
+            className="inline-flex items-center gap-1 text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors"
+          >
+            <ChevronLeft className="h-4 w-4 shrink-0 opacity-80" aria-hidden />
+            My Tests
+          </Link>
+        )}
       </div>
 
       <div className="px-4 py-4 sm:px-6 sm:py-5">
