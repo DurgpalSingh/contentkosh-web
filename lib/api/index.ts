@@ -114,3 +114,6 @@ export { ContentsService } from './services/ContentsService';
 export { UsersService } from './services/UsersService';
 export { TeachersService } from './services/TeachersService';
 export { DashboardService } from './services/DashboardService';
+export type { StudentWithUser, CreateStudentRequest, UpdateStudentRequest, StudentResponse } from './models/Student';
+export { StudentStatus } from './models/Student';
+export { StudentsService } from './services/StudentsService';

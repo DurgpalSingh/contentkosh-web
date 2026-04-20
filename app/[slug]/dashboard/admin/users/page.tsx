@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef,  useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useTeacherStore } from '@/store/useTeacherStore';
+import { useStudentStore } from '@/store/useStudentStore';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Button } from '@/components/ui/button';
 import { UsersService, BusinessUser, User } from '@/lib/api';
@@ -94,6 +95,7 @@ function getFilteredKeys(index: UserIndex, query: string, role: RoleFilter): str
 export default function UsersPage() {
   const { user, business, isAuthenticated, isLoading, isInitialized } = useAuthStore();
   const { setSelectedTeacherUser } = useTeacherStore();
+  const { setSelectedStudentUser } = useStudentStore();
   const router = useRouter();
   const [users, setUsers] = useState<BusinessUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -200,10 +202,8 @@ const restoreScrollPosition = () => {
 
   const handleRowClick = (userItem: BusinessUser) => {
     if (userItem.user?.id && userItem.role === 'TEACHER') {
-
       sessionStorage.setItem('usersPageScrollY', scrollRef.current?.scrollTop.toString() || '0');
       sessionStorage.setItem('usersPageFilter', selectedRole);
-
       setSelectedTeacherUser({
         id: userItem.user.id,
         name: userItem.user.name || '',
@@ -212,6 +212,17 @@ const restoreScrollPosition = () => {
         role: User.role.TEACHER,
       });
       router.push(`${window.location.pathname}/teacher/${userItem.user.id}`);
+    } else if (userItem.user?.id && userItem.role === 'STUDENT') {
+      sessionStorage.setItem('usersPageScrollY', scrollRef.current?.scrollTop.toString() || '0');
+      sessionStorage.setItem('usersPageFilter', selectedRole);
+      setSelectedStudentUser({
+        id: userItem.user.id,
+        name: userItem.user.name || '',
+        email: userItem.user.email || '',
+        mobile: userItem.user.mobile,
+        role: User.role.STUDENT,
+      });
+      router.push(`${window.location.pathname}/student/${userItem.user.id}`);
     }
   };
 
@@ -391,12 +402,12 @@ function UserRowComponent({ user, onRowClick, onEdit, onDelete }: { user: Busine
     }
   };
 
-  const isTeacher = user.role === 'TEACHER';
+  const isClickable = user.role === 'TEACHER' || user.role === 'STUDENT';
 
   return (
     <div
-      className={`px-4 sm:px-6 py-4 hover:bg-gray-50 transition-colors cursor-pointer ${isTeacher ? 'hover:shadow-md' : ''}`}
-      onClick={isTeacher ? onRowClick : undefined}
+      className={`px-4 sm:px-6 py-4 hover:bg-gray-50 transition-colors cursor-pointer ${isClickable ? 'hover:shadow-md' : ''}`}
+      onClick={isClickable ? onRowClick : undefined}
     >
       <div className="flex items-center justify-between gap-4 flex-wrap sm:flex-nowrap">
         <div className="flex items-center space-x-4 flex-1 min-w-0">
