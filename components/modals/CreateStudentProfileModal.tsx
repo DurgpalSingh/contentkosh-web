@@ -99,10 +99,10 @@ export function CreateStudentProfileModal({
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={handleClose} />
 
       <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-auto">
-        <div className="sticky top-0 flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-green-600 to-green-700">
+        <div className="sticky top-0 flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-700">
           <div>
             <h2 className="text-xl font-semibold text-white">Create Student Profile</h2>
-            <p className="text-xs text-green-100 mt-0.5">Set up student details</p>
+            <p className="text-xs text-blue-100 mt-0.5">Set up student details</p>
           </div>
           <Button
             variant="ghost"
@@ -121,17 +121,17 @@ export function CreateStudentProfileModal({
             </div>
           )}
 
-          <div className="rounded-lg border border-green-100 bg-green-50/70 p-3 flex items-start gap-3">
-            <UserCircle2 className="h-5 w-5 text-green-700 mt-0.5" />
+          <div className="rounded-lg border border-blue-100 bg-blue-50/70 p-3 flex items-start gap-3">
+            <UserCircle2 className="h-5 w-5 text-blue-700 mt-0.5" />
             <div className="min-w-0">
-              <p className="text-sm font-medium text-green-900 truncate max-w-full">{user.name || 'Student user'}</p>
-              <p className="text-xs text-green-700 truncate max-w-full">{user.email || '-'}</p>
+              <p className="text-sm font-medium text-blue-900 truncate max-w-full">{user.name || 'Student user'}</p>
+              <p className="text-xs text-blue-700 truncate max-w-full">{user.email || '-'}</p>
             </div>
           </div>
 
           <div className="space-y-4">
             <div className="flex items-center gap-2 text-gray-900">
-              <MapPin className="h-4 w-4 text-green-600" />
+              <MapPin className="h-4 w-4 text-blue-600" />
               <h3 className="text-lg font-semibold">Profile Details <span className="text-sm font-normal text-gray-500">(All optional)</span></h3>
             </div>
 
@@ -141,7 +141,7 @@ export function CreateStudentProfileModal({
                 type="date"
                 value={dob}
                 onChange={(e) => setDob(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors disabled:opacity-70"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:opacity-70"
                 disabled={loading}
               />
             </div>
@@ -151,7 +151,7 @@ export function CreateStudentProfileModal({
               <select
                 value={gender}
                 onChange={(e) => setGender(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors disabled:opacity-70"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:opacity-70"
                 disabled={loading}
               >
                 <option value="">Select Gender</option>
@@ -173,7 +173,7 @@ export function CreateStudentProfileModal({
                 onChange={(e) => setAddress(e.target.value)}
                 placeholder="Full address..."
                 rows={3}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors disabled:opacity-70"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:opacity-70"
                 disabled={loading}
               />
             </div>
@@ -185,7 +185,7 @@ export function CreateStudentProfileModal({
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
                 placeholder="e.g., Mumbai"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors disabled:opacity-70"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:opacity-70"
                 disabled={loading}
               />
             </div>
@@ -197,7 +197,7 @@ export function CreateStudentProfileModal({
                 onChange={(e) => setBio(e.target.value)}
                 placeholder="Brief bio or introduction..."
                 rows={3}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors disabled:opacity-70"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:opacity-70"
                 disabled={loading}
               />
             </div>
@@ -216,7 +216,7 @@ export function CreateStudentProfileModal({
             <Button
               type="button"
               onClick={handleSubmit}
-              className="bg-green-600 hover:bg-green-700 text-white"
+              className="bg-blue-600 hover:bg-blue-700 text-white"
               disabled={loading}
             >
               {loading ? 'Creating...' : (

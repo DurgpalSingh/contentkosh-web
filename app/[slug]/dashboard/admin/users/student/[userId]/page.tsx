@@ -119,7 +119,7 @@ export default function StudentProfilePage() {
       <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 sm:p-6">
         <div className="flex items-start sm:items-center justify-between gap-4 flex-col sm:flex-row">
           <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-green-600 to-green-700 text-white flex items-center justify-center shadow">
+            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 text-white flex items-center justify-center shadow">
               <GraduationCap className="h-6 w-6" />
             </div>
             <div>
@@ -154,20 +154,20 @@ export default function StudentProfilePage() {
 
       {/* Profile setup required banner */}
       {!student && !error && targetUser && (
-        <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6">
+        <div className="bg-gradient-to-r from-blue-50 to-emerald-50 border border-blue-200 rounded-xl p-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="min-w-0">
-              <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-green-100 text-green-800 text-xs font-semibold mb-3">
+              <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-blue-100 text-blue-800 text-xs font-semibold mb-3">
                 <Sparkles className="h-3.5 w-3.5" />
                 Profile setup required
               </div>
-              <h3 className="text-lg font-semibold text-green-900 mb-2">Student profile not created yet</h3>
-              <p className="text-sm text-green-700 leading-relaxed">
+              <h3 className="text-lg font-semibold text-blue-900 mb-2">Student profile not created yet</h3>
+              <p className="text-sm text-blue-700 leading-relaxed">
                 The profile for <strong className="inline-block max-w-full truncate align-bottom">{targetUser.name}</strong> has not been created yet. Click the button below to create it now.
               </p>
             </div>
             <Button
-              className="bg-green-600 hover:bg-green-700 text-white whitespace-nowrap"
+              className="bg-blue-600 hover:bg-blue-700 text-white whitespace-nowrap"
               onClick={() => setIsCreateProfileModalOpen(true)}
               disabled={!business?.id}
             >
@@ -181,8 +181,8 @@ export default function StudentProfilePage() {
       {targetUser && (
         <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-6 overflow-hidden">
           <div className="grid grid-cols-1 sm:grid-cols-[auto,1fr] items-start sm:items-center gap-4 sm:gap-6 min-w-0">
-            <div className="h-16 w-16 rounded-full bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center flex-shrink-0">
-              <UserIcon className="h-8 w-8 text-green-600" />
+            <div className="h-16 w-16 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center flex-shrink-0">
+              <UserIcon className="h-8 w-8 text-blue-600" />
             </div>
             <div className="min-w-0">
               <h2 className="text-2xl font-bold text-gray-900 truncate max-w-full">{targetUser.name}</h2>
@@ -199,7 +199,7 @@ export default function StudentProfilePage() {
                 )}
               </div>
               <div className="flex items-center mt-3">
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
                   <GraduationCap className="h-4 w-4 mr-2" />
                   {targetUser.role}
                 </span>
@@ -216,21 +216,21 @@ export default function StudentProfilePage() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
               <div className="flex items-center gap-3 mb-2">
-                <UserIcon className="h-4 w-4 text-green-600" />
+                <UserIcon className="h-4 w-4 text-blue-600" />
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Gender</p>
               </div>
               <p className="text-sm font-semibold text-gray-900 capitalize">{student.gender || 'Not specified'}</p>
             </div>
             <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
               <div className="flex items-center gap-3 mb-2">
-                <MapPin className="h-4 w-4 text-green-600" />
+                <MapPin className="h-4 w-4 text-blue-600" />
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">City</p>
               </div>
               <p className="text-sm font-semibold text-gray-900">{student.city || 'Not specified'}</p>
             </div>
             <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
               <div className="flex items-center gap-3 mb-2">
-                <Languages className="h-4 w-4 text-green-600" />
+                <Languages className="h-4 w-4 text-blue-600" />
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Languages</p>
               </div>
               <p className="text-sm font-semibold text-gray-900">
@@ -249,7 +249,7 @@ export default function StudentProfilePage() {
                 variant="outline"
                 size="sm"
                 onClick={() => setIsEditProfileModalOpen(true)}
-                className="text-green-600 hover:text-green-800"
+                className="text-blue-600 hover:text-blue-800"
               >
                 <Edit className="h-4 w-4 mr-2" />
                 Edit
@@ -292,7 +292,7 @@ export default function StudentProfilePage() {
                   {student.languages.map((lang) => (
                     <span
                       key={lang}
-                      className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800"
+                      className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800"
                     >
                       {lang}
                     </span>

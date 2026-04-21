@@ -17,6 +17,7 @@ import { EditUserModal } from '@/components/modals/EditUserModal';
 import { AddUserModal } from '@/components/modals/AddUserModal';
 import { CreateUserRequest } from '@/lib/api';
 import { toast } from 'sonner';
+import { USER_ROLES } from '@/lib/constants';
 
 type UserIndex = {
   usersByKey: Map<string, BusinessUser>;
@@ -97,6 +98,8 @@ export default function UsersPage() {
   const { setSelectedTeacherUser } = useTeacherStore();
   const { setSelectedStudentUser } = useStudentStore();
   const router = useRouter();
+  const teacherUserPath = (userId: string) => `${window.location.pathname}/teacher/${userId}`;
+  const studentUserPath = (userId: string) => `${window.location.pathname}/student/${userId}`;
   const [users, setUsers] = useState<BusinessUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -201,7 +204,7 @@ const restoreScrollPosition = () => {
   };
 
   const handleRowClick = (userItem: BusinessUser) => {
-    if (userItem.user?.id && userItem.role === 'TEACHER') {
+    if (userItem.user?.id && userItem.role === USER_ROLES.TEACHER) {
       sessionStorage.setItem('usersPageScrollY', scrollRef.current?.scrollTop.toString() || '0');
       sessionStorage.setItem('usersPageFilter', selectedRole);
       setSelectedTeacherUser({
@@ -211,8 +214,8 @@ const restoreScrollPosition = () => {
         mobile: userItem.user.mobile,
         role: User.role.TEACHER,
       });
-      router.push(`${window.location.pathname}/teacher/${userItem.user.id}`);
-    } else if (userItem.user?.id && userItem.role === 'STUDENT') {
+      router.push(teacherUserPath(userItem.user.id));
+    } else if (userItem.user?.id && userItem.role === USER_ROLES.STUDENT) {
       sessionStorage.setItem('usersPageScrollY', scrollRef.current?.scrollTop.toString() || '0');
       sessionStorage.setItem('usersPageFilter', selectedRole);
       setSelectedStudentUser({
@@ -222,7 +225,7 @@ const restoreScrollPosition = () => {
         mobile: userItem.user.mobile,
         role: User.role.STUDENT,
       });
-      router.push(`${window.location.pathname}/student/${userItem.user.id}`);
+      router.push(studentUserPath(userItem.user.id));
     }
   };
 
