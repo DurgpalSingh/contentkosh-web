@@ -55,13 +55,18 @@ export const BulkUploadModal = ({
     }
   }, [isOpen])
 
-  // Trigger callbacks when done
+  const onSavedRef = useRef(onSaved)
+  const onCloseRef = useRef(onClose)
+  useEffect(() => { onSavedRef.current = onSaved }, [onSaved])
+  useEffect(() => { onCloseRef.current = onClose }, [onClose])
+
+  // Trigger callbacks when done — use refs to avoid stale closure / infinite loop
   useEffect(() => {
     if (state === 'done') {
-      onSaved()
-      onClose()
+      onSavedRef.current()
+      onCloseRef.current()
     }
-  }, [state, onSaved, onClose])
+  }, [state])
 
   const handleFileSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
