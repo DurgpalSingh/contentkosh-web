@@ -11,6 +11,33 @@ import {
 } from '@/lib/content-upload.config';
 
 /**
+ * Derives a human-readable label from an accept string.
+ * e.g. ".doc,.docx" → "DOC, DOCX"
+ * e.g. "application/pdf,image/*" → "PDF, Image"
+ */
+function acceptToLabel(accept: string): string {
+  const parts = accept.split(',').map(t => t.trim());
+  const labels: string[] = [];
+  for (const part of parts) {
+    if (part.startsWith('.')) {
+      labels.push(part.slice(1).toUpperCase());
+    } else if (part === 'application/pdf') {
+      labels.push('PDF');
+    } else if (part.startsWith('image/')) {
+      labels.push('Image');
+    } else if (part === 'application/msword') {
+      // skip — .doc extension entry will cover it
+    } else if (part.includes('wordprocessingml')) {
+      // skip — .docx extension entry will cover it
+    } else {
+      labels.push(part.split('/').pop()?.toUpperCase() ?? part);
+    }
+  }
+  // Deduplicate
+  return [...new Set(labels)].join(', ');
+}
+
+/**
  * Props for the FileUploadArea component
  */
 export interface FileUploadAreaProps {
@@ -57,14 +84,12 @@ export function validateFileType(file: File, accept: string): boolean {
     if (type.startsWith('.')) {
       return fileExtension === type.toLowerCase();
     }
-
     if (type.endsWith('/*')) {
-      // Handle wildcard types like "image/*"
       const prefix = type.slice(0, -2);
       return file.type.startsWith(prefix);
     }
     return file.type === type;
-  }) || CONTENT_UPLOAD_ALLOWED_EXTENSIONS.includes(fileExtension);
+  });
 }
 
 /**
@@ -100,6 +125,9 @@ export function FileUploadArea({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const dragCounter = useRef(0);
+
+  const label = acceptToLabel(accept);
+  const errorMessage = `Please upload a ${label} file`;
 
   /**
    * Handles dragenter event
@@ -176,8 +204,7 @@ export function FileUploadArea({
   const handleFileSelection = (file: File) => {
     // Validate file type using validateFileType helper
     if (!validateFileType(file, accept)) {
-      // For invalid files: call onError with error message and onChange with null
-      onError?.(CONTENT_UPLOAD_ERROR_MESSAGE);
+      onError?.(errorMessage);
       onChange(null);
       return;
     }
@@ -320,7 +347,8 @@ export function FileUploadArea({
       >
         {/* Hidden span with instructions for screen readers */}
         <span id="file-upload-instructions" className="sr-only">
-          Accepted file types: {acceptedLabel}
+          {/* Accepted file types: {acceptedLabel} */}
+          Accepted file types: {label}
         </span>
         {/* Empty state - shown when no file is selected */}
         {!value && !previewUrl && (
@@ -335,7 +363,8 @@ export function FileUploadArea({
             
             {/* Secondary text indicating accepted file types */}
             <p className="text-sm text-slate-500">
-              {acceptedLabel} files
+              {/* {acceptedLabel} files */}
+              {label} files
             </p>
           </div>
         )}
