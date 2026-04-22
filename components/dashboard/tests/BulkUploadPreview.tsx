@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { CheckCircle2, XCircle, ChevronDown, ChevronUp } from 'lucide-react'
+import { HtmlContent } from '@/components/common/HtmlContent'
 import type { BulkUploadParsedQuestion, BulkUploadInvalidBlock } from '@/lib/api'
 
 interface BulkUploadPreviewProps {
@@ -17,9 +18,15 @@ const TYPE_COLORS: Record<string, string> = {
   FILL_IN_THE_BLANK: 'bg-pink-50 text-pink-700 border-pink-200',
 }
 
+/** Strip HTML tags to get plain text for the collapsed preview line */
+function htmlToPlainText(html: string): string {
+  return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+}
+
 function QuestionCard({ q, index }: { q: BulkUploadParsedQuestion; index: number }) {
   const [expanded, setExpanded] = useState(false)
   const typeColor = TYPE_COLORS[q.type] ?? 'bg-gray-50 text-gray-700 border-gray-200'
+  const previewText = htmlToPlainText(q.questionText)
 
   return (
     <li className="bg-white border border-gray-200 rounded-xl overflow-hidden">
@@ -37,7 +44,8 @@ function QuestionCard({ q, index }: { q: BulkUploadParsedQuestion; index: number
               {q.type.replace(/_/g, ' ')}
             </span>
           </div>
-          <p className="text-sm text-gray-900 line-clamp-2">{q.questionText}</p>
+          {/* Collapsed: plain text preview */}
+          <p className="text-sm text-gray-900 line-clamp-2">{previewText}</p>
         </div>
         <span className="flex-shrink-0 text-gray-400 mt-1">
           {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -45,7 +53,15 @@ function QuestionCard({ q, index }: { q: BulkUploadParsedQuestion; index: number
       </button>
 
       {expanded && (
-        <div className="px-4 pb-4 pt-1 border-t border-gray-100 space-y-3">
+        <div className="px-4 pb-4 pt-2 border-t border-gray-100 space-y-3">
+          {/* Question rendered as rich HTML */}
+          <div>
+            <p className="text-xs font-medium text-gray-500 mb-1.5">Question</p>
+            <div className="text-sm bg-gray-50 rounded-lg px-3 py-2">
+              <HtmlContent html={q.questionText} />
+            </div>
+          </div>
+
           {q.options.length > 0 && (
             <div>
               <p className="text-xs font-medium text-gray-500 mb-1.5">Options</p>
@@ -81,9 +97,9 @@ function QuestionCard({ q, index }: { q: BulkUploadParsedQuestion; index: number
           {q.solution && (
             <div>
               <p className="text-xs font-medium text-gray-500 mb-1">Solution</p>
-              <p className="text-xs text-gray-600 bg-gray-50 rounded-lg px-3 py-2 whitespace-pre-line">
-                {q.solution}
-              </p>
+              <div className="text-xs bg-gray-50 rounded-lg px-3 py-2">
+                <HtmlContent html={q.solution} className="text-gray-600" />
+              </div>
             </div>
           )}
         </div>
@@ -105,7 +121,9 @@ function ErrorCard({ block }: { block: BulkUploadInvalidBlock }) {
         <XCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-red-800">Question #{block.position}</p>
-          <p className="text-xs text-red-600 mt-0.5">{block.errors[0]}{block.errors.length > 1 ? ` +${block.errors.length - 1} more` : ''}</p>
+          <p className="text-xs text-red-600 mt-0.5">
+            {block.errors[0]}{block.errors.length > 1 ? ` +${block.errors.length - 1} more` : ''}
+          </p>
         </div>
         <span className="flex-shrink-0 text-red-400 mt-1">
           {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
