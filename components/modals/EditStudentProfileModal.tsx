@@ -60,6 +60,7 @@ export function EditStudentProfileModal({
 
     try {
       const request: UpdateStudentRequest = {
+        businessId: student.businessId || 0,
         ...(dob && { dob }),
         ...(gender && { gender }),
         ...(languages.length > 0 && { languages }),

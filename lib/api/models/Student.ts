@@ -35,6 +35,7 @@ export type CreateStudentRequest = {
 }
 
 export type UpdateStudentRequest = {
+  businessId: number;
   dob?: string;
   gender?: string;
   languages?: string[];
