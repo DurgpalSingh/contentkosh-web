@@ -12,6 +12,7 @@ interface TeacherTestQuestionsTabProps {
   onAddQuestion: () => void
   onEditQuestion: (question: TeacherTestQuestion) => void
   onDeleteQuestion: (question: TestQuestion) => void
+  onBulkUpload: () => void
 }
 
 const toTeacherQuestion = (q: TestQuestion): TeacherTestQuestion => {
@@ -24,6 +25,7 @@ export const TeacherTestQuestionsTab = ({
   onAddQuestion,
   onEditQuestion,
   onDeleteQuestion,
+  onBulkUpload,
 }: TeacherTestQuestionsTabProps) => {
   return (
     <div className="space-y-4">
@@ -34,14 +36,14 @@ export const TeacherTestQuestionsTab = ({
       ) : null}
 
       <div className="flex justify-end">
-        <Button
-          type="button"
-          className="bg-blue-600 hover:bg-blue-700"
-          disabled={questionsLocked}
-          onClick={onAddQuestion}
-        >
-          Add question
-        </Button>
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" onClick={onBulkUpload}>
+            Upload from file
+          </Button>
+          <Button type="button" className="bg-blue-600 hover:bg-blue-700" onClick={onAddQuestion}>
+            Add question
+          </Button>
+        </div>
       </div>
 
       {questions.length === 0 ? (
