@@ -7,10 +7,10 @@ import { useTeacherStore } from '@/store/useTeacherStore';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Button } from '@/components/ui/button';
 import { TeachersService, TeacherWithUser } from '@/lib/api';
-import { ApiError } from '@/lib/api/core/ApiError';
 import { ArrowLeft, User as UserIcon, BookOpen, Mail, Phone, Edit, AlertCircle, Sparkles, Briefcase, GraduationCap, Languages } from 'lucide-react';
 import { CreateTeacherProfileModal } from '@/components/modals/CreateTeacherProfileModal';
 import { EditTeacherProfileModal } from '@/components/modals/EditTeacherProfileModal';
+import { resolveProfileFetchError } from '@/lib/profileFetchError';
 
 export default function TeacherProfilePage() {
   const router = useRouter();
@@ -46,16 +46,14 @@ export default function TeacherProfilePage() {
         }
       }
     } catch (err: unknown) {
-      if (err instanceof ApiError && err.status === 404) {
-        // Profile doesn't exist yet - use user details from store populated by users page.
-        if (!selectedTeacherUser || selectedTeacherUser.id !== userId) {
-          setError('Teacher profile not found. Please open from Users page to create profile.');
-        }
-      } else {
-        const message =
-          err instanceof ApiError
-            ? (err.body?.message ?? 'Failed to fetch teacher profile')
-            : 'Failed to fetch teacher profile';
+      const message = resolveProfileFetchError({
+        err,
+        fallbackMessage: 'Failed to fetch teacher profile',
+        suppressNotFoundError: !selectedTeacherUser || selectedTeacherUser.id !== userId,
+        notFoundMessage: 'Teacher profile not found. Please open from Users page to create profile.',
+      });
+
+      if (message) {
         setError(message);
       }
     } finally {

@@ -7,7 +7,6 @@ import { useStudentStore } from '@/store/useStudentStore';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Button } from '@/components/ui/button';
 import { StudentsService, StudentWithUser } from '@/lib/api';
-import { ApiError } from '@/lib/api/core/ApiError';
 import {
   ArrowLeft,
   User as UserIcon,
@@ -23,6 +22,7 @@ import {
 } from 'lucide-react';
 import { CreateStudentProfileModal } from '@/components/modals/CreateStudentProfileModal';
 import { EditStudentProfileModal } from '@/components/modals/EditStudentProfileModal';
+import { resolveProfileFetchError } from '@/lib/profileFetchError';
 
 export default function StudentProfilePage() {
   const router = useRouter();
@@ -58,15 +58,15 @@ export default function StudentProfilePage() {
         }
       }
     } catch (err: unknown) {
-      if (err instanceof ApiError && err.status === 404) {
-        if (!selectedStudentUser || selectedStudentUser.id !== userId) {
-          setError('Student profile not found. Please open from Users page to create profile.');
-        }
-      } else {
-        const message =
-          err instanceof ApiError
-            ? (err.body?.message ?? 'Failed to fetch student profile')
-            : 'Failed to fetch student profile';
+      const message = resolveProfileFetchError({
+        err,
+        fallbackMessage: 'Failed to fetch student profile',
+        suppressNotFoundError: !selectedStudentUser || selectedStudentUser.id !== userId,
+        notFoundMessage: 'Student profile not found. Please open from Users page to create profile.',
+        
+      });
+
+      if (message) {
         setError(message);
       }
     } finally {
