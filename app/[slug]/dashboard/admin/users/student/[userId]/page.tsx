@@ -3,54 +3,67 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
-import { useTeacherStore } from '@/store/useTeacherStore';
+import { useStudentStore } from '@/store/useStudentStore';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Button } from '@/components/ui/button';
-import { TeachersService, TeacherWithUser } from '@/lib/api';
-import { ArrowLeft, User as UserIcon, BookOpen, Mail, Phone, Edit, AlertCircle, Sparkles, Briefcase, GraduationCap, Languages } from 'lucide-react';
-import { CreateTeacherProfileModal } from '@/components/modals/CreateTeacherProfileModal';
-import { EditTeacherProfileModal } from '@/components/modals/EditTeacherProfileModal';
+import { StudentsService, StudentWithUser } from '@/lib/api';
+import {
+  ArrowLeft,
+  User as UserIcon,
+  GraduationCap,
+  Mail,
+  Phone,
+  Edit,
+  AlertCircle,
+  Sparkles,
+  MapPin,
+  Languages,
+  Calendar,
+} from 'lucide-react';
+import { CreateStudentProfileModal } from '@/components/modals/CreateStudentProfileModal';
+import { EditStudentProfileModal } from '@/components/modals/EditStudentProfileModal';
 import { resolveProfileFetchError } from '@/lib/profileFetchError';
 
-export default function TeacherProfilePage() {
+export default function StudentProfilePage() {
   const router = useRouter();
   const params = useParams();
   const userId = parseInt(params.userId as string, 10);
 
   const { isAuthenticated, isInitialized, business } = useAuthStore();
-  const { selectedTeacherUser } = useTeacherStore();
+  const { selectedStudentUser } = useStudentStore();
 
-  const [teacher, setTeacher] = useState<TeacherWithUser | null>(null);
-  const [targetUser, setTargetUser] = useState<TeacherWithUser['user'] | null>(null);
+  const [student, setStudent] = useState<StudentWithUser | null>(null);
+  const [targetUser, setTargetUser] = useState<StudentWithUser['user'] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isCreateProfileModalOpen, setIsCreateProfileModalOpen] = useState(false);
   const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
 
-  const fetchTeacherProfile = useCallback(async () => {
+  const fetchStudentProfile = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      setTeacher(null);
+      setStudent(null);
 
       if (!Number.isFinite(userId)) {
-        setError('Invalid teacher user id');
+        setError('Invalid student user id');
         return;
       }
 
-      const profile = await TeachersService.getApiTeachersByUserId(userId);
+      const profile = await StudentsService.getApiStudentsByUserId(userId);
       if (profile?.data) {
-        setTeacher(profile.data as TeacherWithUser);
+        setStudent(profile.data as StudentWithUser);
         if (profile.data.user) {
-          setTargetUser(profile.data.user as TeacherWithUser['user']);
+          setTargetUser(profile.data.user as StudentWithUser['user']);
         }
       }
     } catch (err: unknown) {
       const message = resolveProfileFetchError({
         err,
-        fallbackMessage: 'Failed to fetch teacher profile',
-        suppressNotFoundError: !selectedTeacherUser || selectedTeacherUser.id !== userId,
-        notFoundMessage: 'Teacher profile not found. Please open from Users page to create profile.',
+        fallbackMessage: 'Failed to fetch student profile',
+        suppressNotFoundError: !selectedStudentUser || selectedStudentUser.id !== userId,
+        notFoundMessage: 'Student profile not found. Please open from Users page to create profile.',
+        
       });
 
       if (message) {
@@ -59,33 +72,32 @@ export default function TeacherProfilePage() {
     } finally {
       setLoading(false);
     }
-  }, [userId, selectedTeacherUser]);
+  }, [userId, selectedStudentUser]);
 
   useEffect(() => {
     if (isAuthenticated && isInitialized && userId) {
-      fetchTeacherProfile();
+      fetchStudentProfile();
     }
-  }, [userId, isAuthenticated, isInitialized, fetchTeacherProfile]);
+  }, [userId, isAuthenticated, isInitialized, fetchStudentProfile]);
 
   useEffect(() => {
-    // in case profile doesn't exist yet, we can still show user details from store populated by users page.
-    if (selectedTeacherUser && selectedTeacherUser.id === userId) {
-      setTargetUser(selectedTeacherUser as TeacherWithUser['user']);
+    if (selectedStudentUser && selectedStudentUser.id === userId) {
+      setTargetUser(selectedStudentUser as StudentWithUser['user']);
     }
-  }, [selectedTeacherUser, userId])
+  }, [selectedStudentUser, userId]);
 
   const handleProfileCreated = useCallback(() => {
     setIsCreateProfileModalOpen(false);
-    fetchTeacherProfile();
-  }, [fetchTeacherProfile]);
+    fetchStudentProfile();
+  }, [fetchStudentProfile]);
 
   const handleProfileUpdated = useCallback(() => {
     setIsEditProfileModalOpen(false);
-    fetchTeacherProfile();
-  }, [fetchTeacherProfile]);
+    fetchStudentProfile();
+  }, [fetchStudentProfile]);
 
   const goBack = () => {
-    useTeacherStore.persist.clearStorage();
+    useStudentStore.persist.clearStorage();
     router.push(`/${params.slug}/dashboard/admin/users`);
   };
 
@@ -103,15 +115,16 @@ export default function TeacherProfilePage() {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 sm:p-6">
         <div className="flex items-start sm:items-center justify-between gap-4 flex-col sm:flex-row">
           <div className="flex items-center gap-4">
             <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 text-white flex items-center justify-center shadow">
-              <BookOpen className="h-6 w-6" />
+              <GraduationCap className="h-6 w-6" />
             </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Teacher Profile</h1>
-              <p className="text-gray-600">Manage teacher information and profile details</p>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Student Profile</h1>
+              <p className="text-gray-600">Manage student information and profile details</p>
             </div>
           </div>
           <Button
@@ -126,6 +139,7 @@ export default function TeacherProfilePage() {
         </div>
       </div>
 
+      {/* Error banner */}
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-6">
           <div className="flex gap-3">
@@ -138,15 +152,16 @@ export default function TeacherProfilePage() {
         </div>
       )}
 
-      {!teacher && !error && targetUser && (
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
+      {/* Profile setup required banner */}
+      {!student && !error && targetUser && (
+        <div className="bg-gradient-to-r from-blue-50 to-emerald-50 border border-blue-200 rounded-xl p-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="min-w-0">
               <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-blue-100 text-blue-800 text-xs font-semibold mb-3">
                 <Sparkles className="h-3.5 w-3.5" />
                 Profile setup required
               </div>
-              <h3 className="text-lg font-semibold text-blue-900 mb-2">Teacher profile not created yet</h3>
+              <h3 className="text-lg font-semibold text-blue-900 mb-2">Student profile not created yet</h3>
               <p className="text-sm text-blue-700 leading-relaxed">
                 The profile for <strong className="inline-block max-w-full truncate align-bottom">{targetUser.name}</strong> has not been created yet. Click the button below to create it now.
               </p>
@@ -162,6 +177,7 @@ export default function TeacherProfilePage() {
         </div>
       )}
 
+      {/* User info card */}
       {targetUser && (
         <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-6 overflow-hidden">
           <div className="grid grid-cols-1 sm:grid-cols-[auto,1fr] items-start sm:items-center gap-4 sm:gap-6 min-w-0">
@@ -184,7 +200,7 @@ export default function TeacherProfilePage() {
               </div>
               <div className="flex items-center mt-3">
                 <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                  <BookOpen className="h-4 w-4 mr-2" />
+                  <GraduationCap className="h-4 w-4 mr-2" />
                   {targetUser.role}
                 </span>
               </div>
@@ -193,35 +209,42 @@ export default function TeacherProfilePage() {
         </div>
       )}
 
-      {teacher && (
+      {/* Student details */}
+      {student && (
         <div className="space-y-6">
+          {/* Summary stat cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
               <div className="flex items-center gap-3 mb-2">
-                <Briefcase className="h-4 w-4 text-blue-600" />
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Designation</p>
+                <UserIcon className="h-4 w-4 text-blue-600" />
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Gender</p>
               </div>
-              <p className="text-sm font-semibold text-gray-900">{teacher.designation || 'Not specified'}</p>
+              <p className="text-sm font-semibold text-gray-900 capitalize">{student.gender || 'Not specified'}</p>
             </div>
             <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
               <div className="flex items-center gap-3 mb-2">
-                <GraduationCap className="h-4 w-4 text-blue-600" />
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Qualification</p>
+                <MapPin className="h-4 w-4 text-blue-600" />
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">City</p>
               </div>
-              <p className="text-sm font-semibold text-gray-900">{teacher.qualification || 'Not specified'}</p>
+              <p className="text-sm font-semibold text-gray-900">{student.city || 'Not specified'}</p>
             </div>
             <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
               <div className="flex items-center gap-3 mb-2">
                 <Languages className="h-4 w-4 text-blue-600" />
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Experience</p>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Languages</p>
               </div>
-              <p className="text-sm font-semibold text-gray-900">{teacher.experienceYears || 0} years</p>
+              <p className="text-sm font-semibold text-gray-900">
+                {student.languages && student.languages.length > 0
+                  ? `${student.languages.length} language${student.languages.length > 1 ? 's' : ''}`
+                  : 'Not specified'}
+              </p>
             </div>
           </div>
 
+          {/* Personal details card */}
           <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-6">
             <div className="flex items-center justify-between mb-6 gap-4">
-              <h3 className="text-xl font-bold text-gray-900">Professional Details</h3>
+              <h3 className="text-xl font-bold text-gray-900">Personal Details</h3>
               <Button
                 variant="outline"
                 size="sm"
@@ -235,93 +258,79 @@ export default function TeacherProfilePage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Designation</label>
-                <p className="text-gray-900 font-medium">{teacher.designation || 'Not specified'}</p>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Gender</label>
+                <p className="text-gray-900 font-medium capitalize">{student.gender || 'Not specified'}</p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Qualification</label>
-                <p className="text-gray-900 font-medium">{teacher.qualification || 'Not specified'}</p>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <span className="flex items-center gap-1">
+                    <Calendar className="h-3.5 w-3.5" />
+                    Date of Birth
+                  </span>
+                </label>
+                <p className="text-gray-900 font-medium">
+                  {student.dob ? new Date(student.dob).toLocaleDateString() : 'Not specified'}
+                </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Experience</label>
-                <p className="text-gray-900 font-medium">{teacher.experienceYears || 0} years</p>
+                <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
+                <p className="text-gray-900 font-medium">{student.city || 'Not specified'}</p>
               </div>
 
-              {teacher.languages && teacher.languages.length > 0 && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Languages</label>
-                  <div className="flex flex-wrap gap-2">
-                    {teacher.languages.map((lang) => (
-                      <span
-                        key={lang}
-                        className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800"
-                      >
-                        {lang}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                <p className="text-gray-900 font-medium">{student.address || 'Not specified'}</p>
+              </div>
             </div>
 
-            {teacher.bio && (
-              <div className="mt-6 pt-6 border-t border-gray-100">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Bio</label>
-                <p className="text-gray-900 whitespace-pre-wrap leading-relaxed">{teacher.bio}</p>
+            {student.languages && student.languages.length > 0 && (
+              <div className="mt-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Languages</label>
+                <div className="flex flex-wrap gap-2">
+                  {student.languages.map((lang) => (
+                    <span
+                      key={lang}
+                      className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800"
+                    >
+                      {lang}
+                    </span>
+                  ))}
+                </div>
               </div>
             )}
-          </div>
 
-          <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-6">
-            <h3 className="text-xl font-bold text-gray-900 mb-6">Personal Details</h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {teacher.gender && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Gender</label>
-                  <p className="text-gray-900 font-medium capitalize">{teacher.gender}</p>
-                </div>
-              )}
-
-              {teacher.dob && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Date of Birth</label>
-                  <p className="text-gray-900 font-medium">{new Date(teacher.dob).toLocaleDateString()}</p>
-                </div>
-              )}
-
-              {teacher.address && (
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
-                  <p className="text-gray-900 font-medium">{teacher.address}</p>
-                </div>
-              )}
-            </div>
+            {student.bio && (
+              <div className="mt-6 pt-6 border-t border-gray-100">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Bio</label>
+                <p className="text-gray-900 whitespace-pre-wrap leading-relaxed">{student.bio}</p>
+              </div>
+            )}
           </div>
         </div>
       )}
 
+      {/* Modals */}
       {targetUser && business?.id && business.id > 0 && (
         <>
-          <CreateTeacherProfileModal
+          <CreateStudentProfileModal
             isOpen={isCreateProfileModalOpen}
             onClose={() => setIsCreateProfileModalOpen(false)}
             businessId={business.id}
             user={{
               id: targetUser.id,
               name: targetUser.name,
-              email: targetUser.email
+              email: targetUser.email,
             }}
             onProfileCreated={handleProfileCreated}
           />
 
-          {teacher && (
-            <EditTeacherProfileModal
+          {student && (
+            <EditStudentProfileModal
               isOpen={isEditProfileModalOpen}
               onClose={() => setIsEditProfileModalOpen(false)}
-              teacher={teacher}
+              student={student}
               onProfileUpdated={handleProfileUpdated}
             />
           )}

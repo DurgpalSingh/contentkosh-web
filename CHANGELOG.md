@@ -1,6 +1,24 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.2.12] - Student Profile UX
+**P.R Raised by** : shubh404-SE
+**Date** : 2026-04-21
+
+### Added
+- **Student Profile State Store**: Added `useStudentStore` to pass selected student user context from Users page to Student Profile page.
+- Before redirecting from Users page to Student Profile page, selected student user details are stored in Zustand.
+- **Student Profile Page**:
+  - Improved 404 handling for missing student profile.
+  - Student Profile now uses store context when profile does not exist and prompts profile creation.
+- **Student Profile UI Refresh**:
+  - Improved profile-not-created state and section presentation.
+  - Added cleaner professional summary cards and improved page hierarchy.
+- **Student Modals UI Refresh**:
+  - Created `CreateTeacherProfileModal` and `EditTeacherProfileModal` 
+  - Improved step indicators, spacing, and section clarity.
+
+
 ## Version [1.2.11] - UI fixed text attempt screen + create test modal
 **P.R Raised by** : shubh404-SE on **Date** : 2026-04-14
 
