@@ -58,3 +58,80 @@ export const batchSchema = z.object({
 }).merge(dateRangeFields).refine(dateRangeRefinement, dateRangeRefinementMessage);
 
 export type BatchFormData = z.infer<typeof batchSchema>;
+
+const optionalTrimmedString = z.string().trim().optional();
+
+const optionalEmail = z
+    .string()
+    .trim()
+    .email('Enter a valid email')
+    .or(z.literal(''))
+    .optional()
+    .transform((value) => (value ? value : undefined));
+
+const optionalDateString = z
+    .string()
+    .trim()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format')
+    .or(z.literal(''))
+    .optional()
+    .transform((value) => (value ? value : undefined));
+
+const optionalLanguagesCsv = z
+    .string()
+    .trim()
+    .or(z.literal(''))
+    .optional()
+    .transform((value) =>
+        value
+            ? value
+                .split(',')
+                .map((entry) => entry.trim())
+                .filter(Boolean)
+            : []
+    );
+
+const genderSchema = z.enum(['male', 'female', 'other']);
+
+export const settingsUserDetailsSchema = z.object({
+    name: z.string().trim().min(1, 'Name is required').max(100, 'Name is too long'),
+    mobile: z.string().trim().max(20, 'Mobile number is too long').optional(),
+});
+
+export const settingsTeacherProfileSchema = z.object({
+    qualification: optionalTrimmedString,
+    experienceYears: z
+        .union([z.string(), z.number(), z.undefined()])
+        .transform((value) => {
+            if (value === undefined) return undefined;
+            const normalized = String(value).trim();
+            if (!normalized) return undefined;
+            const parsed = Number(normalized);
+            return Number.isNaN(parsed) ? Number.NaN : parsed;
+        })
+        .refine((value) => value === undefined || Number.isInteger(value), 'Experience must be a whole number')
+        .refine((value) => value === undefined || (value >= 0 && value <= 60), 'Experience must be between 0 and 60'),
+    designation: optionalTrimmedString,
+    bio: optionalTrimmedString,
+    languages: optionalLanguagesCsv,
+    gender: z.union([genderSchema, z.literal('')]).optional().transform((value) => (value ? value : undefined)),
+    dob: optionalDateString,
+    address: optionalTrimmedString,
+});
+
+export const settingsStudentProfileSchema = z.object({
+    gender: z.union([genderSchema, z.literal('')]).optional().transform((value) => (value ? value : undefined)),
+    dob: optionalDateString,
+    languages: optionalLanguagesCsv,
+    address: optionalTrimmedString,
+    city: optionalTrimmedString,
+    bio: optionalTrimmedString,
+});
+
+export const settingsBusinessDetailsSchema = z.object({
+    instituteName: optionalTrimmedString,
+    tagline: optionalTrimmedString,
+    contactNumber: optionalTrimmedString,
+    email: optionalEmail,
+    address: optionalTrimmedString,
+});

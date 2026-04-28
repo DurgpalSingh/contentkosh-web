@@ -1,6 +1,16 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.2.14] - Settings Profile UX
+**P.R Raised by** : shubh404-SE
+**Date** : 2026-04-29
+
+### Added
+  - implimented settings features to update user profile and add logo.
+  - fixed student/teacher create profile if not exist.
+  - fixed business logo on header.
+  - login success message
+---
 ## Version [1.2.13] - Student Profile bug fix
 **P.R Raised by** : shubh404-SE
 **Date** : 2026-04-29
