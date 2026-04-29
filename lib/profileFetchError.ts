@@ -21,5 +21,9 @@ export function resolveProfileFetchError({
     404: suppressNotFoundError ? null : notFoundMessage,
   };
 
-  return statusMessageMap[err.status] ?? err.body?.message ?? fallbackMessage;
+  if (err.status in statusMessageMap) {
+    return statusMessageMap[err.status];
+  }
+
+  return err.body?.message ?? fallbackMessage;
 }
