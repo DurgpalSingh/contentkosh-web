@@ -49,7 +49,7 @@ export default function TeacherProfilePage() {
       const message = resolveProfileFetchError({
         err,
         fallbackMessage: 'Failed to fetch teacher profile',
-        suppressNotFoundError: !selectedTeacherUser || selectedTeacherUser.id !== userId,
+        suppressNotFoundError: !!selectedTeacherUser && selectedTeacherUser.id === userId,
         notFoundMessage: 'Teacher profile not found. Please open from Users page to create profile.',
       });
 

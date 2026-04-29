@@ -61,7 +61,7 @@ export default function StudentProfilePage() {
       const message = resolveProfileFetchError({
         err,
         fallbackMessage: 'Failed to fetch student profile',
-        suppressNotFoundError: !selectedStudentUser || selectedStudentUser.id !== userId,
+        suppressNotFoundError: !!selectedStudentUser && selectedStudentUser.id === userId,
         notFoundMessage: 'Student profile not found. Please open from Users page to create profile.',
         
       });

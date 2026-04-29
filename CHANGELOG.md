@@ -1,6 +1,13 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.2.13] - Student Profile bug fix
+**P.R Raised by** : shubh404-SE
+**Date** : 2026-04-29
+
+### Changed
+  - create student profile button when profile not exist.
+---
 ## Version [1.2.12] - Student Profile UX
 **P.R Raised by** : shubh404-SE
 **Date** : 2026-04-21
