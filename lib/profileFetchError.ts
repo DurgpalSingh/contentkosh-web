@@ -21,17 +21,10 @@ export function resolveProfileFetchError({
     404: suppressNotFoundError ? null : notFoundMessage,
   };
 
-<<<<<<< HEAD
-=======
   // If we have an explicit mapping for this status code, return it (even if it's null)
->>>>>>> 075ace5 (implimented profile settings feature)
   if (err.status in statusMessageMap) {
     return statusMessageMap[err.status];
   }
 
   return err.body?.message ?? fallbackMessage;
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 075ace5 (implimented profile settings feature)
