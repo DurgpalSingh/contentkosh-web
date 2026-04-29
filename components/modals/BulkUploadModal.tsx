@@ -124,7 +124,7 @@ export const BulkUploadModal = ({
       open={isOpen}
       titleId="bulk-upload-title"
       title="Upload questions from file"
-      subtitle="Upload a .doc or .docx file to bulk-add questions."
+      subtitle="Upload a .doc, .docx, .xls, .xlsx or .xlc file to bulk-add questions."
       onClose={onClose}
     >
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -135,7 +135,11 @@ export const BulkUploadModal = ({
             <form id="bulk-upload-form" onSubmit={(e) => void handleFileSubmit(e)}>
               <div className="space-y-4">
                 <FileUploadArea
-                  accept=".docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  accept={
+                    '.doc,.docx,.xls,.xlsx,.xlc,' +
+                    'application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,' +
+                    'application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                  }
                   value={selectedFile}
                   onChange={setSelectedFile}
                   onError={setFileError}

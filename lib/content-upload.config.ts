@@ -23,6 +23,16 @@ export const CONTENT_UPLOAD_FORMATS = [
     extensions: ['.doc', '.docx'],
     maxSizeMb: 10,
   },
+  {
+    key: 'excel',
+    label: 'Excel',
+    mimeTypes: [
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    ],
+    extensions: ['.xls', '.xlsx', '.xlc'],
+    maxSizeMb: 10,
+  },
 ] as const;
 
 export type ContentUploadFormat = (typeof CONTENT_UPLOAD_FORMATS)[number];
@@ -82,7 +92,7 @@ export const CONTENT_UPLOAD_ALLOWED_EXTENSIONS: string[] = CONTENT_UPLOAD_FORMAT
   (format) => format.extensions
 );
 
-export const CONTENT_UPLOAD_LABEL = 'PDF, Image, or DOC';
+export const CONTENT_UPLOAD_LABEL = 'PDF, Image, DOC, or Excel';
 
 export const CONTENT_UPLOAD_ERROR_MESSAGE = `Please upload a ${CONTENT_UPLOAD_LABEL} file`;
 
