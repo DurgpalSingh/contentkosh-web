@@ -117,3 +117,12 @@ export { DashboardService } from './services/DashboardService';
 export type { StudentWithUser, CreateStudentRequest, UpdateStudentRequest, StudentResponse } from './models/Student';
 export { StudentStatus } from './models/Student';
 export { StudentsService } from './services/StudentsService';
+export type {
+  SettingsRole,
+  SettingsGender,
+  SettingsTeacherProfile,
+  SettingsStudentProfile,
+  SettingsBusinessDetails,
+  SettingsProfileResponse,
+  UpdateSettingsProfilePayload,
+} from './models/SettingsProfile';

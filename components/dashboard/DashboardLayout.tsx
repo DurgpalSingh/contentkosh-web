@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
+import { resolveAssetUrl } from '@/lib/assets/assetUrl';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -34,17 +35,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   }, [pathname]);
 
   const logoUrl = useMemo(() => {
-    const logoPath = business?.logo?.trim();
-    if (!logoPath) return null;
-
-    // Logo is stored as backend file path (for example: /uploads/content/file.jpg)
-    // TODO: Will change once backend ready.
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
-    const backendBase = apiBase.replace(/\/api\/?$/, '');
-    const normalized = logoPath.replace(/\\/g, '/');
-    const normalizedPath = normalized.startsWith('/') ? normalized : `/${normalized}`;
-    return `${backendBase}${normalizedPath}`;
+    return resolveAssetUrl(business?.logo);
   }, [business?.logo]);
+
+  const userProfileImageUrl = useMemo(() => {
+    return resolveAssetUrl(user?.profilePicture);
+  }, [user?.profilePicture]);
 
   // Dynamically rewrite navigation URLs if business slug is present
   const navigation = getNavigationItems(user, permissions).map(item => {
@@ -97,6 +93,48 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     </div>
   );
 
+  const SidebarUserSection = ({ mobileSidebar = false }: { mobileSidebar?: boolean }) => (
+    <div className={mobileSidebar ? 'border-t border-blue-100 p-4' : 'border-t border-slate-200 p-4 bg-slate-50/50'}>
+      <div className={`flex items-center ${mobileSidebar ? '' : 'p-2 rounded-lg hover:bg-white hover:shadow-sm transition-all'} cursor-default`}>
+        <div className="flex-shrink-0">
+          {userProfileImageUrl ? (
+            <Image
+              src={userProfileImageUrl}
+              alt={`${user?.name || 'User'} profile`}
+              width={36}
+              height={36}
+              unoptimized
+              className="h-9 w-9 rounded-full object-cover border border-blue-100"
+            />
+          ) : (
+            <div
+              className={`h-9 w-9 rounded-full border border-blue-100 flex items-center justify-center ${
+                mobileSidebar ? 'bg-slate-200' : 'bg-blue-50'
+              }`}
+            >
+              <User className={`h-5 w-5 ${mobileSidebar ? 'text-slate-500' : 'text-blue-500'}`} />
+            </div>
+          )}
+        </div>
+        <div className="ml-3">
+          <p className="text-sm font-medium text-slate-700">{user?.name || 'User'}</p>
+          <p className="text-xs text-slate-500">{user?.email}</p>
+        </div>
+      </div>
+
+      <Button
+        variant="ghost"
+        className={`w-full justify-start px-3 py-2 text-sm font-medium text-slate-600 hover:bg-white hover:text-red-600 ${
+          mobileSidebar ? 'mt-4' : 'mt-3 hover:shadow-sm'
+        }`}
+        onClick={handleLogout}
+      >
+        <LogOut className="mr-3 h-5 w-5" />
+        Sign out
+      </Button>
+    </div>
+  );
+
   if (hideDashboardChrome) {
     return <div className="min-h-screen w-full bg-slate-50">{children}</div>;
   }
@@ -142,28 +180,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             })}
           </nav>
 
-          <div className="border-t border-blue-100 p-4">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="h-9 w-9 rounded-full bg-slate-200 flex items-center justify-center">
-                  <User className="h-5 w-5 text-slate-500" />
-                </div>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-slate-700">{user?.name || 'User'}</p>
-                <p className="text-xs text-slate-500">{user?.email}</p>
-              </div>
-            </div>
-
-            <Button
-              variant="ghost"
-              className="mt-4 w-full justify-start px-3 py-2 text-sm font-medium text-slate-600 hover:bg-white hover:text-red-600"
-              onClick={handleLogout}
-            >
-              <LogOut className="mr-3 h-5 w-5" />
-              Sign out
-            </Button>
-          </div>
+          <SidebarUserSection mobileSidebar />
         </div>
       </div>
 
@@ -196,28 +213,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             })}
           </nav>
 
-          <div className="border-t border-slate-200 p-4 bg-slate-50/50">
-            <div className="flex items-center p-2 rounded-lg hover:bg-white hover:shadow-sm transition-all cursor-default">
-              <div className="flex-shrink-0">
-                <div className="h-9 w-9 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center">
-                  <User className="h-5 w-5 text-blue-500" />
-                </div>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-slate-700">{user?.name || 'User'}</p>
-                <p className="text-xs text-slate-500">{user?.email}</p>
-              </div>
-            </div>
-
-            <Button
-              variant="ghost"
-              className="mt-3 w-full justify-start px-3 py-2 text-sm font-medium text-slate-600 hover:bg-white hover:text-red-600 hover:shadow-sm"
-              onClick={handleLogout}
-            >
-              <LogOut className="mr-3 h-5 w-5" />
-              Sign out
-            </Button>
-          </div>
+          <SidebarUserSection />
         </div>
       </div>
 

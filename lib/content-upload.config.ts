@@ -25,6 +25,19 @@ export const CONTENT_UPLOAD_FORMATS = [
   },
 ] as const;
 
+export const PROFILE_IMAGE_UPLOAD_CONFIG = {
+  mimeTypes: ['image/jpeg', 'image/png', 'image/webp'] as const,
+  extensions: ['.jpg', '.jpeg', '.png', '.webp'] as const,
+  maxSizeMb: 5,
+} as const;
+
+export const PROFILE_IMAGE_UPLOAD_MAX_SIZE_BYTES =
+  PROFILE_IMAGE_UPLOAD_CONFIG.maxSizeMb * 1024 * 1024;
+
+export const PROFILE_IMAGE_UPLOAD_ACCEPT = [
+  ...PROFILE_IMAGE_UPLOAD_CONFIG.extensions,
+].join(',');
+
 const acceptTokens = CONTENT_UPLOAD_FORMATS.flatMap((format) => [
   ...format.mimeTypes,
   ...format.extensions,

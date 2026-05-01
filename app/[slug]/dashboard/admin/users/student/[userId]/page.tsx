@@ -63,7 +63,6 @@ export default function StudentProfilePage() {
         fallbackMessage: 'Failed to fetch student profile',
         suppressNotFoundError: !!selectedStudentUser && selectedStudentUser.id === userId,
         notFoundMessage: 'Student profile not found. Please open from Users page to create profile.',
-        
       });
 
       if (message) {

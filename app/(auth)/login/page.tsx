@@ -12,6 +12,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { authApi } from '@/lib/auth';
 import { ROUTES } from '@/lib/constants';
 import { LoginRequest } from '@/lib/api';
+import { toast } from 'sonner';
 
 const loginSchema = z.object({
   email: z
@@ -78,6 +79,7 @@ export default function LoginPage() {
           const safeNextPath = getSafeNextPath();
           router.push(safeNextPath || ROUTES.DASHBOARD);
         }
+        toast.success('Login successful');
       } else {
         setError('Invalid response from server');
       }

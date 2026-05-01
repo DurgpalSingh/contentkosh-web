@@ -21,6 +21,7 @@ export function resolveProfileFetchError({
     404: suppressNotFoundError ? null : notFoundMessage,
   };
 
+  // If we have an explicit mapping for this status code, return it (even if it's null)
   if (err.status in statusMessageMap) {
     return statusMessageMap[err.status];
   }
