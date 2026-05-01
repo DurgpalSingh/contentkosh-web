@@ -5,9 +5,26 @@ import { X, UserCircle2, MapPin, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Select } from '@/components/ui/select';
 import { StudentsService, UpdateStudentRequest, StudentWithUser } from '@/lib/api';
 import { LanguageInputChips } from './LanguageInputChips';
 import { toast } from 'sonner';
+
+function validateDob(dateStr: string): string | null {
+  const selected = new Date(dateStr);
+  if (isNaN(selected.getTime())) return 'Invalid date';
+  const today = new Date();
+  const sel = new Date(selected.getFullYear(), selected.getMonth(), selected.getDate());
+  const tod = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  if (sel > tod) return 'Date of birth cannot be in the future';
+  let age = tod.getFullYear() - sel.getFullYear();
+  const monthDiff = tod.getMonth() - sel.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && tod.getDate() < sel.getDate())) {
+    age--;
+  }
+  if (age < 10) return 'Student must be at least 10 years old';
+  return null;
+}
 
 interface EditStudentProfileModalProps {
   isOpen: boolean;
@@ -24,6 +41,7 @@ export function EditStudentProfileModal({
 }: EditStudentProfileModalProps) {
   const [gender, setGender] = useState<string>('');
   const [dob, setDob] = useState('');
+  const [dobError, setDobError] = useState<string | null>(null);
   const [languages, setLanguages] = useState<string[]>([]);
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('');
@@ -55,6 +73,10 @@ export function EditStudentProfileModal({
   }, [isOpen]);
 
   const handleSubmit = async () => {
+    if (dob && dobError) {
+      setError(dobError);
+      return;
+    }
     setLoading(true);
     setError(null);
 
@@ -133,26 +155,36 @@ export function EditStudentProfileModal({
               <Input
                 type="date"
                 value={dob}
-                onChange={(e) => setDob(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setDob(val);
+                  if (val) {
+                    const err = validateDob(val);
+                    setDobError(err);
+                  } else {
+                    setDobError(null);
+                  }
+                }}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:opacity-70"
                 disabled={loading}
               />
+              {dobError && <p className="text-xs text-red-600 mt-1">{dobError}</p>}
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
-              <select
-                value={gender}
-                onChange={(e) => setGender(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:opacity-70"
-                disabled={loading}
-              >
-                <option value="">Select Gender</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
+                <Select
+                  id="edit-student-gender"
+                  value={gender}
+                  onChange={(v) => setGender(String(v))}
+                  options={[
+                    { value: 'male', label: 'Male' },
+                    { value: 'female', label: 'Female' },
+                    { value: 'other', label: 'Other' },
+                  ]}
+                  placeholder="Select Gender"
+                  disabled={loading}
+                />
+              </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Languages</label>
@@ -210,7 +242,7 @@ export function EditStudentProfileModal({
               type="button"
               onClick={handleSubmit}
               className="bg-blue-600 hover:bg-blue-700 text-white"
-              disabled={loading}
+              disabled={loading || !!dobError}
             >
               {loading ? 'Saving...' : (
                 <>
