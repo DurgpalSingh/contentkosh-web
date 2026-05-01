@@ -6,25 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select } from '@/components/ui/select';
+import { validateDob } from '@/lib/validation';
 import { StudentsService, CreateStudentRequest, User } from '@/lib/api';
 import { LanguageInputChips } from './LanguageInputChips';
 import { toast } from 'sonner';
-
-function validateDob(dateStr: string): string | null {
-  const selected = new Date(dateStr);
-  if (isNaN(selected.getTime())) return 'Invalid date';
-  const today = new Date();
-  const sel = new Date(selected.getFullYear(), selected.getMonth(), selected.getDate());
-  const tod = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  if (sel > tod) return 'Date of birth cannot be in the future';
-  let age = tod.getFullYear() - sel.getFullYear();
-  const monthDiff = tod.getMonth() - sel.getMonth();
-  if (monthDiff < 0 || (monthDiff === 0 && tod.getDate() < sel.getDate())) {
-    age--;
-  }
-  if (age < 10) return 'Student must be at least 10 years old';
-  return null;
-}
 
 interface CreateStudentProfileModalProps {
   isOpen: boolean;
@@ -73,10 +58,13 @@ export function CreateStudentProfileModal({
   };
 
   const handleSubmit = async () => {
-    if (dob && dobError) {
-      setError(dobError);
+    const dobValidationError = dob ? validateDob(dob) : null;
+    if (dobValidationError) {
+      setDobError(dobValidationError);
+      setError(dobValidationError);
       return;
     }
+    setDobError(null);
     if (!user.id) {
       setError('User id is missing');
       return;
@@ -165,12 +153,6 @@ export function CreateStudentProfileModal({
                 onChange={(e) => {
                   const val = e.target.value;
                   setDob(val);
-                  if (val) {
-                    const err = validateDob(val);
-                    setDobError(err);
-                  } else {
-                    setDobError(null);
-                  }
                 }}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:opacity-70"
                 disabled={loading}
@@ -250,7 +232,7 @@ export function CreateStudentProfileModal({
               type="button"
               onClick={handleSubmit}
               className="bg-blue-600 hover:bg-blue-700 text-white"
-              disabled={loading || !!dobError}
+              disabled={loading }
             >
               {loading ? 'Creating...' : (
                 <>

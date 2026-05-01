@@ -255,3 +255,27 @@ export function validateProfessionalStep(
   return errors;
 }
 
+/**
+ * Validates a date of birth string (yyyy-mm-dd).
+ * - Not in the future
+ * - Minimum age 10 years
+ *
+ * @param dateStr ISO date string (YYYY-MM-DD)
+ * @returns error message or null
+ */
+export function validateDob(dateStr: string): string | null {
+    const selected = new Date(dateStr);
+    if (isNaN(selected.getTime())) return 'Invalid date';
+    const today = new Date();
+    const sel = new Date(selected.getFullYear(), selected.getMonth(), selected.getDate());
+    const tod = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    if (sel > tod) return 'Date of birth cannot be in the future';
+    let age = tod.getFullYear() - sel.getFullYear();
+    const monthDiff = tod.getMonth() - sel.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && tod.getDate() < sel.getDate())) {
+        age--;
+    }
+    if (age < 10) return 'Student must be at least 10 years old';
+    return null;
+}
+
