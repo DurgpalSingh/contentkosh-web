@@ -23,7 +23,7 @@ export class AnnouncementsService {
   > {
     return __request(OpenAPI, {
       method: 'GET',
-      url: '/api/announcements/my',
+      url: '/api/announcements/received',
     });
   }
 
