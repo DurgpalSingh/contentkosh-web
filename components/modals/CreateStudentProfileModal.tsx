@@ -5,6 +5,8 @@ import { X, UserCircle2, MapPin, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Select } from '@/components/ui/select';
+import { validateDob } from '@/lib/validation';
 import { StudentsService, CreateStudentRequest, User } from '@/lib/api';
 import { LanguageInputChips } from './LanguageInputChips';
 import { toast } from 'sonner';
@@ -32,6 +34,7 @@ export function CreateStudentProfileModal({
   const [bio, setBio] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [dobError, setDobError] = useState<string | null>(null);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -55,6 +58,13 @@ export function CreateStudentProfileModal({
   };
 
   const handleSubmit = async () => {
+    const dobValidationError = dob ? validateDob(dob) : null;
+    if (dobValidationError) {
+      setDobError(dobValidationError);
+      setError(dobValidationError);
+      return;
+    }
+    setDobError(null);
     if (!user.id) {
       setError('User id is missing');
       return;
@@ -140,25 +150,30 @@ export function CreateStudentProfileModal({
               <Input
                 type="date"
                 value={dob}
-                onChange={(e) => setDob(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setDob(val);
+                }}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:opacity-70"
                 disabled={loading}
               />
+              {dobError && <p className="text-xs text-red-600 mt-1">{dobError}</p>}
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
-              <select
+              <Select
+                id="create-student-gender"
                 value={gender}
-                onChange={(e) => setGender(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:opacity-70"
+                onChange={(v) => setGender(String(v))}
+                options={[
+                  { value: 'male', label: 'Male' },
+                  { value: 'female', label: 'Female' },
+                  { value: 'other', label: 'Other' },
+                ]}
+                placeholder="Select Gender"
                 disabled={loading}
-              >
-                <option value="">Select Gender</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="other">Other</option>
-              </select>
+              />
             </div>
 
             <div>
@@ -217,7 +232,7 @@ export function CreateStudentProfileModal({
               type="button"
               onClick={handleSubmit}
               className="bg-blue-600 hover:bg-blue-700 text-white"
-              disabled={loading}
+              disabled={loading }
             >
               {loading ? 'Creating...' : (
                 <>

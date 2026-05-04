@@ -1,6 +1,13 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.2.15] - Student Profile DOB validation.
+**P.R Raised by** : shubh404-SE
+**Date** : 2026-05-01
+
+### Changed
+  - Added DOB validation in create and edit student profile modal. Set minimum DOB to 10 years. 
+---
 ## Version [1.2.14] - Settings Profile UX
 **P.R Raised by** : shubh404-SE
 **Date** : 2026-04-29
@@ -10,6 +17,7 @@ All notable changes to this project will be documented in this file.
   - fixed student/teacher create profile if not exist.
   - fixed business logo on header.
   - login success message
+
 ---
 ## Version [1.2.13] - Student Profile bug fix
 **P.R Raised by** : shubh404-SE

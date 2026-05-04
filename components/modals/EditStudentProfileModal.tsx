@@ -5,9 +5,12 @@ import { X, UserCircle2, MapPin, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Select } from '@/components/ui/select';
+import { validateDob } from '@/lib/validation';
 import { StudentsService, UpdateStudentRequest, StudentWithUser } from '@/lib/api';
 import { LanguageInputChips } from './LanguageInputChips';
 import { toast } from 'sonner';
+
 
 interface EditStudentProfileModalProps {
   isOpen: boolean;
@@ -24,6 +27,7 @@ export function EditStudentProfileModal({
 }: EditStudentProfileModalProps) {
   const [gender, setGender] = useState<string>('');
   const [dob, setDob] = useState('');
+  const [dobError, setDobError] = useState<string | null>(null);
   const [languages, setLanguages] = useState<string[]>([]);
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('');
@@ -55,6 +59,13 @@ export function EditStudentProfileModal({
   }, [isOpen]);
 
   const handleSubmit = async () => {
+    const dobValidationError = dob ? validateDob(dob) : null;
+    if (dobValidationError) {
+      setDobError(dobValidationError);
+      setError(dobValidationError);
+      return;
+    }
+    setDobError(null);
     setLoading(true);
     setError(null);
 
@@ -133,26 +144,30 @@ export function EditStudentProfileModal({
               <Input
                 type="date"
                 value={dob}
-                onChange={(e) => setDob(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setDob(val);
+                }}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:opacity-70"
                 disabled={loading}
               />
+              {dobError && <p className="text-xs text-red-600 mt-1">{dobError}</p>}
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
-              <select
-                value={gender}
-                onChange={(e) => setGender(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:opacity-70"
-                disabled={loading}
-              >
-                <option value="">Select Gender</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
+                <Select
+                  id="edit-student-gender"
+                  value={gender}
+                  onChange={(v) => setGender(String(v))}
+                  options={[
+                    { value: 'male', label: 'Male' },
+                    { value: 'female', label: 'Female' },
+                    { value: 'other', label: 'Other' },
+                  ]}
+                  placeholder="Select Gender"
+                  disabled={loading}
+                />
+              </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Languages</label>
