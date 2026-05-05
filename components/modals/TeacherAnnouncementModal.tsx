@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toISODateTime } from '@/lib/utils';
+import { validateAnnouncementForm } from '@/lib/validation';
 import { getErrorMessage, defaultEndDate, toggleSetItem } from '@/components/announcements/announcementHelpers';
 import { toast } from 'sonner';
 
@@ -117,40 +118,30 @@ export function TeacherAnnouncementModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (saving) return;
-    if (!heading.trim() || !content.trim()) {
-      toast.error('Heading and content are required');
+    const result = validateAnnouncementForm({
+      heading,
+      content,
+      startLocal,
+      endLocal,
+      scope: 'BATCH',
+      visibleToAdmins,
+      visibleToTeachers,
+      visibleToStudents,
+      targetAllBatches,
+      selectedBatchIds,
+      requireStudents: true,
+    });
+    if (!result.valid) {
+      toast.error(result.error ?? 'Validation failed');
       return;
     }
-    if (!visibleToStudents) {
-      toast.error('Announcements for students must remain visible to students');
-      return;
-    }
-    if (!startLocal || !endLocal) {
-      toast.error('Start and end dates are required');
-      return;
-    }
-    const startIso = toISODateTime(startLocal);
-    const endIso = toISODateTime(endLocal);
-    if (!startIso || !endIso) {
-      toast.error('Start and end dates are invalid');
-      return;
-    }
-    if (new Date(endIso).getTime() <= new Date(startIso).getTime()) {
-      toast.error('End time must be after start time');
-      return;
-    }
-    if (!targetAllBatches && selectedBatchIds.size === 0) {
-      toast.error('Select at least one batch, or choose all your batches');
-      return;
-    }
-
     setSaving(true);
     try {
       const base = {
         heading: heading.trim(),
         content: content.trim(),
-        startDate: startIso,
-        endDate: endIso,
+        startDate: result.startIso!,
+        endDate: result.endIso!,
         isActive: true,
         visibleToAdmins,
         visibleToTeachers,
@@ -171,6 +162,7 @@ export function TeacherAnnouncementModal({
       onSuccess();
       onClose();
     } catch (err) {
+      console.error(err);
       toast.error(getErrorMessage(err, 'Failed to save announcement'));
     } finally {
       setSaving(false);

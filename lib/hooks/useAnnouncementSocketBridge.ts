@@ -5,7 +5,7 @@ import { io, type Socket } from 'socket.io-client';
 import { ANNOUNCEMENT_SOCKET_EVENTS } from '@/lib/constants/announcement';
 import { ANNOUNCEMENTS_LIST_REFRESH_EVENT } from '@/lib/constants/announcementFeed';
 import { AnnouncementsService } from '@/lib/api';
-import { getAnnouncementSocketBaseUrl } from '@/lib/socketUrl';
+import { getAnnouncementSocketBaseUrl } from '@/lib/utils';
 import { useAnnouncementNotificationStore } from '@/store/useAnnouncementNotificationStore';
 import '@/lib/auth';
 
@@ -43,7 +43,7 @@ export function useAnnouncementSocketBridge(
       transports: ['websocket', 'polling'],
     });
 
-    const shouldProcessPayload = (payload: AnnouncementSocketPayload): boolean => {
+    const isRelevantAnnouncementPayload = (payload: AnnouncementSocketPayload): boolean => {
       if (payload.id === undefined || payload.businessId === undefined) return false;
       if (payload.businessId !== businessId) return false;
       const now = Date.now();
@@ -54,7 +54,7 @@ export function useAnnouncementSocketBridge(
     };
 
     const fetchAndMaybeNotify = async (payload: AnnouncementSocketPayload, isNewEvent: boolean) => {
-      if (!shouldProcessPayload(payload) || payload.id === undefined) return;
+      if (!isRelevantAnnouncementPayload(payload) || payload.id === undefined) return;
       const id = payload.id;
       if (inFlightRef.current.has(id)) return;
       inFlightRef.current.add(id);
@@ -85,7 +85,7 @@ export function useAnnouncementSocketBridge(
     };
 
     const onDeleted = (payload: AnnouncementSocketPayload) => {
-      if (!shouldProcessPayload(payload) || payload.id === undefined) return;
+      if (!isRelevantAnnouncementPayload(payload) || payload.id === undefined) return;
       remove(payload.id);
       dispatchListRefresh();
     };

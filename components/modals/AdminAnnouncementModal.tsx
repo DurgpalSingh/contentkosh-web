@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toISODateTime } from '@/lib/utils';
+import { validateAnnouncementForm } from '@/lib/validation';
 import { getErrorMessage, defaultEndDate, toggleSetItem } from '@/components/announcements/announcementHelpers';
 import { toast } from 'sonner';
 
@@ -162,34 +163,22 @@ export function AdminAnnouncementModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (saving) return;
-    if (!heading.trim() || !content.trim()) {
-      toast.error('Heading and content are required');
-      return;
-    }
-    if (!startLocal || !endLocal) {
-      toast.error('Start and end dates are required');
-      return;
-    }
-    const startIso = toISODateTime(startLocal);
-    const endIso = toISODateTime(endLocal);
-    if (!startIso || !endIso) {
-      toast.error('Start and end dates are invalid');
-      return;
-    }
-    if (new Date(endIso).getTime() <= new Date(startIso).getTime()) {
-      toast.error('End time must be after start time');
-      return;
-    }
-    if (!visibleToAdmins && !visibleToTeachers && !visibleToStudents) {
-      toast.error('Select at least one audience');
-      return;
-    }
-    if (scope === 'COURSE' && !targetAllCourses && selectedCourseIds.size === 0) {
-      toast.error('Select at least one course, or choose all courses');
-      return;
-    }
-    if (scope === 'BATCH' && !targetAllBatches && selectedBatchIds.size === 0) {
-      toast.error('Select at least one batch, or choose all batches');
+    const result = validateAnnouncementForm({
+      heading,
+      content,
+      startLocal,
+      endLocal,
+      scope,
+      visibleToAdmins,
+      visibleToTeachers,
+      visibleToStudents,
+      targetAllCourses,
+      targetAllBatches,
+      selectedCourseIds,
+      selectedBatchIds,
+    });
+    if (!result.valid) {
+      toast.error(result.error ?? 'Validation failed');
       return;
     }
 
@@ -198,8 +187,8 @@ export function AdminAnnouncementModal({
       const base = {
         heading: heading.trim(),
         content: content.trim(),
-        startDate: startIso,
-        endDate: endIso,
+        startDate: result.startIso!,
+        endDate: result.endIso!,
         isActive: true,
         visibleToAdmins,
         visibleToTeachers,
@@ -222,6 +211,7 @@ export function AdminAnnouncementModal({
       onSuccess();
       onClose();
     } catch (err) {
+      console.error(err);
       toast.error(getErrorMessage(err, 'Failed to save announcement'));
     } finally {
       setSaving(false);
