@@ -77,19 +77,10 @@ const optionalDateString = z
     .optional()
     .transform((value) => (value ? value : undefined));
 
-const optionalLanguagesCsv = z
-    .string()
-    .trim()
-    .or(z.literal(''))
+const optionalLanguagesArray = z
+    .array(z.string().trim().min(1))
     .optional()
-    .transform((value) =>
-        value
-            ? value
-                .split(',')
-                .map((entry) => entry.trim())
-                .filter(Boolean)
-            : []
-    );
+    .transform((value) => value ?? []);
 
 const genderSchema = z.enum(['male', 'female', 'other']);
 
@@ -113,7 +104,7 @@ export const settingsTeacherProfileSchema = z.object({
         .refine((value) => value === undefined || (value >= 0 && value <= 60), 'Experience must be between 0 and 60'),
     designation: optionalTrimmedString,
     bio: optionalTrimmedString,
-    languages: optionalLanguagesCsv,
+    languages: optionalLanguagesArray,
     gender: z.union([genderSchema, z.literal('')]).optional().transform((value) => (value ? value : undefined)),
     dob: optionalDateString,
     address: optionalTrimmedString,
@@ -122,7 +113,7 @@ export const settingsTeacherProfileSchema = z.object({
 export const settingsStudentProfileSchema = z.object({
     gender: z.union([genderSchema, z.literal('')]).optional().transform((value) => (value ? value : undefined)),
     dob: optionalDateString,
-    languages: optionalLanguagesCsv,
+    languages: optionalLanguagesArray,
     address: optionalTrimmedString,
     city: optionalTrimmedString,
     bio: optionalTrimmedString,

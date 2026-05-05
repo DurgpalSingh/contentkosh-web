@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef,  useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useTeacherStore } from '@/store/useTeacherStore';
 import { useStudentStore } from '@/store/useStudentStore';
@@ -11,6 +12,7 @@ import { UsersService, BusinessUser, User } from '@/lib/api';
 import { ApiError } from '@/lib/api/core/ApiError';
 import { Users, Mail, Calendar, Shield, User as UserIcon, Edit } from 'lucide-react';
 import { UsersFilterBar, RoleFilter } from '@/components/dashboard/users/UsersFilterBar';
+import { resolveAssetUrl } from '@/lib/assets/assetUrl';
 
 import { DeleteConfirmModal } from '@/components/modals/DeleteConfirmModal';
 import { EditUserModal } from '@/components/modals/EditUserModal';
@@ -406,6 +408,8 @@ function UserRowComponent({ user, onRowClick, onEdit, onDelete }: { user: Busine
   };
 
   const isClickable = user.role === 'TEACHER' || user.role === 'STUDENT';
+  const profilePicturePath = (user.user as { profilePicture?: string | null } | undefined)?.profilePicture;
+  const profilePictureUrl = useMemo(() => resolveAssetUrl(profilePicturePath ?? null), [profilePicturePath]);
 
   return (
     <div
@@ -414,8 +418,12 @@ function UserRowComponent({ user, onRowClick, onEdit, onDelete }: { user: Busine
     >
       <div className="flex items-center justify-between gap-4 flex-wrap sm:flex-nowrap">
         <div className="flex items-center space-x-4 flex-1 min-w-0">
-          <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-            <UserIcon className="h-5 w-5 text-gray-600" />
+          <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden">
+            {profilePictureUrl ? (
+              <Image src={profilePictureUrl} alt={`${user.user?.name ?? 'User'} profile`} width={40} height={40} unoptimized className="h-full w-full object-cover" />
+            ) : (
+              <UserIcon className="h-5 w-5 text-gray-600" />
+            )}
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center space-x-2 sm:space-x-3 flex-wrap">
