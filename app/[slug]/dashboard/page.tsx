@@ -218,7 +218,7 @@ function QuickActions() {
                 <Button
                     variant="outline"
                     className="w-full text-left p-3 h-auto justify-start border-gray-200 hover:bg-gray-50 transition-colors"
-                    onClick={() => router.push(`${baseUrl}/dashboard/admin/announcements`)} // Check ROUTES constant
+                    onClick={() => router.push(`${baseUrl}/dashboard/announcement`)}
                 >
                     <div>
                         <div className="font-medium text-gray-900">Send Announcement</div>

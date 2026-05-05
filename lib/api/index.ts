@@ -10,6 +10,8 @@ export type { OpenAPIConfig } from './core/OpenAPI';
 export type { AddUserToBatchRequest } from './models/AddUserToBatchRequest';
 export type { AdminDashboard } from './models/AdminDashboard';
 export type { Announcement } from './models/Announcement';
+export type { AnnouncementScope } from './models/AnnouncementScope';
+export type { AnnouncementTarget } from './models/AnnouncementTarget';
 export type { ApiResponse } from './models/ApiResponse';
 export { AssignUserToBusinessRequest } from './models/AssignUserToBusinessRequest';
 export type { attemptId } from './models/attemptId';

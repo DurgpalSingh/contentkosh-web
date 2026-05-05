@@ -36,6 +36,7 @@ import { TEST_LANGUAGE_LABEL, TEST_LANGUAGE_OPTIONS } from '@/lib/tests/testLang
 import { resultVisibilityExamLabel } from '@/lib/tests/testUiMappers'
 import { validateTestForm, type TestFormErrors } from '@/lib/tests/testFormValidation'
 import { toast } from 'sonner'
+import { toISODateTime } from '@/lib/utils'
 
 interface TeacherTestSettingsTabProps {
   kind: TestKind
@@ -45,13 +46,6 @@ interface TeacherTestSettingsTabProps {
   subjects: Subject[]
   onSettingsSaved: () => void
   onTestDeleted: () => void
-}
-
-const toDatetimeLocalValue = (iso: string | undefined): string => {
-  if (!iso) return ''
-  const d = new Date(iso)
-  const offset = d.getTimezoneOffset() * 60000
-  return new Date(d.getTime() - offset).toISOString().slice(0, 16)
 }
 
 type PracticeWithSubject = PracticeTest & { subjectId?: number | null }
@@ -75,8 +69,8 @@ const buildPracticeDraft = (t: PracticeTest): UpdatePracticeWithSubject => ({
 const buildExamDraft = (t: ExamTest): UpdateExamWithSubject => ({
   name: t.name,
   description: t.description,
-  startAt: toDatetimeLocalValue(t.startAt),
-  deadlineAt: toDatetimeLocalValue(t.deadlineAt),
+  startAt: toISODateTime(t.startAt, { format: 'datetimeLocal' }) ?? '',
+  deadlineAt: toISODateTime(t.deadlineAt, { format: 'datetimeLocal' }) ?? '',
   durationMinutes: t.durationMinutes,
   defaultMarksPerQuestion: t.defaultMarksPerQuestion,
   negativeMarksPerQuestion: t.negativeMarksPerQuestion,
@@ -803,7 +797,7 @@ const ExamSettingsFields = ({
           <Input
             className={inputClass}
             type="datetime-local"
-            value={toDatetimeLocalValue(draft.startAt)}
+            value={draft.startAt ?? ''}
             onChange={(e) => setDraft((s) => ({ ...s, startAt: e.target.value }))}
           />
         </Field>
@@ -811,7 +805,7 @@ const ExamSettingsFields = ({
           <Input
             className={inputClass}
             type="datetime-local"
-            value={toDatetimeLocalValue(draft.deadlineAt)}
+            value={draft.deadlineAt ?? ''}
             onChange={(e) => setDraft((s) => ({ ...s, deadlineAt: e.target.value }))}
           />
         </Field>

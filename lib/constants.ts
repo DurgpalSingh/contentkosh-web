@@ -4,18 +4,17 @@ export const ROUTES = {
   LOGIN: '/login',
   REGISTER: '/register',
   DASHBOARD: '/dashboard',
+  /** Singular path; slug is applied in `DashboardLayout` for `/dashboard/*` links. */
+  ANNOUNCEMENT: '/dashboard/announcement',
   TESTS: '/dashboard/tests',
   ADMIN: {
     USERS: '/dashboard/admin/users',
-    ANNOUNCEMENTS: '/dashboard/admin/announcements',
   },
   TEACHER: {
     CLASSES: '/dashboard/teacher/classes',
-    ANNOUNCEMENTS: '/dashboard/teacher/announcements',
   },
   STUDENT: {
     CLASSES: '/dashboard/student/classes',
-    ANNOUNCEMENTS: '/dashboard/student/announcements',
     MYTEST: '/dashboard/student/mytest',
   },
 } as const;
@@ -27,3 +26,5 @@ export const USER_ROLES = {
   USER: 'USER',
 } as const;
 
+
+export const DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;

@@ -5,7 +5,7 @@ class PermissionService {
     private baseUrl: string;
 
     private constructor() {
-        this.baseUrl = `${API_BASE_URL}/permission`;
+        this.baseUrl = `${API_BASE_URL}/api/permission`;
     }
 
     public static getInstance(): PermissionService {

@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import { DATE_ONLY_REGEX } from "@/lib/constants"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -9,16 +10,36 @@ export function cn(...inputs: ClassValue[]) {
  * Convert a date-only string (YYYY-MM-DD) to an ISO-8601 datetime string at UTC midnight.
  * Returns undefined if input is falsy.
  */
-export function toISODateTime(date?: string | Date): string | undefined {
+export function toISODateTime(
+  date?: string | Date,
+  options?: { format?: 'iso' | 'datetimeLocal' },
+): string | undefined {
   if (!date) return undefined;
-  if (date instanceof Date) {
-    return date.toISOString();
+  const format = options?.format ?? 'iso';
+
+  const asDate = (() => {
+    if (date instanceof Date) return date;
+    if (DATE_ONLY_REGEX.test(date)) {
+      return new Date(`${date}T00:00:00.000Z`);
+    }
+    return new Date(date);
+  })();
+
+  if (Number.isNaN(asDate.getTime())) return undefined;
+
+  if (format === 'datetimeLocal') {
+    const offsetMs = asDate.getTimezoneOffset() * 60_000;
+    return new Date(asDate.getTime() - offsetMs).toISOString().slice(0, 16);
   }
-  // If string is in YYYY-MM-DD format, treat it as date-only and return UTC midnight
-  if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-    return `${date}T00:00:00.000Z`;
-  }
-  // Fallback: try to parse and return ISO string
-  return new Date(date).toISOString();
+
+  return asDate.toISOString();
+}
+
+/**
+ * Socket.IO runs on the API host without the `/api` prefix.
+ */
+export function getAnnouncementSocketBaseUrl(): string {
+  const api = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
+  return api.replace(/\/api\/?$/, '');
 }
 

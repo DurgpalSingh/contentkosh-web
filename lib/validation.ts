@@ -1,3 +1,4 @@
+import { toISODateTime } from '@/lib/utils'
 /**
  * Validates an entity name (e.g., Exam name, Course name).
  * 
@@ -277,5 +278,84 @@ export function validateDob(dateStr: string): string | null {
     }
     if (age < 10) return 'Student must be at least 10 years old';
     return null;
+}
+
+export type AnnouncementScope = 'COURSE' | 'BATCH' | string;
+
+export interface ValidateAnnouncementParams {
+  heading: string;
+  content: string;
+  startLocal: string;
+  endLocal: string;
+  scope: AnnouncementScope;
+  visibleToAdmins: boolean;
+  visibleToTeachers: boolean;
+  visibleToStudents: boolean;
+  targetAllCourses?: boolean;
+  targetAllBatches?: boolean;
+  selectedCourseIds?: Set<number>;
+  selectedBatchIds?: Set<number>;
+  requireStudents?: boolean;
+}
+
+export interface ValidateAnnouncementResult {
+  valid: boolean;
+  error?: string;
+  startIso?: string;
+  endIso?: string;
+}
+
+export function validateAnnouncementForm(params: ValidateAnnouncementParams): ValidateAnnouncementResult {
+  const {
+    heading,
+    content,
+    startLocal,
+    endLocal,
+    scope,
+    visibleToAdmins,
+    visibleToTeachers,
+    visibleToStudents,
+    targetAllCourses,
+    targetAllBatches,
+    selectedCourseIds,
+    selectedBatchIds,
+    requireStudents,
+  } = params;
+
+  if (!heading.trim() || !content.trim()) {
+    return { valid: false, error: 'Heading and content are required' };
+  }
+
+  if (!startLocal || !endLocal) {
+    return { valid: false, error: 'Start and end dates are required' };
+  }
+
+  const startIso = toISODateTime(startLocal);
+  const endIso = toISODateTime(endLocal);
+  if (!startIso || !endIso) {
+    return { valid: false, error: 'Start and end dates are invalid' };
+  }
+
+  if (new Date(endIso).getTime() <= new Date(startIso).getTime()) {
+    return { valid: false, error: 'End time must be after start time' };
+  }
+
+  if (requireStudents && !visibleToStudents) {
+    return { valid: false, error: 'Announcements for students must remain visible to students' };
+  }
+
+  if (!visibleToAdmins && !visibleToTeachers && !visibleToStudents) {
+    return { valid: false, error: 'Select at least one audience' };
+  }
+
+  if (scope === 'COURSE' && !targetAllCourses && (!selectedCourseIds || selectedCourseIds.size === 0)) {
+    return { valid: false, error: 'Select at least one course, or choose all courses' };
+  }
+
+  if (scope === 'BATCH' && !targetAllBatches && (!selectedBatchIds || selectedBatchIds.size === 0)) {
+    return { valid: false, error: 'Select at least one batch, or choose all batches' };
+  }
+
+  return { valid: true, startIso, endIso };
 }
 

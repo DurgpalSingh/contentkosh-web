@@ -1,12 +1,21 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.2.16] - Announcement Feature
+**P.R Raised by** : shubh404-SE on **Date** : 2026-04-10
+
+### Added
+  - Implimented announcements pages for all users, admin/teacher can manage their announcements
+  - used sockets for real time update
+
+---
 ## Version [1.2.15] - Student Profile DOB validation.
 **P.R Raised by** : shubh404-SE
 **Date** : 2026-05-01
 
 ### Changed
   - Added DOB validation in create and edit student profile modal. Set minimum DOB to 10 years. 
+
 ---
 ## Version [1.2.14] - Settings Profile UX
 **P.R Raised by** : shubh404-SE
@@ -51,12 +60,14 @@ All notable changes to this project will be documented in this file.
   - Reattempt button in prectice test result screen.
   - Popup alert before user back from attempt screen without submit test.
   - Highlighted mandatory fields in create test modal.
+
 ---
 ## Version [1.2.10] - Table edit feature.
 **P.R Raised by** : shubh404-SE on **Date** : 2026-04-11
 
 ### Updated
   - Added table edit feature in question form.
+
 ---
 ## Version [1.2.9] - hindi font
 **P.R Raised by** : shubh404-SE on **Date** : 2026-04-09
