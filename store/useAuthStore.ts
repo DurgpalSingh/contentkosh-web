@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 import { User, Business } from '@/lib/api';
 import { authApi } from '@/lib/auth';
 import { AuthService } from '@/lib/api';
-import { permissionService } from '@/services/permission.service';
+import { permissionService } from '@/services/PermissionService';
 
 let initializeAuthPromise: Promise<void> | null = null;
 

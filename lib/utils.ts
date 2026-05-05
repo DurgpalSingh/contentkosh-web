@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import { DATE_ONLY_REGEX } from "@/lib/constants"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -18,7 +19,7 @@ export function toISODateTime(
 
   const asDate = (() => {
     if (date instanceof Date) return date;
-    if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    if (DATE_ONLY_REGEX.test(date)) {
       return new Date(`${date}T00:00:00.000Z`);
     }
     return new Date(date);
