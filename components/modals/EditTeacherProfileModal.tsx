@@ -5,6 +5,7 @@ import { X, UserCircle2, Briefcase, MapPin, Save, AlertCircle, Info } from 'luci
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { DatePicker } from '@/components/ui/date-picker';
 import { TeachersService, UpdateTeacherRequest, Gender, TeacherWithUser } from '@/lib/api';
 import { validateProfessionalStep, ProfessionalStepErrors } from '@/lib/validation';
 import { LanguageInputChips } from './LanguageInputChips';
@@ -368,12 +369,11 @@ export function EditTeacherProfileModal({
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
-                <Input
-                  type="date"
+                <DatePicker
                   value={dob}
-                  onChange={(e) => setDob(e.target.value)}
-                  className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:opacity-70'
+                  onChange={setDob}
                   disabled={loading}
+                  placeholder="Select date"
                 />
               </div>
 

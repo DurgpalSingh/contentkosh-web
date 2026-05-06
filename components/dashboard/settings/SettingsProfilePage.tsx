@@ -1,10 +1,6 @@
 'use client';
 
-import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react';
-import Image from 'next/image';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { useCallback, useEffect, useMemo, useState, type ChangeEvent } from 'react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { SettingsService } from '@/lib/api/services/SettingsService';
 import type { SettingsProfileResponse, UpdateSettingsProfilePayload } from '@/lib/api/models/SettingsProfile';
@@ -22,45 +18,24 @@ import {
   PROFILE_IMAGE_UPLOAD_CONFIG,
   PROFILE_IMAGE_UPLOAD_MAX_SIZE_BYTES,
 } from '@/lib/content-upload.config';
+import type { SettingsProfileFormState, SettingsInputChangeEvent, SettingsTextFieldKey } from '@/lib/api/models/settingsProfileTypes';
+import { SettingsProfileEditForm } from './SettingsProfileEditForm';
+import { SettingsProfilePreview } from './SettingsProfilePreview';
 
-type FormState = {
-  name: string;
-  mobile: string;
-  teacherQualification: string;
-  teacherExperienceYears: string;
-  teacherDesignation: string;
-  teacherBio: string;
-  teacherLanguages: string;
-  teacherGender: string;
-  teacherDob: string;
-  teacherAddress: string;
-  studentGender: string;
-  studentDob: string;
-  studentLanguages: string;
-  studentAddress: string;
-  studentCity: string;
-  studentBio: string;
-  businessInstituteName: string;
-  businessTagline: string;
-  businessContactNumber: string;
-  businessEmail: string;
-  businessAddress: string;
-};
-
-const EMPTY_FORM: FormState = {
+const EMPTY_FORM: SettingsProfileFormState = {
   name: '',
   mobile: '',
   teacherQualification: '',
   teacherExperienceYears: '',
   teacherDesignation: '',
   teacherBio: '',
-  teacherLanguages: '',
+  teacherLanguages: [],
   teacherGender: '',
   teacherDob: '',
   teacherAddress: '',
   studentGender: '',
   studentDob: '',
-  studentLanguages: '',
+  studentLanguages: [],
   studentAddress: '',
   studentCity: '',
   studentBio: '',
@@ -98,7 +73,7 @@ export function SettingsProfilePage() {
   const [saving, setSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
-  const [form, setForm] = useState<FormState>(EMPTY_FORM);
+  const [form, setForm] = useState<SettingsProfileFormState>(EMPTY_FORM);
   const [profilePictureFile, setProfilePictureFile] = useState<File | null>(null);
   const [businessLogoFile, setBusinessLogoFile] = useState<File | null>(null);
   const [profilePicturePreviewUrl, setProfilePicturePreviewUrl] = useState<string | null>(null);
@@ -116,20 +91,20 @@ export function SettingsProfilePage() {
   const displayedProfilePicture = profilePicturePreviewUrl || currentProfilePicture;
   const displayedBusinessLogo = businessLogoPreviewUrl || currentBusinessLogo;
 
-  const hydrateForm = (data: SettingsProfileResponse): FormState => ({
+  const hydrateForm = (data: SettingsProfileResponse): SettingsProfileFormState => ({
     name: data.name || '',
     mobile: data.mobile || '',
     teacherQualification: data.teacher?.qualification || '',
     teacherExperienceYears: data.teacher?.experienceYears?.toString() || '',
     teacherDesignation: data.teacher?.designation || '',
     teacherBio: data.teacher?.bio || '',
-    teacherLanguages: data.teacher?.languages?.join(', ') || '',
+    teacherLanguages: data.teacher?.languages || [],
     teacherGender: data.teacher?.gender || '',
     teacherDob: formatDateInput(data.teacher?.dob),
     teacherAddress: data.teacher?.address || '',
     studentGender: data.student?.gender || '',
     studentDob: formatDateInput(data.student?.dob),
-    studentLanguages: data.student?.languages?.join(', ') || '',
+    studentLanguages: data.student?.languages || [],
     studentAddress: data.student?.address || '',
     studentCity: data.student?.city || '',
     studentBio: data.student?.bio || '',
@@ -181,9 +156,15 @@ export function SettingsProfilePage() {
     loadProfile();
   }, [loadProfile]);
 
-  const onInput = (key: string) => (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setForm(prev => ({ ...prev, [key]: event.target.value }));
-  };
+  const setValue = useCallback(<K extends keyof SettingsProfileFormState>(key: K, value: SettingsProfileFormState[K]) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+  }, []);
+
+  const onInput =
+    (key: SettingsTextFieldKey) =>
+    (event: SettingsInputChangeEvent) => {
+      setValue(key, event.target.value);
+    };
 
   const onProfilePictureChange = (event: ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0] || null;
@@ -335,229 +316,6 @@ export function SettingsProfilePage() {
     setIsEditing(false);
   };
 
-  const ProfilePreview = () => (
-    <div className="space-y-6">
-      <div className="rounded-2xl border border-slate-200 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 p-5">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-4">
-            <div className="h-16 w-16 overflow-hidden rounded-2xl border border-white bg-white shadow-sm">
-              {displayedProfilePicture ? (
-                <Image
-                  src={displayedProfilePicture}
-                  alt="Profile"
-                  width={64}
-                  height={64}
-                  unoptimized
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center text-2xl font-semibold text-slate-400">
-                  {(profile?.name || 'U').slice(0, 1).toUpperCase()}
-                </div>
-              )}
-            </div>
-            <div>
-              <h1 className="text-2xl font-semibold text-slate-900">Profile Settings</h1>
-              <p className="text-sm text-slate-600">Review your account information and role details.</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="inline-flex rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-700">
-              Role: {profile?.role || 'USER'}
-            </span>
-            <Button
-              type="button"
-              onClick={() => setIsEditing(true)}
-              className="rounded-xl bg-blue-600 text-white hover:bg-blue-700"
-            >
-              Edit Profile
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Name</p>
-          <p className="mt-1 text-sm font-semibold text-slate-900">{form.name || '-'}</p>
-        </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Mobile</p>
-          <p className="mt-1 text-sm font-semibold text-slate-900">{form.mobile || '-'}</p>
-        </div>
-      </div>
-
-      {(isTeacher || isStudent) && (
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900">{isTeacher ? 'Teacher Details' : 'Student Details'}</h2>
-          {profileSectionReadOnly ? (
-            <p className="mt-2 text-sm text-amber-700">Profile is not initialized by admin yet.</p>
-          ) : isTeacher ? (
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <p className="text-sm text-slate-700"><span className="font-medium">Qualification:</span> {form.teacherQualification || '-'}</p>
-              <p className="text-sm text-slate-700"><span className="font-medium">Experience:</span> {form.teacherExperienceYears || '-'}</p>
-              <p className="text-sm text-slate-700"><span className="font-medium">Designation:</span> {form.teacherDesignation || '-'}</p>
-              <p className="text-sm text-slate-700"><span className="font-medium">Languages:</span> {form.teacherLanguages || '-'}</p>
-              <p className="text-sm text-slate-700"><span className="font-medium">Gender:</span> {form.teacherGender || '-'}</p>
-              <p className="text-sm text-slate-700"><span className="font-medium">DOB:</span> {form.teacherDob || '-'}</p>
-              <p className="text-sm text-slate-700 sm:col-span-2"><span className="font-medium">Address:</span> {form.teacherAddress || '-'}</p>
-              <p className="text-sm text-slate-700 sm:col-span-2"><span className="font-medium">Bio:</span> {form.teacherBio || '-'}</p>
-            </div>
-          ) : (
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <p className="text-sm text-slate-700"><span className="font-medium">Gender:</span> {form.studentGender || '-'}</p>
-              <p className="text-sm text-slate-700"><span className="font-medium">DOB:</span> {form.studentDob || '-'}</p>
-              <p className="text-sm text-slate-700"><span className="font-medium">Languages:</span> {form.studentLanguages || '-'}</p>
-              <p className="text-sm text-slate-700"><span className="font-medium">City:</span> {form.studentCity || '-'}</p>
-              <p className="text-sm text-slate-700 sm:col-span-2"><span className="font-medium">Address:</span> {form.studentAddress || '-'}</p>
-              <p className="text-sm text-slate-700 sm:col-span-2"><span className="font-medium">Bio:</span> {form.studentBio || '-'}</p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {isAdmin && (
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="mb-4 flex items-center gap-4">
-            {displayedBusinessLogo && (
-              <Image
-                src={displayedBusinessLogo}
-                alt="Business logo"
-                width={56}
-                height={56}
-                unoptimized
-                className="h-14 w-14 rounded-xl border border-slate-200 object-cover"
-              />
-            )}
-            <h2 className="text-lg font-semibold text-slate-900">Business Details</h2>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <p className="text-sm text-slate-700"><span className="font-medium">Institute:</span> {form.businessInstituteName || '-'}</p>
-            <p className="text-sm text-slate-700"><span className="font-medium">Contact:</span> {form.businessContactNumber || '-'}</p>
-            <p className="text-sm text-slate-700"><span className="font-medium">Email:</span> {form.businessEmail || '-'}</p>
-            <p className="text-sm text-slate-700"><span className="font-medium">Tagline:</span> {form.businessTagline || '-'}</p>
-            <p className="text-sm text-slate-700 sm:col-span-2"><span className="font-medium">Address:</span> {form.businessAddress || '-'}</p>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-
-  const ProfileEditForm = () => (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-5 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Edit Profile</h1>
-          <p className="text-sm text-slate-500">Update your details and save changes.</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button type="button" variant="outline" onClick={handleCancel} disabled={saving}>
-            Cancel
-          </Button>
-          <Button onClick={handleSave} disabled={saving} className="rounded-xl bg-blue-600 px-6 text-white hover:bg-blue-700">
-            {saving ? 'Saving...' : 'Save Changes'}
-          </Button>
-        </div>
-      </div>
-
-      <div className="grid gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:grid-cols-2">
-        <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Name</label>
-          <Input value={form.name || ''} onChange={onInput('name')} maxLength={100} />
-        </div>
-        <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Mobile</label>
-          <Input value={form.mobile || ''} onChange={onInput('mobile')} maxLength={20} />
-        </div>
-      </div>
-
-      <div className="rounded-2xl border border-slate-200 p-4">
-        <label className="mb-1 block text-sm font-medium text-slate-700">Profile Picture</label>
-        {displayedProfilePicture && (
-          <Image
-            src={displayedProfilePicture}
-            alt="Profile"
-            width={88}
-            height={88}
-            unoptimized
-            className="mb-3 h-20 w-20 rounded-full border border-slate-200 object-cover"
-          />
-        )}
-        <Input type="file" accept={PROFILE_IMAGE_UPLOAD_ACCEPT} onChange={onProfilePictureChange} />
-      </div>
-
-      {isTeacher && (
-        <div className="space-y-4 rounded-2xl border border-slate-200 p-4">
-          <h2 className="text-lg font-semibold text-slate-900">Teacher Details</h2>
-          {profileSectionReadOnly && (
-            <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700">Profile not initialized by admin yet. You can update user details now, and profile details will unlock after initialization.</p>
-          )}
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Input disabled={profileSectionReadOnly} placeholder="Qualification" value={form.teacherQualification || ''} onChange={onInput('teacherQualification')} />
-            <Input disabled={profileSectionReadOnly} placeholder="Experience Years" type="number" value={form.teacherExperienceYears || ''} onChange={onInput('teacherExperienceYears')} />
-            <Input disabled={profileSectionReadOnly} placeholder="Designation" value={form.teacherDesignation || ''} onChange={onInput('teacherDesignation')} />
-            <Input disabled={profileSectionReadOnly} placeholder="Languages (comma separated)" value={form.teacherLanguages || ''} onChange={onInput('teacherLanguages')} />
-            <select disabled={profileSectionReadOnly} className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm" value={form.teacherGender || ''} onChange={onInput('teacherGender')}>
-              <option value="">Gender</option>
-              <option value="male">Male</option>
-              <option value="female">Female</option>
-              <option value="other">Other</option>
-            </select>
-            <Input disabled={profileSectionReadOnly} type="date" value={form.teacherDob || ''} onChange={onInput('teacherDob')} />
-          </div>
-          <Textarea disabled={profileSectionReadOnly} placeholder="Address" value={form.teacherAddress || ''} onChange={onInput('teacherAddress')} />
-          <Textarea disabled={profileSectionReadOnly} placeholder="Bio" value={form.teacherBio || ''} onChange={onInput('teacherBio')} />
-        </div>
-      )}
-
-      {isStudent && (
-        <div className="space-y-4 rounded-2xl border border-slate-200 p-4">
-          <h2 className="text-lg font-semibold text-slate-900">Student Details</h2>
-          {profileSectionReadOnly && (
-            <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700">Profile not initialized by admin yet. You can update user details now, and profile details will unlock after initialization.</p>
-          )}
-          <div className="grid gap-4 sm:grid-cols-2">
-            <select disabled={profileSectionReadOnly} className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm" value={form.studentGender || ''} onChange={onInput('studentGender')}>
-              <option value="">Gender</option>
-              <option value="male">Male</option>
-              <option value="female">Female</option>
-              <option value="other">Other</option>
-            </select>
-            <Input disabled={profileSectionReadOnly} type="date" value={form.studentDob || ''} onChange={onInput('studentDob')} />
-            <Input disabled={profileSectionReadOnly} placeholder="Languages (comma separated)" value={form.studentLanguages || ''} onChange={onInput('studentLanguages')} />
-            <Input disabled={profileSectionReadOnly} placeholder="City" value={form.studentCity || ''} onChange={onInput('studentCity')} />
-          </div>
-          <Textarea disabled={profileSectionReadOnly} placeholder="Address" value={form.studentAddress || ''} onChange={onInput('studentAddress')} />
-          <Textarea disabled={profileSectionReadOnly} placeholder="Bio" value={form.studentBio || ''} onChange={onInput('studentBio')} />
-        </div>
-      )}
-
-      {isAdmin && (
-        <div className="space-y-4 rounded-2xl border border-slate-200 p-4">
-          <h2 className="text-lg font-semibold text-slate-900">Business Details</h2>
-          {displayedBusinessLogo && (
-            <Image
-              src={displayedBusinessLogo}
-              alt="Business logo"
-              width={96}
-              height={96}
-              unoptimized
-              className="mb-3 h-24 w-24 rounded-xl border border-slate-200 object-cover"
-            />
-          )}
-          <Input type="file" accept={PROFILE_IMAGE_UPLOAD_ACCEPT} onChange={onBusinessLogoChange} />
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Input placeholder="Institute Name" value={form.businessInstituteName || ''} onChange={onInput('businessInstituteName')} />
-            <Input placeholder="Contact Number" value={form.businessContactNumber || ''} onChange={onInput('businessContactNumber')} />
-            <Input placeholder="Business Email" value={form.businessEmail || ''} onChange={onInput('businessEmail')} />
-            <Input placeholder="Tagline" value={form.businessTagline || ''} onChange={onInput('businessTagline')} />
-          </div>
-          <Textarea placeholder="Business Address" value={form.businessAddress || ''} onChange={onInput('businessAddress')} />
-        </div>
-      )}
-    </div>
-  );
-
   if (loading) {
     return <div className="rounded-2xl border border-slate-200 bg-white/80 p-6 shadow-sm backdrop-blur">Loading profile...</div>;
   }
@@ -568,11 +326,42 @@ export function SettingsProfilePage() {
         <button className="w-full rounded-xl border border-blue-100 bg-white px-4 py-2 text-left text-sm font-semibold text-blue-700 shadow-sm">
           Profile
         </button>
-        <p className="mt-3 text-xs text-slate-500">Manage account and role-specific details.</p>
       </aside>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        {activeTab === 'profile' && (isEditing ? <ProfileEditForm /> : <ProfilePreview />)}
+        {activeTab === 'profile' && (
+          isEditing ? (
+            <SettingsProfileEditForm
+              form={form}
+              displayedProfilePicture={displayedProfilePicture}
+              profileSectionReadOnly={profileSectionReadOnly}
+              isTeacher={isTeacher}
+              isStudent={isStudent}
+              isAdmin={isAdmin}
+              saving={saving}
+              profileImageUploadAccept={PROFILE_IMAGE_UPLOAD_ACCEPT}
+              onCancel={handleCancel}
+              onSave={handleSave}
+              onInput={onInput}
+              onValueChange={setValue}
+              onProfilePictureChange={onProfilePictureChange}
+              onBusinessLogoChange={onBusinessLogoChange}
+              displayedBusinessLogo={displayedBusinessLogo}
+            />
+          ) : (
+            <SettingsProfilePreview
+              profile={profile}
+              form={form}
+              displayedProfilePicture={displayedProfilePicture}
+              displayedBusinessLogo={displayedBusinessLogo}
+              isAdmin={isAdmin}
+              isTeacher={isTeacher}
+              isStudent={isStudent}
+              profileSectionReadOnly={profileSectionReadOnly}
+              onEditProfile={() => setIsEditing(true)}
+            />
+          )
+        )}
       </section>
     </div>
   );

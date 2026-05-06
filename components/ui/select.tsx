@@ -288,7 +288,7 @@ export function Select({
           disabled={disabled || itemCount === 0}
           className={cn(
             'flex h-10 w-full items-center justify-between gap-2 rounded-md border border-input bg-background px-3 text-left text-sm ring-offset-background',
-            'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-200  focus:border-blue-400',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0',
             'disabled:cursor-not-allowed disabled:opacity-50',
             triggerClassName,
           )}

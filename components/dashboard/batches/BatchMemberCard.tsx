@@ -1,8 +1,10 @@
 'use client';
 
+import Image from 'next/image';
 import { BatchUser } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { CalendarDays, Info, Mail, Trash2, UserCog, Users } from 'lucide-react';
+import { resolveAssetUrl } from '@/lib/assets/assetUrl';
 
 export type BatchMemberRole = 'STUDENT' | 'TEACHER';
 
@@ -34,15 +36,31 @@ export function BatchMemberCard({ member, role, onViewDetails, onDelete, isDelet
         badge: 'bg-blue-100 text-blue-800 border-blue-200',
       };
 
+  const profilePicturePath = (member.user as { profilePicture?: string | null } | undefined)?.profilePicture;
+  const profilePictureUrl = resolveAssetUrl(profilePicturePath ?? null);
+
   return (
     <div className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 hover:border-slate-300 hover:shadow-md">
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div className="flex min-w-0 flex-1 items-start gap-4">
         <div
-            className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border ${roleTheme.avatar}`}
+            className={`flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border ${roleTheme.avatar}`}
             aria-hidden="true"
           >
-            {role === 'TEACHER' ? <UserCog className="h-6 w-6" /> : <Users className="h-6 w-6" />}
+            {profilePictureUrl ? (
+              <Image
+                src={profilePictureUrl}
+                alt={`${name} profile`}
+                width={48}
+                height={48}
+                unoptimized
+                className="h-full w-full object-cover"
+              />
+            ) : role === 'TEACHER' ? (
+              <UserCog className="h-6 w-6" />
+            ) : (
+              <Users className="h-6 w-6" />
+            )}
           </div>
 
           <div className="min-w-0 flex-1 space-y-3">

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select } from '@/components/ui/select';
+import { DatePicker } from '@/components/ui/date-picker';
 import { validateDob } from '@/lib/validation';
 import { StudentsService, UpdateStudentRequest, StudentWithUser } from '@/lib/api';
 import { LanguageInputChips } from './LanguageInputChips';
@@ -141,15 +142,11 @@ export function EditStudentProfileModal({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
-              <Input
-                type="date"
+              <DatePicker
                 value={dob}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setDob(val);
-                }}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:opacity-70"
+                onChange={setDob}
                 disabled={loading}
+                placeholder="Select date"
               />
               {dobError && <p className="text-xs text-red-600 mt-1">{dobError}</p>}
             </div>
