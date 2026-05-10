@@ -1,6 +1,11 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.2.18] - UAT config 
+**P.R Raised by** : shubh404-SE on **Date** : 2026-05-10
+### Changed
+  - Added uat  config.
+---
 ## Version [1.2.17] - Profile UI fixes.
 **P.R Raised by** : shubh404-SE
 **Date** : 2026-05-05
