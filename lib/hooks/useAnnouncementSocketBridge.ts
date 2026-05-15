@@ -67,9 +67,7 @@ export function useAnnouncementSocketBridge(
         }
         addOrUpdate(id, heading, isNewEvent);
       } catch {
-        if (isNewEvent) {
-          addOrUpdate(id, `Announcement #${id}`, true);
-        }
+        // Skip notification when details are inaccessible/unavailable for this user.
       } finally {
         inFlightRef.current.delete(id);
         dispatchListRefresh();

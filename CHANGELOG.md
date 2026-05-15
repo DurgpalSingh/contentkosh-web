@@ -1,6 +1,12 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.2.19] - Profile picture visibility + announcement audience fixes
+**P.R Raised by** : shubh404-SE on **Date** : 2026-05-15
+### Changed
+  - added profile picture rendering in batch member details modal and in student and teacher profile pages.
+  - removed announcement socket fallback notification on announcement fetch failure to prevent false-positive alerts.
+---
 ## Version [1.2.18] - UAT config 
 **P.R Raised by** : shubh404-SE on **Date** : 2026-05-10
 ### Changed

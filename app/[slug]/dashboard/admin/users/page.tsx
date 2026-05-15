@@ -206,6 +206,7 @@ const restoreScrollPosition = () => {
   };
 
   const handleRowClick = (userItem: BusinessUser) => {
+    const profilePicture = (userItem.user as { profilePicture?: string | null } | undefined)?.profilePicture;
     if (userItem.user?.id && userItem.role === USER_ROLES.TEACHER) {
       sessionStorage.setItem('usersPageScrollY', scrollRef.current?.scrollTop.toString() || '0');
       sessionStorage.setItem('usersPageFilter', selectedRole);
@@ -215,7 +216,8 @@ const restoreScrollPosition = () => {
         email: userItem.user.email || '',
         mobile: userItem.user.mobile,
         role: User.role.TEACHER,
-      });
+        ...(profilePicture ? { profilePicture } : {}),
+      } as User);
       router.push(teacherUserPath(userItem.user.id));
     } else if (userItem.user?.id && userItem.role === USER_ROLES.STUDENT) {
       sessionStorage.setItem('usersPageScrollY', scrollRef.current?.scrollTop.toString() || '0');
@@ -226,7 +228,8 @@ const restoreScrollPosition = () => {
         email: userItem.user.email || '',
         mobile: userItem.user.mobile,
         role: User.role.STUDENT,
-      });
+        ...(profilePicture ? { profilePicture } : {}),
+      } as User);
       router.push(studentUserPath(userItem.user.id));
     }
   };

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import Image from 'next/image';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useTeacherStore } from '@/store/useTeacherStore';
@@ -11,6 +12,7 @@ import { ArrowLeft, User as UserIcon, BookOpen, Mail, Phone, Edit, AlertCircle, 
 import { CreateTeacherProfileModal } from '@/components/modals/CreateTeacherProfileModal';
 import { EditTeacherProfileModal } from '@/components/modals/EditTeacherProfileModal';
 import { resolveProfileFetchError } from '@/lib/profileFetchError';
+import { resolveAssetUrl } from '@/lib/assets/assetUrl';
 
 export default function TeacherProfilePage() {
   const router = useRouter();
@@ -26,6 +28,11 @@ export default function TeacherProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [isCreateProfileModalOpen, setIsCreateProfileModalOpen] = useState(false);
   const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
+  const targetUserProfilePicture = resolveAssetUrl(
+    (targetUser as { profilePicture?: string | null } | null)?.profilePicture ??
+      (teacher?.user as { profilePicture?: string | null } | undefined)?.profilePicture ??
+      null,
+  );
 
   const fetchTeacherProfile = useCallback(async () => {
     try {
@@ -166,7 +173,18 @@ export default function TeacherProfilePage() {
         <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-6 overflow-hidden">
           <div className="grid grid-cols-1 sm:grid-cols-[auto,1fr] items-start sm:items-center gap-4 sm:gap-6 min-w-0">
             <div className="h-16 w-16 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center flex-shrink-0">
-              <UserIcon className="h-8 w-8 text-blue-600" />
+              {targetUserProfilePicture ? (
+                <Image
+                  src={targetUserProfilePicture}
+                  alt={`${targetUser.name ?? 'Teacher'} profile`}
+                  width={64}
+                  height={64}
+                  unoptimized
+                  className="h-full w-full object-cover rounded-full"
+                />
+              ) : (
+                <UserIcon className="h-8 w-8 text-blue-600" />
+              )}
             </div>
             <div className="min-w-0">
               <h2 className="text-2xl font-bold text-gray-900 truncate max-w-full">{targetUser.name}</h2>

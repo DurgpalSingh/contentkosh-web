@@ -1,9 +1,11 @@
 'use client';
 
+import Image from 'next/image';
 import { BatchUser } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { UserCog, Users } from 'lucide-react';
 import { BatchMemberRole } from '@/components/dashboard/batches/BatchMemberCard';
+import { resolveAssetUrl } from '@/lib/assets/assetUrl';
 
 interface BatchMemberDetailsModalProps {
   member: BatchUser | null;
@@ -13,6 +15,8 @@ interface BatchMemberDetailsModalProps {
 
 export function BatchMemberDetailsModal({ member, role, onClose }: BatchMemberDetailsModalProps) {
   if (!member) return null;
+  const profilePicturePath = (member.user as { profilePicture?: string | null } | undefined)?.profilePicture;
+  const profilePictureUrl = resolveAssetUrl(profilePicturePath ?? null);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4" onClick={onClose}>
@@ -32,8 +36,21 @@ export function BatchMemberDetailsModal({ member, role, onClose }: BatchMemberDe
 
         <div className="p-6 space-y-4">
           <div className="flex items-center gap-4">
-            <div className="h-16 w-16 rounded-full flex items-center justify-center border-2 bg-blue-100 text-blue-600 border-blue-200">
-              {role === 'TEACHER' ? <UserCog className="h-8 w-8" /> : <Users className="h-8 w-8" />}
+            <div className="h-16 w-16 rounded-full flex items-center justify-center border-2 bg-blue-100 text-blue-600 border-blue-200 overflow-hidden">
+              {profilePictureUrl ? (
+                <Image
+                  src={profilePictureUrl}
+                  alt={`${member.user?.name || 'Member'} profile`}
+                  width={64}
+                  height={64}
+                  unoptimized
+                  className="h-full w-full object-cover"
+                />
+              ) : role === 'TEACHER' ? (
+                <UserCog className="h-8 w-8" />
+              ) : (
+                <Users className="h-8 w-8" />
+              )}
             </div>
             <div>
               <h4 className="text-xl font-bold text-slate-900">{member.user?.name || 'Unknown'}</h4>
