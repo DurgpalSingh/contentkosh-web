@@ -66,7 +66,7 @@ function getRoleFromTab(tab: MemberTab): typeof USER_ROLES.STUDENT | typeof USER
 
 export default function BatchDetailsPage() {
   const { user: currentUser, business, isAuthenticated, isLoading: authLoading } = useAuthStore();
-  const params = useParams<{ slug: string; batchId: string }>();
+  const params = useParams() as { slug?: string; batchId?: string };
   const router = useRouter();
 
   const batchId = Number(params?.batchId);

@@ -6,7 +6,7 @@ export type Subject = {
     /**
      * Subject ID
      */
-    id?: number;
+    id: number;
     /**
      * Name of the subject (e.g., Geography, History, Physics)
      */

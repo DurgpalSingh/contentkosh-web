@@ -214,7 +214,9 @@ export function Select({
   );
 
   const resolveFormRoot = useCallback((): HTMLElement | null => {
-    return formRootRef?.current ?? triggerRef.current?.closest('form');
+    const fromRef = formRootRef?.current ?? null;
+    const closest = triggerRef.current ? (triggerRef.current.closest('form') as HTMLElement | null) : null;
+    return fromRef ?? closest ?? null;
   }, [formRootRef]);
 
   const moveFocusToNextField = useCallback(() => {

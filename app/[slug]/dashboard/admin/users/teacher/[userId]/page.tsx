@@ -47,9 +47,10 @@ export default function TeacherProfilePage() {
 
       const profile = await TeachersService.getApiTeachersByUserId(userId);
       if (profile?.data) {
-        setTeacher(profile.data as TeacherWithUser);
-        if (profile.data.user) {
-          setTargetUser(profile.data.user as TeacherWithUser['user']);
+        const data = profile.data as TeacherWithUser;
+        setTeacher(data);
+        if (data.user) {
+          setTargetUser(data.user);
         }
       }
     } catch (err: unknown) {
