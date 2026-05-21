@@ -36,41 +36,85 @@ function InlineMonthCaption({
             style={style}
             {...divProps}
         >
-            <components.PreviousMonthButton
-                type="button"
-                className="h-8 w-8 rounded-lg bg-white p-0 border border-slate-200 text-slate-600 shadow-sm hover:bg-slate-50 hover:text-slate-900"
-                tabIndex={prevDisabled ? -1 : undefined}
-                aria-disabled={prevDisabled ? true : undefined}
-                aria-label={labels.labelPrevious(previousMonth)}
-                onClick={() => {
-                    if (previousMonth) goToMonth(previousMonth)
-                }}
-            >
-                <Chevron
-                    disabled={prevDisabled ? true : undefined}
-                    className="h-4 w-4"
-                    orientation={dir === "rtl" ? "right" : "left"}
+            {components.PreviousMonthButton ? (
+                <components.PreviousMonthButton
+                    type="button"
+                    className="h-8 w-8 rounded-lg bg-white p-0 border border-slate-200 text-slate-600 shadow-sm hover:bg-slate-50 hover:text-slate-900"
+                    tabIndex={prevDisabled ? -1 : undefined}
+                    aria-disabled={prevDisabled ? true : undefined}
+                    aria-label={labels.labelPrevious(previousMonth)}
+                    onClick={() => {
+                        if (previousMonth) goToMonth(previousMonth)
+                    }}
+                >
+                    {Chevron ? (
+                        <Chevron
+                            disabled={prevDisabled ? true : undefined}
+                            className="h-4 w-4"
+                            orientation={dir === "rtl" ? "right" : "left"}
+                        />
+                    ) : (
+                        <button
+                            type="button"
+                            className="h-8 w-8 rounded-lg bg-white p-0 border border-slate-200 text-slate-600 shadow-sm hover:bg-slate-50 hover:text-slate-900"
+                            tabIndex={prevDisabled ? -1 : undefined}
+                            aria-disabled={prevDisabled ? true : undefined}
+                            aria-label={labels.labelPrevious(previousMonth)}
+                            onClick={() => previousMonth && goToMonth(previousMonth)}
+                        />
+                    )}
+                </components.PreviousMonthButton>
+            ) : (
+                <button
+                    type="button"
+                    className="h-8 w-8 rounded-lg bg-white p-0 border border-slate-200 text-slate-600 shadow-sm hover:bg-slate-50 hover:text-slate-900"
+                    tabIndex={prevDisabled ? -1 : undefined}
+                    aria-disabled={prevDisabled ? true : undefined}
+                    aria-label={labels.labelPrevious(previousMonth)}
+                    onClick={() => previousMonth && goToMonth(previousMonth)}
                 />
-            </components.PreviousMonthButton>
+            )}
 
             <div className="flex items-center gap-2">{children}</div>
 
-            <components.NextMonthButton
-                type="button"
-                className="h-8 w-8 rounded-lg bg-white p-0 border border-slate-200 text-slate-600 shadow-sm hover:bg-slate-50 hover:text-slate-900"
-                tabIndex={nextDisabled ? -1 : undefined}
-                aria-disabled={nextDisabled ? true : undefined}
-                aria-label={labels.labelNext(nextMonth)}
-                onClick={() => {
-                    if (nextMonth) goToMonth(nextMonth)
-                }}
-            >
-                <Chevron
-                    disabled={nextDisabled ? true : undefined}
-                    className="h-4 w-4"
-                    orientation={dir === "rtl" ? "left" : "right"}
+            {components.NextMonthButton ? (
+                <components.NextMonthButton
+                    type="button"
+                    className="h-8 w-8 rounded-lg bg-white p-0 border border-slate-200 text-slate-600 shadow-sm hover:bg-slate-50 hover:text-slate-900"
+                    tabIndex={nextDisabled ? -1 : undefined}
+                    aria-disabled={nextDisabled ? true : undefined}
+                    aria-label={labels.labelNext(nextMonth)}
+                    onClick={() => {
+                        if (nextMonth) goToMonth(nextMonth)
+                    }}
+                >
+                    {Chevron ? (
+                        <Chevron
+                            disabled={nextDisabled ? true : undefined}
+                            className="h-4 w-4"
+                            orientation={dir === "rtl" ? "left" : "right"}
+                        />
+                    ) : (
+                        <button
+                            type="button"
+                            className="h-8 w-8 rounded-lg bg-white p-0 border border-slate-200 text-slate-600 shadow-sm hover:bg-slate-50 hover:text-slate-900"
+                            tabIndex={nextDisabled ? -1 : undefined}
+                            aria-disabled={nextDisabled ? true : undefined}
+                            aria-label={labels.labelNext(nextMonth)}
+                            onClick={() => nextMonth && goToMonth(nextMonth)}
+                        />
+                    )}
+                </components.NextMonthButton>
+            ) : (
+                <button
+                    type="button"
+                    className="h-8 w-8 rounded-lg bg-white p-0 border border-slate-200 text-slate-600 shadow-sm hover:bg-slate-50 hover:text-slate-900"
+                    tabIndex={nextDisabled ? -1 : undefined}
+                    aria-disabled={nextDisabled ? true : undefined}
+                    aria-label={labels.labelNext(nextMonth)}
+                    onClick={() => nextMonth && goToMonth(nextMonth)}
                 />
-            </components.NextMonthButton>
+            )}
         </div>
     )
 }
@@ -122,7 +166,7 @@ function Calendar({
             }}
             components={{
                 MonthCaption: InlineMonthCaption,
-                Chevron: ({ orientation, ...props }) => {
+                Chevron: ({ orientation, ...props }: React.SVGProps<SVGSVGElement> & { orientation?: 'left' | 'right' | 'up' | 'down'; disabled?: boolean }) => {
                     switch (orientation) {
                         case "left":
                             return <ChevronLeft className="h-4 w-4" {...props} />

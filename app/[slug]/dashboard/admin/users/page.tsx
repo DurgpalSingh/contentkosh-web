@@ -100,8 +100,8 @@ export default function UsersPage() {
   const { setSelectedTeacherUser } = useTeacherStore();
   const { setSelectedStudentUser } = useStudentStore();
   const router = useRouter();
-  const teacherUserPath = (userId: number ) => `${window.location.pathname}/teacher/${userId}`;
-  const studentUserPath = (userId: number ) => `${window.location.pathname}/student/${userId}`;
+  const teacherUserPath = (userId: string | number) => `${window.location.pathname}/teacher/${userId}`;
+  const studentUserPath = (userId: string | number) => `${window.location.pathname}/student/${userId}`;
   const [users, setUsers] = useState<BusinessUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

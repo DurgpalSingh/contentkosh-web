@@ -1,10 +1,16 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.2.21] - Build type error fix
+**P.R Raised by** : shubh404-SE on **Date** : 2026-05-19
+### Changed
+  - fixed build time type errors.
+---
 ## Version [1.2.20] - Type error fix in users page
 **P.R Raised by** : shubh404-SE on **Date** : 2026-05-19
 ### Changed
   - fixed type error in users page which cause crash in users page. 
+
 ## Version [1.2.19] - Profile picture visibility + announcement audience fixes
 **P.R Raised by** : shubh404-SE on **Date** : 2026-05-15
 ### Changed

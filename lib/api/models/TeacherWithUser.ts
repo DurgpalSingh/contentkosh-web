@@ -11,6 +11,7 @@ export type TeacherWithUser = {
         email: string;
         mobile?: string;
         role: string;
+        profilePicture?: string | null;
     };
     userId: number;
     businessId: number;

@@ -84,11 +84,20 @@ export type StudentDashboardData = {
 
 export type DashboardData = AdminDashboardData | TeacherDashboardData | StudentDashboardData;
 
-export const isAdminDashboardData = (data: DashboardData): data is AdminDashboardData =>
-  'totalUsers' in data.stats;
+export const isAdminDashboardData = (data: object): data is AdminDashboardData => {
+  if (!data || typeof data !== 'object') return false;
+  const d = data as { stats?: { totalUsers?: number } };
+  return !!d.stats && typeof d.stats.totalUsers === 'number';
+};
 
-export const isTeacherDashboardData = (data: DashboardData): data is TeacherDashboardData =>
-  'totalBatches' in data.stats && 'recentContent' in data;
+export const isTeacherDashboardData = (data: object): data is TeacherDashboardData => {
+  if (!data || typeof data !== 'object') return false;
+  const d = data as { stats?: { totalBatches?: number }; recentContent?: Array<{ id?: number; title?: string; createdAt?: string }> };
+  return !!d.stats && typeof d.stats.totalBatches === 'number' && Array.isArray(d.recentContent);
+};
 
-export const isStudentDashboardData = (data: DashboardData): data is StudentDashboardData =>
-  'enrolledBatches' in data.stats;
+export const isStudentDashboardData = (data: object): data is StudentDashboardData => {
+  if (!data || typeof data !== 'object') return false;
+  const d = data as { stats?: { enrolledBatches?: number } };
+  return !!d.stats && typeof d.stats.enrolledBatches === 'number';
+};

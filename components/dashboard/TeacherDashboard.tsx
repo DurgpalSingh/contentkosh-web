@@ -3,7 +3,7 @@
 import { ReactNode, useEffect, useState } from 'react';
 import { Bell, BookOpen, GraduationCap, Users } from 'lucide-react';
 import { DashboardService } from '@/lib/api';
-import { isTeacherDashboardData, TeacherDashboardData } from '@/types/dashboard';
+import { isTeacherDashboardData, TeacherDashboardData } from '@/lib/api/models/Dashboard';
 
 const formatDate = (value: string) => new Date(value).toLocaleDateString();
 

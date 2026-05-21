@@ -51,6 +51,10 @@ export type BusinessUser = {
          * User mobile
          */
         mobile?: string;
+        /**
+         * User profile picture URL or path
+         */
+        profilePicture?: string | null;
     };
     business?: {
         /**

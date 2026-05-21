@@ -34,6 +34,10 @@ export type User = {
      */
     businessId?: number;
     /**
+     * User profile picture URL or path
+     */
+    profilePicture?: string | null;
+    /**
      * Business details
      */
     business?: Business;
