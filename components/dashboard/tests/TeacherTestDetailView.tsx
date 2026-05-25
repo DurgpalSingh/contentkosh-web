@@ -226,6 +226,7 @@ export function TeacherTestDetailView({
 
   const status = typeof test.status === 'number' ? test.status : 0
   const isDraft = status === testStatus.draft
+  const questionsLocked = Boolean((test as { hasAttempts?: boolean }).hasAttempts)
 
   return (
     <div className="space-y-6">
@@ -259,6 +260,7 @@ export function TeacherTestDetailView({
       {activeTab === TEACHER_TEST_TAB.QUESTIONS && (
         <TeacherTestQuestionsTab
           questions={questions}
+          questionsLocked={questionsLocked}
           onAddQuestion={() => setAddQuestionOpen(true)}
           onEditQuestion={(q) => setEditQuestion(q)}
           onDeleteQuestion={(q) => setDeleteQuestionTarget(q)}

@@ -1,6 +1,13 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.2.22] - Question Preview added in test for teacher
+**P.R Raised by** : shubh404-SE on **Date** : 2026-05-26
+
+### Changed
+  - created a new component to show question preview with all its fields.
+  - Question section locked when there is attempt in test.
+---
 ## Version [1.2.21] - Build type error fix
 **P.R Raised by** : shubh404-SE on **Date** : 2026-05-19
 ### Changed
