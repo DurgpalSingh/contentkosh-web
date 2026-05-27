@@ -1,6 +1,12 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.2.23] - uat config fixed + readme file updated
+**P.R Raised by** : shubh404-SE on **Date** : 2026-05-27
+
+### Changed
+  - uat config fixed for frontend and readme file updated.
+---
 ## Version [1.2.22] - Question Preview added in test for teacher
 **P.R Raised by** : shubh404-SE on **Date** : 2026-05-26
 
