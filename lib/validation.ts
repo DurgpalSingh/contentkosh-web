@@ -39,8 +39,8 @@ export const containsAlphabet = (label: string): Validator => (value) => {
 
 export const hasValidCharacters = (label: string): Validator => (value) => {
     // Allows letters, numbers, spaces, underscores, and hyphens
-    if (!/^[a-zA-Z0-9\s_-]+$/.test(value)) {
-        return `${label} can only contain letters, numbers, spaces, hyphens (-), and underscores (_)`;
+    if (!/^[a-zA-Z0-9\s_\-()[\]&|]+$/.test(value)) {
+        return `${label} can only contain letters, numbers, spaces, hyphens (-), underscores (_), parentheses (), brackets [], ampersands (&), and pipes (|)`;
     }
     return null;
 };

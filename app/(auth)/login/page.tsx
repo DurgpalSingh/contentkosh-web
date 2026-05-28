@@ -104,7 +104,7 @@ export default function LoginPage() {
             priority
           />
           <h1 className="mt-4 text-4xl font-bold leading-tight text-slate-900">
-            Log in and continue managing your content workflows.
+            Log in and continue managing your Pathway of Growth.
           </h1>
         </section>
 
