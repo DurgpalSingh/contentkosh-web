@@ -1,6 +1,13 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+All notable changes to this project will be documented in this file
+## Version [1.2.24] - common special character validation added in Name field
+**P.R Raised by** : shubh404-SE on **Date** : 2026-05-28
+
+### Changed
+  - `(, ), [, ], &,|` Allowed these extra fields in name field
+  - favicon added.
+---.
 ## Version [1.2.23] - uat config fixed + readme file updated
 **P.R Raised by** : shubh404-SE on **Date** : 2026-05-27
 
