@@ -7,8 +7,8 @@ export type CreateContentRequest = {
     file: Blob;
     /** Title of the content (required) */
     title: string;
-    /** Subject ID (required) */
-    subjectId: number;
+    /** Subject ID (optional) */
+    subjectId?: number;
     /** Status of the content */
     status?: CreateContentRequest.status;
 };
