@@ -23,8 +23,8 @@ export function ContentsFilterModal({
   onSubjectChange,
 }: ContentFilterProps) {
   return (
-    <div className="w-full lg:w-[320px]">
-      <div className="mt-1 flex items-start gap-3">
+    <div className="w-full xl:w-[360px]">
+      <div className="mt-1 grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="relative flex-1 min-w-0">
           <Filter className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <Select

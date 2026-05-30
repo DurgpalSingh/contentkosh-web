@@ -59,22 +59,18 @@ export function AddContentModal({
     setStatus('ACTIVE');
     setFile(null);
     setError(null);
-    setSelectedSubjectId(initialSubjectId ?? subjects[0]?.id);
+    setSelectedSubjectId(initialSubjectId);
   };
 
   useEffect(() => {
     if (!isOpen) return;
-    setSelectedSubjectId(initialSubjectId ?? subjects[0]?.id);
+    setSelectedSubjectId(initialSubjectId);
   }, [isOpen, initialSubjectId, subjects]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedBatchId) {
       setError('Please select a batch');
-      return;
-    }
-    if (!selectedSubjectId) {
-      setError('Please select a subject');
       return;
     }
     if (title.trim().length < 3) {
@@ -98,7 +94,9 @@ export function AddContentModal({
       form.append('file', file);
       form.append('title', title.trim());
       if (status) form.append('status', status);
-      form.append('subjectId', String(selectedSubjectId));
+      if (selectedSubjectId !== undefined) {
+        form.append('subjectId', String(selectedSubjectId));
+      }
 
       await ContentsService.postApiBatchesContents({
         batchId: selectedBatchId,
@@ -183,7 +181,7 @@ export function AddContentModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700">Subject <span className="text-red-500">*</span></label>
+            <label className="block text-sm font-medium text-slate-700">Subject (optional)</label>
             <Select
               id="add-content-subject"
               value={selectedSubjectId ?? ''}
@@ -191,10 +189,7 @@ export function AddContentModal({
                 setSelectedSubjectId(value === '' ? undefined : Number(value))
               }
               options={[
-                {
-                  value: '',
-                  label: subjects.length === 0 ? 'No subjects available' : 'Select a subject',
-                },
+                { value: '', label: 'No subject selected' },
                 ...subjects.flatMap((s) =>
                   typeof s.id === 'number'
                     ? [
@@ -206,7 +201,6 @@ export function AddContentModal({
                     : [],
                 ),
               ]}
-              disabled={subjects.length === 0}
               triggerClassName="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
             />
           </div>

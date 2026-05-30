@@ -611,7 +611,7 @@ const PracticeSettingsFields = ({
     <section>
       <SectionHeader icon={FileText} title="General" />
       <div className="space-y-4">
-        <Field label="Subject" error={errors.subjectId}>
+        <Field label="Subject (optional)" error={errors.subjectId}>
           <Select
             id="practice-subject"
             value={draft.subjectId ?? ''}
@@ -622,13 +622,12 @@ const PracticeSettingsFields = ({
               }))
             }
             options={[
-              { value: '', label: 'Select subject' },
+              { value: '', label: 'No subject selected' },
               ...subjects.map((s) => ({
                 value: s.id,
                 label: s.name ?? `Subject ${s.id}`,
               })),
             ]}
-            disabled={subjectsLoading || subjects.length === 0}
             triggerClassName={selectClass}
           />
         </Field>
@@ -732,7 +731,7 @@ const ExamSettingsFields = ({
     <section>
       <SectionHeader icon={FileText} title="General" />
       <div className="space-y-4">
-        <Field label="Subject" error={errors.subjectId}>
+        <Field label="Subject (optional)" error={errors.subjectId}>
           <Select
             id="exam-subject"
             value={draft.subjectId ?? ''}
@@ -743,13 +742,12 @@ const ExamSettingsFields = ({
               }))
             }
             options={[
-              { value: '', label: 'Select subject' },
+              { value: '', label: 'No subject selected' },
               ...subjects.map((s) => ({
                 value: s.id,
                 label: s.name ?? `Subject ${s.id}`,
               })),
             ]}
-            disabled={subjectsLoading || subjects.length === 0}
             triggerClassName={selectClass}
           />
         </Field>

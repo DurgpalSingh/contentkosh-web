@@ -75,7 +75,7 @@ export function CreateTestModal({
   useEffect(() => {
     if (!isOpen) return;
     setBatchId(0);
-    setSubjectId(0);
+    setSubjectId(undefined);
     setExamWindow(defaultExamWindow());
     setError(null);
     setFormErrors({});
@@ -111,7 +111,7 @@ export function CreateTestModal({
     setName('');
     setDescription('');
     setDurationMinutes(60);
-    setSubjectId(0);
+    setSubjectId(undefined);
     setLanguage(TestLanguage.EN);
     setResultVisibility(ResultVisibilityExam._0);
     setExamWindow(defaultExamWindow());
@@ -134,7 +134,7 @@ export function CreateTestModal({
       durationMinutes: kind === TEST_KIND.EXAM ? durationMinutes : undefined,
       defaultMarksPerQuestion,
       requireBatch: true,
-      requireSubject: true,
+      requireSubject: false,
       validateTextRules: true,
       disallowPastStart: true,
     });
@@ -267,17 +267,19 @@ export function CreateTestModal({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="subject">Subject <span className="text-red-400">*</span></Label>
+            <Label htmlFor="subject">Subject (optional)</Label>
             <Select
               id="subject"
-              value={subjectId ?? 0}
-              onChange={(v) => setSubjectId(Number(v))}
-              options={filteredSubjects.map((s) => ({
-                value: s.id ?? 0,
-                label: s.name ?? `Subject ${s.id ?? ''}`,
-              }))}
-              disabled={filteredSubjects.length === 0}
-              placeholder="Select subject"
+              value={subjectId ?? ''}
+              onChange={(v) => setSubjectId(v ? Number(v) : undefined)}
+              options={[
+                { value: '', label: 'No subject selected' },
+                ...filteredSubjects.map((s) => ({
+                  value: s.id ?? 0,
+                  label: s.name ?? `Subject ${s.id ?? ''}`,
+                })),
+              ]}
+              placeholder="No subject selected"
             />
             {formErrors.subjectId && (
               <p className="text-sm text-red-600 mt-1">{formErrors.subjectId}</p>

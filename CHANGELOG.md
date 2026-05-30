@@ -1,6 +1,13 @@
 # Changelog
 
 All notable changes to this project will be documented in this file
+## Version [1.2.25] - subject field in test and content + login page tag line
+**P.R Raised by** : shubh404-SE on **Date** : 2026-05-29
+
+### Changed
+  - now subject is optional in test and content.
+  - login page tag line changed
+---
 ## Version [1.2.24] - common special character validation added in Name field
 **P.R Raised by** : shubh404-SE on **Date** : 2026-05-28
 
