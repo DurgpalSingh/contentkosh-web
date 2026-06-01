@@ -57,7 +57,7 @@ export function TeacherDashboard() {
   return (
     <div className="space-y-4 sm:space-y-6">
       <header className="rounded-2xl border border-slate-200 bg-gradient-to-r from-slate-50 via-white to-emerald-50 p-4 sm:p-6">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">Teacher Dashboard</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">My Dashboard</h1>
         <p className="mt-1 text-sm text-slate-600">Track your batches, students, and content activity in one place.</p>
       </header>
 

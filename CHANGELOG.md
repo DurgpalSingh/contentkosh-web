@@ -1,6 +1,14 @@
 # Changelog
 
 All notable changes to this project will be documented in this file
+## Version [1.2.26] - Dashboard heading + test attempt/result page ui
+**P.R Raised by** : shubh404-SE on **Date** : 2026-06-02
+
+### Changed
+  - text "Student/Teacher/Admin Dashboard" changed to "My Dashboard" in all dashboard pages.
+  - result page cards issue solved. 
+  - test attempt question list box and question content ui fix (scroll issue and flag color issue).
+---
 ## Version [1.2.25] - subject field in test and content + login page tag line
 **P.R Raised by** : shubh404-SE on **Date** : 2026-05-29
 

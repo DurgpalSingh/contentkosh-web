@@ -11,7 +11,6 @@ import type { TestLanguage } from '@/lib/api/models/TestLanguage';
 import type { PracticeTestAttemptDetails, ExamTestAttemptDetails } from '@/lib/api';
 import { PracticeTestsService } from '@/lib/api';
 import { AttemptStatus } from '@/lib/api/models/AttemptStatus';
-import { ResultVisibilityExam } from '@/lib/api/models/ResultVisibilityExam';
 import type { StudentAttemptQuestion } from '@/lib/api/models/StudentAttemptQuestion';
 import {
   studentExamAttemptPath,
@@ -23,6 +22,7 @@ import { HtmlContent } from '@/components/common/HtmlContent';
 import { TEST_KIND, TEST_KIND_LABEL, type TestKind } from '@/lib/tests/testConstants';
 
 type AttemptDetails = PracticeTestAttemptDetails | ExamTestAttemptDetails;
+type AttemptWithAnsweredCount = AttemptDetails['attempt'] & { answeredCount?: number };
 
 export function StudentTestResultView({
   kind,
@@ -43,20 +43,26 @@ export function StudentTestResultView({
   const safeAttempt = details.attempt;
   const safeTest = details.test;
   const safeQuestions = useMemo(() => details.questions ?? [], [details.questions]);
+  const attemptMeta = safeAttempt as AttemptWithAnsweredCount | undefined;
 
   const derived = useMemo(() => {
     const attemptStatus = safeAttempt?.status;
     const isExam = kind === TEST_KIND.EXAM;
-    const hiddenByPolicy =
+    const resultsVisible =
+      !isExam ||
+      safeQuestions.some((row) => row.correctAnswer != null) ||
+      safeAttempt?.score != null ||
+      safeAttempt?.totalScore != null ||
+      safeAttempt?.percentage != null;
+    const resultsHidden =
       !!safeAttempt &&
       !!safeTest &&
       isExam &&
-      'resultVisibility' in safeTest &&
-      safeTest.resultVisibility === ResultVisibilityExam._1 &&
-      attemptStatus !== AttemptStatus._0;
+      attemptStatus !== AttemptStatus._0 &&
+      !resultsVisible;
 
     let correct = 0;
-    let wrong = 0;
+    let incorrect = 0;
     let unattempted = 0;
     for (const row of safeQuestions) {
       const sa = row.studentAnswer;
@@ -70,14 +76,14 @@ export function StudentTestResultView({
         continue;
       }
       if (sa?.isCorrect === true) correct += 1;
-      else if (sa?.isCorrect === false) wrong += 1;
+      else if (sa?.isCorrect === false) incorrect += 1;
     }
 
     return {
       isExam,
-      hiddenByPolicy,
+      resultsHidden,
       attemptInProgress: attemptStatus === AttemptStatus._0,
-      stats: { total: safeQuestions.length, correct, wrong, unattempted },
+      stats: { total: safeQuestions.length, correct, incorrect, unattempted },
     };
   }, [kind, safeAttempt, safeQuestions, safeTest]);
 
@@ -100,7 +106,7 @@ export function StudentTestResultView({
     router.push(studentPracticeAttemptPath(slug, aid));
   };
   const questions = safeQuestions;
-  const hiddenByPolicy = derived.hiddenByPolicy;
+  const resultsHidden = derived.resultsHidden;
   const isExam = kind === TEST_KIND.EXAM;
 
   const scoreLine =
@@ -113,7 +119,7 @@ export function StudentTestResultView({
           </span>
         )}
       </p>
-    ) : hiddenByPolicy ? (
+    ) : resultsHidden ? (
       <p className="text-gray-700 mt-2">Your score will be available when results are released.</p>
     ) : null;
 
@@ -176,16 +182,33 @@ export function StudentTestResultView({
 
       <div className="space-y-4">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <SummaryTile label="Questions" value={derived.stats.total} tone="neutral" />
-          <SummaryTile label="Correct" value={derived.stats.correct} tone="success" />
-          <SummaryTile label="Wrong" value={derived.stats.wrong} tone="danger" />
-          <SummaryTile label="Unattempted" value={derived.stats.unattempted} tone="muted" />
+          {resultsHidden ? (
+            <>
+              <SummaryTile
+                label="Attempted"
+                value={Math.max(0, attemptMeta?.answeredCount ?? 0)}
+                tone="success"
+              />
+              <SummaryTile
+                label="Unattempted"
+                value={Math.max(0, derived.stats.total - (attemptMeta?.answeredCount ?? 0))}
+                tone="muted"
+              />
+            </>
+          ) : (
+            <>
+              <SummaryTile label="Questions" value={derived.stats.total} tone="neutral" />
+              <SummaryTile label="Correct" value={derived.stats.correct} tone="success" />
+              <SummaryTile label="Incorrect" value={derived.stats.incorrect} tone="danger" />
+              <SummaryTile label="Unattempted" value={derived.stats.unattempted} tone="muted" />
+            </>
+          )}
         </div>
 
         <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
           <div className="border-b border-gray-100 px-4 py-3">
             <h2 className="text-lg font-semibold text-gray-900">Detailed answers</h2>
-            {hiddenByPolicy && (
+            {resultsHidden && (
               <p className="text-sm text-amber-800 mt-1">
                 Detailed results for this exam are hidden until they are released.
               </p>
@@ -197,7 +220,7 @@ export function StudentTestResultView({
                 key={row.question.id}
                 index={i + 1}
                 row={row}
-                hiddenByPolicy={!!hiddenByPolicy}
+                hiddenByPolicy={!!resultsHidden}
               />
             ))}
           </div>
