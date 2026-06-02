@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { StudentAttemptResultsTable } from '@/components/dashboard/tests/analytics/StudentAttemptResultsTable'
 import type { TestAnalyticsApiResponse } from '@/lib/tests/testAnalyticsTypes'
 import { BarChart3, Loader2, RefreshCw, TrendingDown, TrendingUp } from 'lucide-react'
+import { HtmlContent } from '@/components/common/HtmlContent'
 
 interface TeacherTestAnalyticsTabProps {
   analytics: TestAnalyticsApiResponse | null
@@ -87,7 +88,13 @@ export const TeacherTestAnalyticsTab = ({
               <ul className="divide-y divide-gray-200 border border-gray-200 rounded-lg bg-white text-sm">
                 {analytics.questionStats.map((q) => (
                   <li key={q.questionId} className="px-4 py-3 flex flex-wrap justify-between gap-2">
-                    <span className="font-mono text-xs text-gray-500">{q.questionId.slice(0, 8)}…</span>
+                    <div className="min-w-0 max-w-[70%]">
+                      {q.questionText ? (
+                        <HtmlContent html={q.questionText} className="text-sm text-gray-800" />
+                      ) : (
+                        <span className="font-mono text-xs text-gray-500">{q.questionId.slice(0, 8)}…</span>
+                      )}
+                    </div>
                     <span className="text-gray-800">
                       {q.correctCount}/{q.totalAttempts} correct ({formatNum(q.accuracy)}%)
                     </span>

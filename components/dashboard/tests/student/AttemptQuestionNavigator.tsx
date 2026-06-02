@@ -101,14 +101,14 @@ export function AttemptQuestionNavigator({
             </li>
             <li className="flex items-center justify-between gap-2">
               <span className="flex items-center gap-2.5 min-w-0">
-                <span className="h-2.5 w-2.5 shrink-0 rounded-full border-2 border-violet-400 bg-violet-100" />
+                <span className="h-2.5 w-2.5 shrink-0 rounded-full border-2 border-red-400 bg-red-100" />
                 <span>Review (no answer)</span>
               </span>
               <span className="tabular-nums font-medium text-slate-500">{stats.reviewNoAnswer}</span>
             </li>
             <li className="flex items-center justify-between gap-2">
               <span className="flex items-center gap-2.5 min-w-0">
-                <span className="h-2.5 w-2.5 shrink-0 rounded-full border-2 border-cyan-500 bg-cyan-100" />
+                <span className="h-2.5 w-2.5 shrink-0 rounded-full border-2 border-yellow-500 bg-yellow-100" />
                 <span>Review + answered</span>
               </span>
               <span className="tabular-nums font-medium text-slate-500">{stats.reviewWithAnswer}</span>

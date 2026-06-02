@@ -1,5 +1,6 @@
-'use client';
+"use client";
 
+import { useEffect, useRef } from 'react';
 import type { TestQuestion } from '@/lib/api/models/TestQuestion';
 import type { TestOption } from '@/lib/api/models/TestOption';
 import { Label } from '@/components/ui/label';
@@ -71,6 +72,7 @@ export function StudentQuestionBlock({
   value,
   onChange,
 }: StudentQuestionBlockProps) {
+  const contentRef = useRef<HTMLDivElement | null>(null);
   const body = question.questionText || question.text || '';
   const qType = question.type;
   const options = question.options ?? [];
@@ -107,6 +109,17 @@ export function StudentQuestionBlock({
 
   const trueFalseTextAnswer = getTrueFalseTextAnswer();
 
+  useEffect(() => {
+    // Reset scroll to top when question changes
+    if (contentRef.current) {
+      try {
+        contentRef.current.scrollTo({ top: 0 });
+      } catch {
+        contentRef.current.scrollTop = 0;
+      }
+    }
+  }, [question.id]);
+
   return (
     <section
       className="rounded-2xl border border-slate-200/90 bg-white shadow-[0_2px_16px_-6px_rgba(15,23,42,0.1)] overflow-hidden max-h-[calc(100vh-24rem)] min-h-0 flex flex-col"
@@ -123,7 +136,7 @@ export function StudentQuestionBlock({
         </div>
       </div>
 
-      <div className="px-5 py-6 sm:px-8 sm:py-8 overflow-auto scrollbar-hide flex-1">
+      <div ref={contentRef} className="px-5 py-6 sm:px-8 sm:py-8 overflow-auto scrollbar-hide flex-1">
         <div className="text-base leading-relaxed text-slate-900 min-w-0">
           <HtmlContent html={body} />
         </div>

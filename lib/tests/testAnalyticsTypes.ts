@@ -24,6 +24,7 @@ export type TestAnalyticsAttemptRow = {
 
 export type TestQuestionStatRow = {
   questionId: string
+  questionText?: string | null
   correctCount: number
   totalAttempts: number
   accuracy: number
