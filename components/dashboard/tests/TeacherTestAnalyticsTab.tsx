@@ -4,7 +4,8 @@ import type { ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import { StudentAttemptResultsTable } from '@/components/dashboard/tests/analytics/StudentAttemptResultsTable'
 import type { TestAnalyticsApiResponse } from '@/lib/tests/testAnalyticsTypes'
-import { BarChart3, Loader2, RefreshCw, TrendingDown, TrendingUp } from 'lucide-react'
+import { BarChart3, Loader2, RefreshCw, TrendingDown, TrendingUp, ChevronDown, ChevronUp } from 'lucide-react'
+import { useState } from 'react'
 import { HtmlContent } from '@/components/common/HtmlContent'
 
 interface TeacherTestAnalyticsTabProps {
@@ -26,6 +27,9 @@ export const TeacherTestAnalyticsTab = ({
   onExportCsv,
 }: TeacherTestAnalyticsTabProps) => {
   const summary = analytics?.summary
+  const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>({})
+
+  const toggleExpanded = (id: string) => setExpandedIds(prev => ({ ...prev, [id]: !prev[id] }))
 
   return (
     <div className="space-y-6">
@@ -86,20 +90,34 @@ export const TeacherTestAnalyticsTab = ({
             <div>
               <h3 className="text-base font-semibold text-gray-900 mb-3">Per-question accuracy</h3>
               <ul className="divide-y divide-gray-200 border border-gray-200 rounded-lg bg-white text-sm">
-                {analytics.questionStats.map((q) => (
-                  <li key={q.questionId} className="px-4 py-3 flex flex-wrap justify-between gap-2">
-                    <div className="min-w-0 max-w-[70%]">
-                      {q.questionText ? (
-                        <HtmlContent html={q.questionText} className="text-sm text-gray-800" />
-                      ) : (
-                        <span className="font-mono text-xs text-gray-500">{q.questionId.slice(0, 8)}…</span>
-                      )}
-                    </div>
-                    <span className="text-gray-800">
-                      {q.correctCount}/{q.totalAttempts} correct ({formatNum(q.accuracy)}%)
-                    </span>
-                  </li>
-                ))}
+                {analytics.questionStats.map((q) => {
+                  const expanded = Boolean(expandedIds[q.questionId])
+                  return (
+                    <li key={q.questionId} className="px-4 py-3 flex items-start justify-between gap-2">
+                      <div className="min-w-0 max-w-[70%]">
+                        {q.questionText ? (
+                          <div>
+                            <div className={`text-sm text-gray-800 ${expanded ? '' : 'max-h-[3.2rem] overflow-hidden'}`}>
+                              <HtmlContent html={q.questionText} />
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="font-mono text-xs text-gray-500">{q.questionId.slice(0, 8)}…</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-gray-800 mr-2">
+                          {q.correctCount}/{q.totalAttempts} correct ({formatNum(q.accuracy)}%)
+                        </span>
+                        {q.questionText && (
+                          <button type="button" onClick={() => toggleExpanded(q.questionId)} aria-label="Toggle question text" className="rounded p-1 text-gray-600 hover:bg-gray-100">
+                            {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                          </button>
+                        )}
+                      </div>
+                    </li>
+                  )
+                })}
               </ul>
             </div>
           )}

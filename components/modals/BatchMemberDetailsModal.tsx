@@ -75,7 +75,7 @@ export function BatchMemberDetailsModal({ member, role, onClose }: BatchMemberDe
             </div>
             <div className="p-3 bg-slate-50 rounded-lg">
               <p className="text-xs text-slate-400 uppercase font-semibold">User ID</p>
-              <p className="text-sm font-medium text-slate-700 mt-1">{member.userId ?? '-'}</p>
+                <p className="text-sm font-medium text-slate-700 mt-1">{member.userId ?? (member.user?.id ?? '-')}</p>
             </div>
           </div>
         </div>
