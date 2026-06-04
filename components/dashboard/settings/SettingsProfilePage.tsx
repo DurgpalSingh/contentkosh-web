@@ -84,7 +84,8 @@ export function SettingsProfilePage() {
   const isStudent = profile?.role === 'STUDENT';
   const hasTeacherProfile = Boolean(profile?.teacher?.id);
   const hasStudentProfile = Boolean(profile?.student?.id);
-  const profileSectionReadOnly = (isTeacher && !hasTeacherProfile) || (isStudent && !hasStudentProfile);
+  // Allow teachers and students to create/edit their own profile from settings
+  const profileSectionReadOnly = false;
 
   const currentProfilePicture = useMemo(() => resolveAssetUrl(profile?.profilePicture), [profile?.profilePicture]);
   const currentBusinessLogo = useMemo(() => resolveAssetUrl(profile?.business?.logo), [profile?.business?.logo]);
@@ -229,10 +230,7 @@ export function SettingsProfilePage() {
       };
 
       if (isTeacher) {
-        if (!hasTeacherProfile) {
-          toast.error('Teacher profile is not initialized by admin yet');
-          return;
-        }
+        // Allow teacher to create or update their profile from settings
         const parsedTeacherDetails = settingsTeacherProfileSchema.safeParse({
           qualification: form.teacherQualification,
           experienceYears: form.teacherExperienceYears || undefined,
@@ -249,10 +247,7 @@ export function SettingsProfilePage() {
         }
         payload.profileDetails = parsedTeacherDetails.data;
       } else if (isStudent) {
-        if (!hasStudentProfile) {
-          toast.error('Student profile is not initialized by admin yet');
-          return;
-        }
+        // Allow student to create or update their profile from settings
         const parsedStudentDetails = settingsStudentProfileSchema.safeParse({
           gender: form.studentGender,
           dob: form.studentDob,

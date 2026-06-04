@@ -1,6 +1,13 @@
 # Changelog
 
 All notable changes to this project will be documented in this file
+## Version [1.2.27] - Settings profile UI + analytics page UI + table filter
+**P.R Raised by** : shubh404-SE on **Date** : 2026-06-03
+
+### Changed
+  - settings profile, now student/teacher can create their profile without admin permision, and also can edit their profile.
+  - analytics page UI improved for better user experience.
+  - added a generic table filter component in result tables
 ## Version [1.2.26] - Dashboard heading + test attempt/result page ui
 **P.R Raised by** : shubh404-SE on **Date** : 2026-06-02
 
