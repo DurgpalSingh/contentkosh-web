@@ -43,6 +43,8 @@ import {
   Undo2,
   Link2,
 } from 'lucide-react';
+import { Image as ImageIcon } from 'lucide-react';
+import TipTapImage from '@tiptap/extension-image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -176,6 +178,7 @@ const RICH_TEXT_EDITOR_ROOT_CLASS = cn(
   '[&_p.is-empty]:before:text-muted-foreground',
   '[&_p.is-empty]:before:pointer-events-none',
   '[&_p.is-empty]:before:h-0',
+  '[&_img]:max-w-full [&_img]:h-auto',
   '[&_table]:my-3 [&_table]:w-full [&_table]:border-collapse [&_table]:border [&_table]:border-border [&_table]:text-sm',
   '[&_thead]:bg-muted/30',
   '[&_th]:border [&_th]:border-border [&_th]:bg-muted/30 [&_th]:px-2 [&_th]:py-2 [&_th]:text-left [&_th]:font-medium',
@@ -355,6 +358,7 @@ export function RichTextField({
         placeholder: placeholder ?? '',
         emptyEditorClass: 'is-editor-empty',
       }),
+      TipTapImage.configure({ HTMLAttributes: { draggable: 'true' } }),
     ],
     [placeholder],
   );
@@ -394,6 +398,24 @@ export function RichTextField({
       onChange(ed.getHTML());
     },
   });
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const onSelectImageFile = useCallback((file?: File | null) => {
+    if (!file || !editor) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const src = String(reader.result ?? '');
+      editor.chain().focus().setImage({ src, alt: file.name }).run();
+    };
+    reader.readAsDataURL(file);
+  }, [editor]);
+
+  const onFileInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0] ?? null;
+    if (f) onSelectImageFile(f);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }, [onSelectImageFile]);
 
   useEffect(() => {
     if (!editor) return;
@@ -811,6 +833,14 @@ export function RichTextField({
         </ToolbarIconButton>
 
         <Popover>
+
+        <ToolbarIconButton
+          tooltip="Insert image"
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <ImageIcon className="h-4 w-4" />
+        </ToolbarIconButton>
+
           <PopoverTrigger asChild>
             <Button
               type="button"
@@ -926,6 +956,14 @@ export function RichTextField({
           </div>
         </div>
       ) : null}
+      <input
+        type="file"
+        accept="image/*"
+        ref={fileInputRef}
+        onChange={onFileInputChange}
+        className="hidden"
+        aria-hidden
+      />
 
       <EditorContent editor={editor} />
     </div>

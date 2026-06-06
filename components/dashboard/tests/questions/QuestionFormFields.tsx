@@ -134,12 +134,14 @@ export const QuestionFormFields = ({ form, formId }: QuestionFormFieldsProps) =>
                     aria-label={`Mark option ${idx + 1} as correct`}
                   />
                 )}
-                <Input
-                  value={o.text}
-                  onChange={(e) => updateOptionText(o.id, e.target.value)}
-                  placeholder={`Option ${idx + 1}`}
-                  className="border-0 bg-transparent shadow-none focus-visible:ring-1"
-                />
+                <div className="flex-1">
+                  <RichTextField
+                    value={o.text}
+                    onChange={(next) => updateOptionText(o.id, next)}
+                    placeholder={`Option ${idx + 1}`}
+                    ariaLabel={`${formId}-option-${o.id}`}
+                  />
+                </div>
                 <Button
                   type="button"
                   variant="ghost"

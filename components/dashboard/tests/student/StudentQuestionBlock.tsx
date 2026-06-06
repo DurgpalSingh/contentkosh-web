@@ -56,7 +56,9 @@ function OptionsList({
                 onChange={() => onSelect(oid, isMulti)}
                 className="mt-1 h-4 w-4 shrink-0 border-slate-300 text-blue-600 focus:ring-blue-500 focus:ring-offset-0"
               />
-              <span className="text-[15px] leading-snug text-slate-800 pt-0.5">{opt.text}</span>
+              <div className="text-[15px] leading-snug text-slate-800 pt-0.5">
+                <HtmlContent html={opt.text ?? ''} />
+              </div>
             </label>
           </li>
         );
