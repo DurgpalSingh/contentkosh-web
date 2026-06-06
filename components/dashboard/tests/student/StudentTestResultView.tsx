@@ -322,7 +322,7 @@ function ResultQuestionCard({
                   <li key={oid}>
                     <div className={`rounded-lg border px-3 py-2 text-sm ${cls}`}>
                       <div className="flex items-start justify-between gap-3">
-                        <p className="whitespace-pre-wrap">{opt.text}</p>
+                        <HtmlContent html={opt.text} />
                         {badge && <span className="text-xs font-semibold">{badge}</span>}
                       </div>
                     </div>
@@ -367,7 +367,7 @@ function ResultQuestionCard({
                   {q.options
                     .filter((o) => o.id && ca.correctOptionIds?.includes(o.id))
                     .map((o) => (
-                      <li key={o.id}>{o.text}</li>
+                      <li key={o.id}><HtmlContent html={o.text} /></li>
                     ))}
                 </ul>
               )}
@@ -384,7 +384,7 @@ function AnswerSummary({ qType, row }: { qType: number; row: StudentAttemptQuest
   if (!sa) return <p className="text-gray-500 mt-1">No answer</p>;
 
   if (qType === questionType.numerical || qType === questionType.fillInTheBlank || qType === questionType.trueFalse) {
-    return <p className="text-gray-900 mt-1">{sa.textAnswer ?? '—'}</p>;
+    return <div className="text-gray-900 mt-1"><HtmlContent html={sa.textAnswer ?? '—'} /></div>;
   }
 
   const ids = sa.selectedOptionIds ?? [];
@@ -394,7 +394,7 @@ function AnswerSummary({ qType, row }: { qType: number; row: StudentAttemptQuest
   return (
     <ul className="mt-1 list-disc pl-5 text-gray-900">
       {texts.map((t, i) => (
-        <li key={i}>{t}</li>
+        <li key={i}><HtmlContent html={t} /></li>
       ))}
     </ul>
   );

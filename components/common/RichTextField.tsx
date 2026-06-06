@@ -21,7 +21,12 @@ import TableRow from '@tiptap/extension-table-row';
 import TableCell from '@tiptap/extension-table-cell';
 import TableHeader from '@tiptap/extension-table-header';
 import katex from 'katex';
+import Underline from '@tiptap/extension-underline';
+import Link from '@tiptap/extension-link';
 import {
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
   ArrowDownToLine,
   ArrowLeftToLine,
   ArrowRightToLine,
@@ -39,7 +44,7 @@ import {
   TableColumnsSplit,
   TableRowsSplit,
   Trash2,
-  Underline,
+  Underline as UnderlineIcon,
   Undo2,
   Link2,
 } from 'lucide-react';
@@ -156,7 +161,12 @@ function shouldShowRichTextTableBubbleMenu(props: { editor: Editor }) {
   return editor.isEditable && editor.isActive('table');
 }
 
+function shouldShowImageBubbleMenu(props: { editor: Editor }) {
+  return props.editor.isEditable && props.editor.isActive('image');
+}
+
 const TABLE_BUBBLE_MENU_OPTIONS = { placement: 'top' as const };
+const IMAGE_BUBBLE_MENU_OPTIONS = { placement: 'top' as const };
 
 const HEADING_LEVELS = [1, 2, 3] as const;
 
@@ -311,12 +321,13 @@ export function RichTextField({
         code: false,
         codeBlock: false,
         horizontalRule: false,
-        link: {
-          openOnClick: false,
-          HTMLAttributes: {
-            rel: 'noopener noreferrer',
-            target: '_blank',
-          },
+      }),
+      Underline,
+      Link.configure({
+        openOnClick: false,
+        HTMLAttributes: {
+          rel: 'noopener noreferrer',
+          target: '_blank',
         },
       }),
       Table.configure({
@@ -358,7 +369,37 @@ export function RichTextField({
         placeholder: placeholder ?? '',
         emptyEditorClass: 'is-editor-empty',
       }),
-      TipTapImage.configure({ HTMLAttributes: { draggable: 'true' } }),
+      TipTapImage.extend({
+        addAttributes() {
+          return {
+            src: {
+              default: null,
+            },
+            alt: {
+              default: null,
+            },
+            width: {
+              default: '100%',
+              parseHTML: (element) => element.getAttribute('width') || element.style.width || '100%',
+              renderHTML: (attributes) => ({
+                width: attributes.width,
+              }),
+            },
+            style: {
+              default: 'display: block; margin: 0 auto; max-width: 100%; height: auto;',
+              parseHTML: (element) => element.getAttribute('style') || element.style.cssText,
+              renderHTML: (attributes) => ({
+                style: attributes.style,
+              }),
+            },
+          };
+        },
+      }).configure({
+        HTMLAttributes: {
+          draggable: 'true',
+          class: 'rounded-lg border border-border shadow-sm max-w-full h-auto',
+        },
+      }),
     ],
     [placeholder],
   );
@@ -387,15 +428,20 @@ export function RichTextField({
     [ariaLabel],
   );
 
+  // Use a ref for onChange to avoid stale closures in the editor's onUpdate hook.
+  // This ensures that when you resize an image, the parent form's "isDirty" state
+  // is correctly updated, enabling the Save button.
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+
   const editor = useEditor({
     immediatelyRender: false,
-    /** Required so toolbar active states and Undo/Redo reflect selection and doc changes */
     shouldRerenderOnTransaction: true,
     extensions,
     content: value || '',
     editorProps,
     onUpdate: ({ editor: ed }) => {
-      onChange(ed.getHTML());
+      onChangeRef.current(ed.getHTML());
     },
   });
 
@@ -545,6 +591,61 @@ export function RichTextField({
     <div className="rounded-md border border-slate-200 bg-white overflow-hidden" aria-label={ariaLabel}>
       <BubbleMenu
         editor={editor}
+        pluginKey="richTextImageBubbleMenu"
+        shouldShow={shouldShowImageBubbleMenu}
+        tippyOptions={IMAGE_BUBBLE_MENU_OPTIONS}
+      >
+        <div
+          className="flex items-center gap-0.5 rounded-lg border border-border bg-card px-1 py-1 shadow-md"
+          role="toolbar"
+        >
+          <ToolbarIconButton
+            tooltip="Align Left"
+            onClick={() => editor.chain().focus().updateAttributes('image', { style: 'display: inline; float: left; margin: 0 1rem 1rem 0; max-width: 100%; height: auto;' }).run()}
+          >
+            <AlignLeft className="h-4 w-4" />
+          </ToolbarIconButton>
+          <ToolbarIconButton
+            tooltip="Align Center"
+            onClick={() => editor.chain().focus().updateAttributes('image', { style: 'display: block; margin: 0 auto; max-width: 100%; height: auto;' }).run()}
+          >
+            <AlignCenter className="h-4 w-4" />
+          </ToolbarIconButton>
+          <ToolbarIconButton
+            tooltip="Align Right"
+            onClick={() => editor.chain().focus().updateAttributes('image', { style: 'display: inline; float: right; margin: 0 0 1rem 1rem; max-width: 100%; height: auto;' }).run()}
+          >
+            <AlignRight className="h-4 w-4" />
+          </ToolbarIconButton>
+          <div className="mx-1 h-4 w-px bg-border" />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-1.5 text-[10px] font-bold"
+            onClick={() => editor.chain().focus().updateAttributes('image', { width: '25%' }).run()}
+          >
+            25%
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-1.5 text-[10px] font-bold"
+            onClick={() => editor.chain().focus().updateAttributes('image', { width: '50%' }).run()}
+          >
+            50%
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-1.5 text-[10px] font-bold"
+            onClick={() => editor.chain().focus().updateAttributes('image', { width: '100%' }).run()}
+          >
+            100%
+          </Button>
+        </div>
+      </BubbleMenu>
+      <BubbleMenu
+        editor={editor}
         pluginKey="richTextTableBubbleMenu"
         shouldShow={shouldShowRichTextTableBubbleMenu}
         options={TABLE_BUBBLE_MENU_OPTIONS}
@@ -665,7 +766,7 @@ export function RichTextField({
           pressed={editor.isActive('underline')}
           onClick={() => editor.chain().focus().toggleUnderline().run()}
         >
-          <Underline className="h-4 w-4" />
+          <UnderlineIcon className="h-4 w-4" />
         </ToolbarIconButton>
         <ToolbarIconButton
           tooltip={RICH_TEXT_TOOLTIP.strike}
