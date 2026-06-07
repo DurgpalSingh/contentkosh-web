@@ -43,7 +43,7 @@ export const QuestionFormFields = ({ form, formId }: QuestionFormFieldsProps) =>
     removeOption,
     updateOptionText,
   } = form
-
+console.log(questionText);
   const showOptions =
     questionTypeValue === questionType.singleChoice ||
     questionTypeValue === questionType.multipleChoice

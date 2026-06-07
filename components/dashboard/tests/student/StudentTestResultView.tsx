@@ -360,7 +360,7 @@ function ResultQuestionCard({
             <div className="mt-3 text-sm border-t border-gray-100 pt-3">
               <p className="font-medium text-gray-700">Correct answer</p>
               {ca.correctTextAnswer != null && ca.correctTextAnswer !== '' && (
-                <p className="text-gray-800 mt-1">{ca.correctTextAnswer}</p>
+                <div className="text-gray-800 mt-1"><HtmlContent html={ca.correctTextAnswer} /></div>
               )}
               {ca.correctOptionIds && ca.correctOptionIds.length > 0 && q.options && (
                 <ul className="mt-1 list-disc pl-5 text-gray-800">

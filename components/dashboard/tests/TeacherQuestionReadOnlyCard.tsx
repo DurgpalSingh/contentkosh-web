@@ -50,7 +50,7 @@ export const TeacherQuestionReadOnlyCard = ({
                   ].join(' ')}
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <span className="leading-snug">{opt.text}</span>
+                    <span className="leading-snug"><HtmlContent html={opt.text} /></span>
                     {isCorrect ? (
                       <span className="text-xs font-semibold shrink-0">Correct</span>
                     ) : null}
@@ -66,7 +66,9 @@ export const TeacherQuestionReadOnlyCard = ({
             <p className="text-xs font-semibold uppercase tracking-wide text-emerald-800">
               Correct answer
             </p>
-            <p className="mt-1 text-emerald-900">{question.correctTextAnswer}</p>
+            <div className="mt-1 text-emerald-900">
+              <HtmlContent html={question.correctTextAnswer} />
+            </div>
           </div>
         ) : null}
 

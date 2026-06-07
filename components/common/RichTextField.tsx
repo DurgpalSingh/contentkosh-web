@@ -372,11 +372,16 @@ export function RichTextField({
       TipTapImage.extend({
         addAttributes() {
           return {
+            ...this.parent?.(),
             src: {
               default: null,
+              parseHTML: (element) => element.getAttribute('src'),
+              renderHTML: (attributes) => ({ src: attributes.src }),
             },
             alt: {
               default: null,
+              parseHTML: (element) => element.getAttribute('alt'),
+              renderHTML: (attributes) => ({ alt: attributes.alt }),
             },
             width: {
               default: '100%',
