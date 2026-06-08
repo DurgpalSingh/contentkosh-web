@@ -48,6 +48,7 @@ export const EditQuestionModal = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!question.id) return
+
     const errors = validateQuestionForm({
       questionTypeValue: form.questionTypeValue,
       questionText: form.questionText,
@@ -63,17 +64,68 @@ export const EditQuestionModal = ({
     setFormErrors({})
     setLoading(true)
     setError(null)
+
     try {
-      const payload = form.buildPayload() as UpdateQuestionDTO
-      if (kind === TEST_KIND.PRACTICE) {
-        await PracticeTestsService.putApiBusinessPracticeTestsQuestions(
-          businessId,
-          question.id,
-          payload,
-        )
+      const {
+        payload,
+        questionImageFile,
+        removeQuestionImage,
+        optionImageFiles,
+        removeOptionImages,
+      } = form.buildSubmitData()
+
+      const hasFiles = questionImageFile !== null || Object.keys(optionImageFiles).length > 0
+      const hasRemovals =
+        removeQuestionImage || Object.keys(removeOptionImages).length > 0
+
+      if (hasFiles || hasRemovals) {
+        // Build FormData — backend's processQuestionMedia reads `data` + image fields
+        const fd = new FormData()
+        fd.append('data', JSON.stringify(payload))
+
+        if (questionImageFile) {
+          fd.append('questionImage', questionImageFile)
+        } else if (removeQuestionImage) {
+          fd.append('removeQuestionImage', 'true')
+        }
+
+        Object.entries(optionImageFiles).forEach(([idx, file]) => {
+          fd.append(`option_${idx}_image`, file)
+        })
+        Object.entries(removeOptionImages).forEach(([idx, shouldRemove]) => {
+          if (shouldRemove) fd.append(`removeOption_${idx}_Image`, 'true')
+        })
+
+        if (kind === TEST_KIND.PRACTICE) {
+          await PracticeTestsService.putApiBusinessPracticeTestsQuestionsWithMedia(
+            businessId,
+            question.id,
+            fd,
+          )
+        } else {
+          await ExamTestsService.putApiBusinessExamTestsQuestionsWithMedia(
+            businessId,
+            question.id,
+            fd,
+          )
+        }
       } else {
-        await ExamTestsService.putApiBusinessExamTestsQuestions(businessId, question.id, payload)
+        // No image changes — plain JSON
+        if (kind === TEST_KIND.PRACTICE) {
+          await PracticeTestsService.putApiBusinessPracticeTestsQuestions(
+            businessId,
+            question.id,
+            payload as UpdateQuestionDTO,
+          )
+        } else {
+          await ExamTestsService.putApiBusinessExamTestsQuestions(
+            businessId,
+            question.id,
+            payload as UpdateQuestionDTO,
+          )
+        }
       }
+
       toast.success('Question updated')
       onSaved()
       onClose()

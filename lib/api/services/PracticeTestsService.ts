@@ -414,6 +414,72 @@ export class PracticeTestsService {
         });
     }
     /**
+     * Create a question in a practice test (with optional image attachments)
+     * Sends as multipart/form-data when image files are provided.
+     * @param businessId Business ID
+     * @param practiceTestId Practice test ID
+     * @param formData Browser FormData containing `data` (JSON string) and optional image fields
+     * @returns any Question created successfully
+     * @throws ApiError
+     */
+    public static postApiBusinessPracticeTestsQuestionsWithMedia(
+        businessId: number,
+        practiceTestId: string,
+        formData: FormData,
+    ): CancelablePromise<(ApiResponse & {
+        data?: TestQuestion;
+    })> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/business/{businessId}/practice-tests/{practiceTestId}/questions',
+            path: {
+                'businessId': businessId,
+                'practiceTestId': practiceTestId,
+            },
+            formData: formData as any,
+            errors: {
+                400: `Invalid input data`,
+                401: `Unauthorized`,
+                403: `Forbidden`,
+                404: `Practice test not found`,
+                500: `Internal server error`,
+            },
+        });
+    }
+    /**
+     * Update a question in a practice test (with optional image attachments)
+     * Sends as multipart/form-data when image files or removal flags are provided.
+     * @param businessId Business ID
+     * @param questionId Question ID
+     * @param formData Browser FormData containing `data` (JSON string) and optional image fields
+     * @returns any Question updated successfully
+     * @throws ApiError
+     */
+    public static putApiBusinessPracticeTestsQuestionsWithMedia(
+        businessId: number,
+        questionId: string,
+        formData: FormData,
+    ): CancelablePromise<(ApiResponse & {
+        data?: TestQuestion;
+    })> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/business/{businessId}/practice-tests/questions/{questionId}',
+            path: {
+                'businessId': businessId,
+                'questionId': questionId,
+            },
+            formData: formData as any,
+            errors: {
+                400: `Invalid input data`,
+                401: `Unauthorized`,
+                403: `Forbidden`,
+                404: `Question not found`,
+                500: `Internal server error`,
+            },
+        });
+    }
+    /**
      * Get a practice test by ID
      * @param businessId Business ID
      * @param practiceTestId Practice test ID

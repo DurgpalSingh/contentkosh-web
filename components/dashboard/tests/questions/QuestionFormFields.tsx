@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -9,6 +9,8 @@ import { RichTextField } from '@/components/common/RichTextField'
 import { questionType, questionTypeLabel } from '@/lib/tests/testUiMappers'
 import { useTeacherQuestionForm } from './useTeacherQuestionForm'
 import { cn } from '@/lib/utils'
+import { ImagePlus, X } from 'lucide-react'
+import { resolveMediaUrl } from '@/lib/resolveMediaUrl'
 
 export type TeacherQuestionFormState = ReturnType<typeof useTeacherQuestionForm>
 
@@ -23,6 +25,84 @@ const sectionClass = cn(
 )
 
 const helperClass = 'text-xs leading-relaxed text-muted-foreground'
+
+const ACCEPTED_IMAGE_TYPES = 'image/jpeg,image/png,image/gif,image/webp'
+
+/** Reusable image attachment widget */
+function ImageAttachment({
+  previewUrl,
+  onFileChange,
+  onRemove,
+  inputId,
+  label = 'Attach image (optional)',
+}: {
+  previewUrl: string | null
+  onFileChange: (file: File | null) => void
+  onRemove: () => void
+  inputId: string
+  label?: string
+}) {
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null
+    if (file) onFileChange(file)
+    // Reset so the same file can be re-selected after removal
+    if (inputRef.current) inputRef.current.value = ''
+  }
+
+  return (
+    <div className="space-y-2">
+      {previewUrl ? (
+        <div className="relative inline-block">
+          <img
+            src={previewUrl}
+            alt="Attached image preview"
+            className="max-h-48 max-w-full rounded-lg border border-border object-contain"
+          />
+          <div className="absolute right-1 top-1 flex gap-1">
+            {/* Replace button */}
+            <button
+              type="button"
+              aria-label="Replace image"
+              onClick={() => inputRef.current?.click()}
+              className="flex h-7 w-7 items-center justify-center rounded-full bg-white/90 shadow hover:bg-white border border-border"
+            >
+              <ImagePlus className="h-4 w-4 text-slate-600" />
+            </button>
+            {/* Remove button */}
+            <button
+              type="button"
+              aria-label="Remove image"
+              onClick={onRemove}
+              className="flex h-7 w-7 items-center justify-center rounded-full bg-white/90 shadow hover:bg-red-50 border border-border"
+            >
+              <X className="h-4 w-4 text-destructive" />
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          className="flex items-center gap-2 rounded-lg border border-dashed border-border/80 bg-muted/30 px-3 py-2 text-xs text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-colors"
+        >
+          <ImagePlus className="h-4 w-4 shrink-0" />
+          {label}
+        </button>
+      )}
+      <input
+        ref={inputRef}
+        id={inputId}
+        type="file"
+        accept={ACCEPTED_IMAGE_TYPES}
+        onChange={handleChange}
+        className="sr-only"
+        aria-label={label}
+      />
+    </div>
+  )
+}
 
 export const QuestionFormFields = ({ form, formId }: QuestionFormFieldsProps) => {
   const {
@@ -42,8 +122,14 @@ export const QuestionFormFields = ({ form, formId }: QuestionFormFieldsProps) =>
     addOption,
     removeOption,
     updateOptionText,
+    // image state
+    questionImagePreview,
+    handleQuestionImageChange,
+    handleRemoveQuestionImage,
+    handleOptionImageChange,
+    handleRemoveOptionImage,
   } = form
-console.log(questionText);
+
   const showOptions =
     questionTypeValue === questionType.singleChoice ||
     questionTypeValue === questionType.multipleChoice
@@ -55,6 +141,7 @@ console.log(questionText);
 
   return (
     <div className="space-y-5">
+      {/* Question type */}
       <div className={sectionClass}>
         <div className="space-y-2">
           <Label id={`${formId}-qtype-label`} htmlFor={`${formId}-qtype`} className="text-foreground">
@@ -71,8 +158,9 @@ console.log(questionText);
         </div>
       </div>
 
+      {/* Question text + image */}
       <div className={sectionClass}>
-        <div className="space-y-2">
+        <div className="space-y-3">
           <Label htmlFor={`${formId}-qtext`} className="text-foreground">
             Question
           </Label>
@@ -82,9 +170,17 @@ console.log(questionText);
             placeholder="Write the question…"
             ariaLabel={`${formId}-qtext`}
           />
+          <ImageAttachment
+            previewUrl={questionImagePreview}
+            onFileChange={handleQuestionImageChange}
+            onRemove={handleRemoveQuestionImage}
+            inputId={`${formId}-question-image`}
+            label="Attach image to question (optional)"
+          />
         </div>
       </div>
 
+      {/* Explanation */}
       <div className={sectionClass}>
         <div className="space-y-2">
           <Label htmlFor={`${formId}-explanation`} className="text-foreground">
@@ -102,6 +198,7 @@ console.log(questionText);
         </div>
       </div>
 
+      {/* MCQ options */}
       {showOptions && (
         <div className={sectionClass}>
           <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -111,50 +208,73 @@ console.log(questionText);
             </Button>
           </div>
           <div className="space-y-2">
-            {options.map((o, idx) => (
-              <div
-                key={o.id}
-                className="flex gap-2 rounded-lg border border-border/60 bg-background/80 p-2 sm:items-center"
-              >
-                {questionTypeValue === questionType.singleChoice ? (
-                  <input
-                    type="radio"
-                    name={`${formId}-correctOpt`}
-                    className="mt-3 h-4 w-4 shrink-0 self-start sm:mt-0 sm:self-center accent-primary"
-                    checked={correctSingleId === o.id}
-                    onChange={() => setCorrectSingleId(o.id)}
-                    aria-label={`Mark option ${idx + 1} as correct`}
-                  />
-                ) : (
-                  <input
-                    type="checkbox"
-                    className="mt-3 h-4 w-4 shrink-0 self-start sm:mt-0 sm:self-center accent-primary"
-                    checked={!!correctMultiIds[o.id]}
-                    onChange={() => toggleMulti(o.id)}
-                    aria-label={`Mark option ${idx + 1} as correct`}
-                  />
-                )}
-                <div className="flex-1">
-                  <RichTextField
-                    value={o.text}
-                    onChange={(next) => updateOptionText(o.id, next)}
-                    placeholder={`Option ${idx + 1}`}
-                    ariaLabel={`${formId}-option-${o.id}`}
-                  />
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-9 w-9 shrink-0 text-muted-foreground hover:text-destructive"
-                  onClick={() => removeOption(o.id)}
-                  disabled={options.length <= 2}
-                  aria-label="Remove option"
+            {options.map((o, idx) => {
+              // Determine the option image preview:
+              // new blob URL takes priority, then existing server URL (if not removed)
+              const optPreview =
+                o.imageFile
+                  ? URL.createObjectURL(o.imageFile)
+                  : o.removeImage
+                  ? null
+                  : resolveMediaUrl(o.existingMediaUrl ?? null)
+
+              return (
+                <div
+                  key={o.id}
+                  className="flex gap-2 rounded-lg border border-border/60 bg-background/80 p-2 sm:items-start"
                 >
-                  ×
-                </Button>
-              </div>
-            ))}
+                  {/* Correct marker */}
+                  {questionTypeValue === questionType.singleChoice ? (
+                    <input
+                      type="radio"
+                      name={`${formId}-correctOpt`}
+                      className="mt-3 h-4 w-4 shrink-0 self-start sm:mt-3 accent-primary"
+                      checked={correctSingleId === o.id}
+                      onChange={() => setCorrectSingleId(o.id)}
+                      aria-label={`Mark option ${idx + 1} as correct`}
+                    />
+                  ) : (
+                    <input
+                      type="checkbox"
+                      className="mt-3 h-4 w-4 shrink-0 self-start sm:mt-3 accent-primary"
+                      checked={!!correctMultiIds[o.id]}
+                      onChange={() => toggleMulti(o.id)}
+                      aria-label={`Mark option ${idx + 1} as correct`}
+                    />
+                  )}
+
+                  {/* Option text + image */}
+                  <div className="flex-1 space-y-2">
+                    <RichTextField
+                      value={o.text}
+                      onChange={(next) => updateOptionText(o.id, next)}
+                      placeholder={`Option ${idx + 1}`}
+                      ariaLabel={`${formId}-option-${o.id}`}
+                    />
+                    <ImageAttachment
+                      previewUrl={optPreview}
+                      onFileChange={(file) => handleOptionImageChange(o.id, file)}
+                      onRemove={() => handleRemoveOptionImage(o.id)}
+                      inputId={`${formId}-option-image-${o.id}`}
+                      label="Attach image to option"
+                    />
+                  </div>
+
+                  {/* Remove option button */}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9 shrink-0 text-muted-foreground hover:text-destructive"
+                    onClick={() => removeOption(o.id)}
+                    disabled={options.length <= 2}
+                    aria-label="Remove option"
+                  >
+                    ×
+                  </Button>
+                </div>
+              )
+            })}
           </div>
           <p className={cn(helperClass, 'mt-3')}>
             {questionTypeValue === questionType.singleChoice
@@ -164,6 +284,7 @@ console.log(questionText);
         </div>
       )}
 
+      {/* True / False */}
       {questionTypeValue === questionType.trueFalse && (
         <div className={sectionClass}>
           <Label className="text-foreground">Correct answer</Label>
@@ -171,7 +292,8 @@ console.log(questionText);
             <label
               className={cn(
                 'flex cursor-pointer items-center gap-2 rounded-lg border border-border/80 bg-background px-4 py-3 text-sm font-medium transition-colors',
-                correctText === 'true' && 'border-primary bg-primary/10 text-foreground ring-1 ring-primary/20',
+                correctText === 'true' &&
+                  'border-primary bg-primary/10 text-foreground ring-1 ring-primary/20',
               )}
             >
               <input
@@ -186,7 +308,8 @@ console.log(questionText);
             <label
               className={cn(
                 'flex cursor-pointer items-center gap-2 rounded-lg border border-border/80 bg-background px-4 py-3 text-sm font-medium transition-colors',
-                correctText === 'false' && 'border-primary bg-primary/10 text-foreground ring-1 ring-primary/20',
+                correctText === 'false' &&
+                  'border-primary bg-primary/10 text-foreground ring-1 ring-primary/20',
               )}
             >
               <input
@@ -202,6 +325,7 @@ console.log(questionText);
         </div>
       )}
 
+      {/* Numerical / Fill in the blank */}
       {(questionTypeValue === questionType.numerical ||
         questionTypeValue === questionType.fillInTheBlank) && (
         <div className={sectionClass}>

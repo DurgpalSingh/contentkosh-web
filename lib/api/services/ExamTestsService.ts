@@ -414,6 +414,72 @@ export class ExamTestsService {
         });
     }
     /**
+     * Create a question in an exam test (with optional image attachments)
+     * Sends as multipart/form-data when image files are provided.
+     * @param businessId Business ID
+     * @param examTestId Exam test ID
+     * @param formData Browser FormData containing `data` (JSON string) and optional image fields
+     * @returns any Question created successfully
+     * @throws ApiError
+     */
+    public static postApiBusinessExamTestsQuestionsWithMedia(
+        businessId: number,
+        examTestId: string,
+        formData: FormData,
+    ): CancelablePromise<(ApiResponse & {
+        data?: TestQuestion;
+    })> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/business/{businessId}/exam-tests/{examTestId}/questions',
+            path: {
+                'businessId': businessId,
+                'examTestId': examTestId,
+            },
+            formData: formData as any,
+            errors: {
+                400: `Invalid input data`,
+                401: `Unauthorized`,
+                403: `Forbidden`,
+                404: `Exam test not found`,
+                500: `Internal server error`,
+            },
+        });
+    }
+    /**
+     * Update a question in an exam test (with optional image attachments)
+     * Sends as multipart/form-data when image files or removal flags are provided.
+     * @param businessId Business ID
+     * @param questionId Question ID
+     * @param formData Browser FormData containing `data` (JSON string) and optional image fields
+     * @returns any Question updated successfully
+     * @throws ApiError
+     */
+    public static putApiBusinessExamTestsQuestionsWithMedia(
+        businessId: number,
+        questionId: string,
+        formData: FormData,
+    ): CancelablePromise<(ApiResponse & {
+        data?: TestQuestion;
+    })> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/business/{businessId}/exam-tests/questions/{questionId}',
+            path: {
+                'businessId': businessId,
+                'questionId': questionId,
+            },
+            formData: formData as any,
+            errors: {
+                400: `Invalid input data`,
+                401: `Unauthorized`,
+                403: `Forbidden`,
+                404: `Question not found`,
+                500: `Internal server error`,
+            },
+        });
+    }
+    /**
      * Get an exam test by ID
      * @param businessId Business ID
      * @param examTestId Exam test ID

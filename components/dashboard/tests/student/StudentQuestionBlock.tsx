@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { questionType, questionTypeLabel } from '@/lib/tests/testUiMappers';
 import type { AnswerDraft } from '@/lib/tests/studentAttemptAnswers';
 import { HtmlContent } from '@/components/common/HtmlContent';
+import { resolveMediaUrl } from '@/lib/resolveMediaUrl';
 
 interface StudentQuestionBlockProps {
   displayIndex: number;
@@ -56,7 +57,14 @@ function OptionsList({
                 onChange={() => onSelect(oid, isMulti)}
                 className="mt-1 h-4 w-4 shrink-0 border-slate-300 text-blue-600 focus:ring-blue-500 focus:ring-offset-0"
               />
-              <div className="text-[15px] leading-snug text-slate-800 pt-0.5">
+              <div className="text-[15px] leading-snug text-slate-800 pt-0.5 flex-1">
+                {opt.mediaUrl && (
+                  <img 
+                    src={resolveMediaUrl(opt.mediaUrl) ?? undefined} 
+                    alt="Option image" 
+                    className="max-w-full h-auto rounded mb-2 border border-slate-200"
+                  />
+                )}
                 <HtmlContent html={opt.text ?? ''} />
               </div>
             </label>
@@ -139,6 +147,15 @@ export function StudentQuestionBlock({
       </div>
 
       <div ref={contentRef} className="px-5 py-6 sm:px-8 sm:py-8 overflow-auto scrollbar-hide flex-1">
+        {question.mediaUrl && (
+          <div className="mb-6">
+            <img 
+              src={resolveMediaUrl(question.mediaUrl) ?? undefined} 
+              alt="Question image" 
+              className="max-w-full h-auto rounded-lg border border-slate-200"
+            />
+          </div>
+        )}
         <div className="text-base leading-relaxed text-slate-900 min-w-0">
           <HtmlContent html={body} />
         </div>
