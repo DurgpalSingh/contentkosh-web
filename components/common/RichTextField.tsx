@@ -70,6 +70,8 @@ import {
 } from '@/lib/richText/richTextConstants';
 import { EDITOR_FONTS, EDITOR_FONT_DEFAULT, type EditorFont } from '@/lib/richText/richTextFonts';
 import { normalizePastedHtmlForEditor } from '@/lib/richText/normalizePastedHtmlForEditor';
+import { uploadEditorImage } from '@/lib/editorImage';
+import { resolveAssetUrl } from '@/lib/assets/assetUrl';
 import { cn } from '@/lib/utils';
 
 import 'katex/dist/katex.min.css';
@@ -452,19 +454,27 @@ export function RichTextField({
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const onSelectImageFile = useCallback((file?: File | null) => {
+  const [imageUploading, setImageUploading] = useState(false);
+
+  const onSelectImageFile = useCallback(async (file?: File | null) => {
     if (!file || !editor) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      const src = String(reader.result ?? '');
+    setImageUploading(true);
+    try {
+      // Upload to server (compress → upload → get URL)
+      const rawUrl = await uploadEditorImage(file);
+      // Resolve to a full absolute URL so the <img> src works everywhere
+      const src = resolveAssetUrl(rawUrl) ?? rawUrl;
       editor.chain().focus().setImage({ src, alt: file.name }).run();
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      console.error('[RichTextField] Image upload failed:', err);
+    } finally {
+      setImageUploading(false);
+    }
   }, [editor]);
 
   const onFileInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0] ?? null;
-    if (f) onSelectImageFile(f);
+    if (f) void onSelectImageFile(f);
     if (fileInputRef.current) fileInputRef.current.value = '';
   }, [onSelectImageFile]);
 
@@ -942,9 +952,16 @@ export function RichTextField({
 
         <ToolbarIconButton
           tooltip="Insert image"
+          disabled={imageUploading}
           onClick={() => fileInputRef.current?.click()}
         >
-          <ImageIcon className="h-4 w-4" />
+          {imageUploading ? (
+            <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+            </svg>
+          ) : (
+            <ImageIcon className="h-4 w-4" />
+          )}
         </ToolbarIconButton>
 
           <PopoverTrigger asChild>
