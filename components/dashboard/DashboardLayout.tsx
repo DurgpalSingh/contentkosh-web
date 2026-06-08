@@ -85,6 +85,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             height={20}
             src={logoUrl}
             alt={`${displayName} logo`}
+            unoptimized
             className="h-full w-full object-cover"
           />
         ) : (
