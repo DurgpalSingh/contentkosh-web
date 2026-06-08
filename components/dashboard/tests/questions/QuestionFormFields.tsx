@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useRef } from 'react'
+import { useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -9,8 +9,6 @@ import { RichTextField } from '@/components/common/RichTextField'
 import { questionType, questionTypeLabel } from '@/lib/tests/testUiMappers'
 import { useTeacherQuestionForm } from './useTeacherQuestionForm'
 import { cn } from '@/lib/utils'
-import { ImagePlus, X } from 'lucide-react'
-import { resolveMediaUrl } from '@/lib/resolveMediaUrl'
 
 export type TeacherQuestionFormState = ReturnType<typeof useTeacherQuestionForm>
 
@@ -25,84 +23,6 @@ const sectionClass = cn(
 )
 
 const helperClass = 'text-xs leading-relaxed text-muted-foreground'
-
-const ACCEPTED_IMAGE_TYPES = 'image/jpeg,image/png,image/gif,image/webp'
-
-/** Reusable image attachment widget */
-function ImageAttachment({
-  previewUrl,
-  onFileChange,
-  onRemove,
-  inputId,
-  label = 'Attach image (optional)',
-}: {
-  previewUrl: string | null
-  onFileChange: (file: File | null) => void
-  onRemove: () => void
-  inputId: string
-  label?: string
-}) {
-  const inputRef = useRef<HTMLInputElement>(null)
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] ?? null
-    if (file) onFileChange(file)
-    // Reset so the same file can be re-selected after removal
-    if (inputRef.current) inputRef.current.value = ''
-  }
-
-  return (
-    <div className="space-y-2">
-      {previewUrl ? (
-        <div className="relative inline-block">
-          <img
-            src={previewUrl}
-            alt="Attached image preview"
-            className="max-h-48 max-w-full rounded-lg border border-border object-contain"
-          />
-          <div className="absolute right-1 top-1 flex gap-1">
-            {/* Replace button */}
-            <button
-              type="button"
-              aria-label="Replace image"
-              onClick={() => inputRef.current?.click()}
-              className="flex h-7 w-7 items-center justify-center rounded-full bg-white/90 shadow hover:bg-white border border-border"
-            >
-              <ImagePlus className="h-4 w-4 text-slate-600" />
-            </button>
-            {/* Remove button */}
-            <button
-              type="button"
-              aria-label="Remove image"
-              onClick={onRemove}
-              className="flex h-7 w-7 items-center justify-center rounded-full bg-white/90 shadow hover:bg-red-50 border border-border"
-            >
-              <X className="h-4 w-4 text-destructive" />
-            </button>
-          </div>
-        </div>
-      ) : (
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          className="flex items-center gap-2 rounded-lg border border-dashed border-border/80 bg-muted/30 px-3 py-2 text-xs text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-colors"
-        >
-          <ImagePlus className="h-4 w-4 shrink-0" />
-          {label}
-        </button>
-      )}
-      <input
-        ref={inputRef}
-        id={inputId}
-        type="file"
-        accept={ACCEPTED_IMAGE_TYPES}
-        onChange={handleChange}
-        className="sr-only"
-        aria-label={label}
-      />
-    </div>
-  )
-}
 
 export const QuestionFormFields = ({ form, formId }: QuestionFormFieldsProps) => {
   const {
@@ -122,12 +42,6 @@ export const QuestionFormFields = ({ form, formId }: QuestionFormFieldsProps) =>
     addOption,
     removeOption,
     updateOptionText,
-    // image state
-    questionImagePreview,
-    handleQuestionImageChange,
-    handleRemoveQuestionImage,
-    handleOptionImageChange,
-    handleRemoveOptionImage,
   } = form
 
   const showOptions =
@@ -158,7 +72,7 @@ export const QuestionFormFields = ({ form, formId }: QuestionFormFieldsProps) =>
         </div>
       </div>
 
-      {/* Question text + image */}
+      {/* Question text */}
       <div className={sectionClass}>
         <div className="space-y-3">
           <Label htmlFor={`${formId}-qtext`} className="text-foreground">
@@ -167,15 +81,8 @@ export const QuestionFormFields = ({ form, formId }: QuestionFormFieldsProps) =>
           <RichTextField
             value={questionText}
             onChange={setQuestionText}
-            placeholder="Write the question…"
+            placeholder="Write the question… (use the image button in the toolbar to attach images)"
             ariaLabel={`${formId}-qtext`}
-          />
-          <ImageAttachment
-            previewUrl={questionImagePreview}
-            onFileChange={handleQuestionImageChange}
-            onRemove={handleRemoveQuestionImage}
-            inputId={`${formId}-question-image`}
-            label="Attach image to question (optional)"
           />
         </div>
       </div>
@@ -208,73 +115,55 @@ export const QuestionFormFields = ({ form, formId }: QuestionFormFieldsProps) =>
             </Button>
           </div>
           <div className="space-y-2">
-            {options.map((o, idx) => {
-              // Determine the option image preview:
-              // new blob URL takes priority, then existing server URL (if not removed)
-              const optPreview =
-                o.imageFile
-                  ? URL.createObjectURL(o.imageFile)
-                  : o.removeImage
-                  ? null
-                  : resolveMediaUrl(o.existingMediaUrl ?? null)
+            {options.map((o, idx) => (
+              <div
+                key={o.id}
+                className="flex gap-2 rounded-lg border border-border/60 bg-background/80 p-2 sm:items-start"
+              >
+                {/* Correct marker */}
+                {questionTypeValue === questionType.singleChoice ? (
+                  <input
+                    type="radio"
+                    name={`${formId}-correctOpt`}
+                    className="mt-3 h-4 w-4 shrink-0 self-start sm:mt-3 accent-primary"
+                    checked={correctSingleId === o.id}
+                    onChange={() => setCorrectSingleId(o.id)}
+                    aria-label={`Mark option ${idx + 1} as correct`}
+                  />
+                ) : (
+                  <input
+                    type="checkbox"
+                    className="mt-3 h-4 w-4 shrink-0 self-start sm:mt-3 accent-primary"
+                    checked={!!correctMultiIds[o.id]}
+                    onChange={() => toggleMulti(o.id)}
+                    aria-label={`Mark option ${idx + 1} as correct`}
+                  />
+                )}
 
-              return (
-                <div
-                  key={o.id}
-                  className="flex gap-2 rounded-lg border border-border/60 bg-background/80 p-2 sm:items-start"
-                >
-                  {/* Correct marker */}
-                  {questionTypeValue === questionType.singleChoice ? (
-                    <input
-                      type="radio"
-                      name={`${formId}-correctOpt`}
-                      className="mt-3 h-4 w-4 shrink-0 self-start sm:mt-3 accent-primary"
-                      checked={correctSingleId === o.id}
-                      onChange={() => setCorrectSingleId(o.id)}
-                      aria-label={`Mark option ${idx + 1} as correct`}
-                    />
-                  ) : (
-                    <input
-                      type="checkbox"
-                      className="mt-3 h-4 w-4 shrink-0 self-start sm:mt-3 accent-primary"
-                      checked={!!correctMultiIds[o.id]}
-                      onChange={() => toggleMulti(o.id)}
-                      aria-label={`Mark option ${idx + 1} as correct`}
-                    />
-                  )}
-
-                  {/* Option text + image */}
-                  <div className="flex-1 space-y-2">
-                    <RichTextField
-                      value={o.text}
-                      onChange={(next) => updateOptionText(o.id, next)}
-                      placeholder={`Option ${idx + 1}`}
-                      ariaLabel={`${formId}-option-${o.id}`}
-                    />
-                    <ImageAttachment
-                      previewUrl={optPreview}
-                      onFileChange={(file) => handleOptionImageChange(o.id, file)}
-                      onRemove={() => handleRemoveOptionImage(o.id)}
-                      inputId={`${formId}-option-image-${o.id}`}
-                      label="Attach image to option"
-                    />
-                  </div>
-
-                  {/* Remove option button */}
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-9 w-9 shrink-0 text-muted-foreground hover:text-destructive"
-                    onClick={() => removeOption(o.id)}
-                    disabled={options.length <= 2}
-                    aria-label="Remove option"
-                  >
-                    ×
-                  </Button>
+                {/* Option text */}
+                <div className="flex-1">
+                  <RichTextField
+                    value={o.text}
+                    onChange={(next) => updateOptionText(o.id, next)}
+                    placeholder={`Option ${idx + 1} (use image button in toolbar for images)`}
+                    ariaLabel={`${formId}-option-${o.id}`}
+                  />
                 </div>
-              )
-            })}
+
+                {/* Remove option button */}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 shrink-0 text-muted-foreground hover:text-destructive"
+                  onClick={() => removeOption(o.id)}
+                  disabled={options.length <= 2}
+                  aria-label="Remove option"
+                >
+                  ×
+                </Button>
+              </div>
+            ))}
           </div>
           <p className={cn(helperClass, 'mt-3')}>
             {questionTypeValue === questionType.singleChoice

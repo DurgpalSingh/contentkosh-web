@@ -2,39 +2,18 @@ import { useCallback, useEffect, useState } from 'react'
 import type { CreateQuestionDTO } from '@/lib/api'
 import { questionType } from '@/lib/tests/testUiMappers'
 import type { TeacherTestQuestion } from '@/lib/tests/teacherQuestionTypes'
-import { resolveMediaUrl } from '@/lib/resolveMediaUrl'
 
 const createOptionId = (): string => crypto.randomUUID()
 
 export type QuestionOptionRow = {
   id: string
   text: string
-  /** Existing persisted image URL (comes from the server on edit) */
-  existingMediaUrl?: string | null
-  /** New file picked by the user — not yet uploaded */
-  imageFile?: File | null
-  /** True when user explicitly clicked "remove image" for this option */
-  removeImage?: boolean
 }
 
 export type TeacherQuestionFormPayload = Omit<CreateQuestionDTO, 'correctOptionIdsAnswers'> & {
   explanation?: string
   /** 1-based indices into the submitted options array (API contract; backend resolves to option ids). */
   correctOptionIdsAnswers?: Array<number | string>
-}
-
-/**
- * Full build result — the JSON payload plus any image files that need to be
- * sent as separate multipart/form-data fields.
- */
-export type QuestionFormBuildResult = {
-  payload: TeacherQuestionFormPayload
-  questionImageFile: File | null
-  removeQuestionImage: boolean
-  /** Keyed by option index (0-based) in the *cleaned* (non-empty) options list */
-  optionImageFiles: Record<number, File>
-  /** Keyed by option index — true means the user wants the existing image removed */
-  removeOptionImages: Record<number, boolean>
 }
 
 const defaultOptions = (): QuestionOptionRow[] => [
@@ -73,8 +52,6 @@ const buildMcqPayload = (
     options: cleaned.map((o) => ({
       id: o.id,
       text: o.text.trim(),
-      // Pass existing mediaUrl so the backend knows what already exists
-      ...(o.existingMediaUrl !== undefined ? { mediaUrl: o.existingMediaUrl ?? undefined } : {}),
     })),
   }
   if (mode === 'single') {
@@ -123,14 +100,6 @@ export const useTeacherQuestionForm = (
   const [correctMultiIds, setCorrectMultiIds] = useState<Record<string, boolean>>(emptyMultiCorrect)
   const [correctText, setCorrectText] = useState('')
 
-  // ── Image state ──────────────────────────────────────────────────────────
-  /** New question-level image file picked by the user */
-  const [questionImageFile, setQuestionImageFile] = useState<File | null>(null)
-  /** Preview URL for the new file (blob URL) or the existing server URL */
-  const [questionImagePreview, setQuestionImagePreview] = useState<string | null>(null)
-  /** True when the user has explicitly removed the existing question image */
-  const [removeQuestionImage, setRemoveQuestionImage] = useState(false)
-
   useEffect(() => {
     if (!isOpen) return
 
@@ -142,9 +111,6 @@ export const useTeacherQuestionForm = (
       setCorrectSingleId('')
       setCorrectMultiIds(emptyMultiCorrect())
       setCorrectText('')
-      setQuestionImageFile(null)
-      setQuestionImagePreview(null)
-      setRemoveQuestionImage(false)
       return
     }
 
@@ -154,20 +120,12 @@ export const useTeacherQuestionForm = (
     setQuestionText(q.questionText ?? q.text ?? '')
     setExplanation(q.explanation ?? '')
 
-    // Restore question-level image — resolve the server path to a full URL for the preview
-    setQuestionImageFile(null)
-    setQuestionImagePreview(resolveMediaUrl(q.mediaUrl ?? null))
-    setRemoveQuestionImage(false)
-
     const opts = q.options ?? []
     if (opts.length >= 2) {
       setOptions(
         opts.map((o) => ({
           id: o.id ?? createOptionId(),
           text: o.text ?? '',
-          existingMediaUrl: o.mediaUrl ?? null,
-          imageFile: null,
-          removeImage: false,
         })),
       )
     } else {
@@ -200,48 +158,6 @@ export const useTeacherQuestionForm = (
     }
   }, [isOpen, initialQuestion])
 
-  // ── Question image handlers ───────────────────────────────────────────────
-  const handleQuestionImageChange = useCallback((file: File | null) => {
-    if (file) {
-      setQuestionImageFile(file)
-      setQuestionImagePreview(URL.createObjectURL(file))
-      setRemoveQuestionImage(false)
-    }
-  }, [])
-
-  const handleRemoveQuestionImage = useCallback(() => {
-    setQuestionImageFile(null)
-    setQuestionImagePreview(null)
-    setRemoveQuestionImage(true)
-  }, [])
-
-  // ── Option image handlers ────────────────────────────────────────────────
-  const handleOptionImageChange = useCallback((optionId: string, file: File | null) => {
-    if (!file) return
-    setOptions((list) =>
-      list.map((o) =>
-        o.id === optionId
-          ? {
-              ...o,
-              imageFile: file,
-              existingMediaUrl: o.existingMediaUrl, // keep for cleanup reference
-              removeImage: false,
-            }
-          : o,
-      ),
-    )
-  }, [])
-
-  const handleRemoveOptionImage = useCallback((optionId: string) => {
-    setOptions((list) =>
-      list.map((o) =>
-        o.id === optionId
-          ? { ...o, imageFile: null, existingMediaUrl: null, removeImage: true }
-          : o,
-      ),
-    )
-  }, [])
-
   // ── Payload builder ──────────────────────────────────────────────────────
   const buildPayload = useCallback((): TeacherQuestionFormPayload => {
     const trimmedExplanation = explanation.trim()
@@ -261,43 +177,7 @@ export const useTeacherQuestionForm = (
       default:
         return buildTextAnswerPayload(base, correctText)
     }
-  }, [
-    correctMultiIds,
-    correctSingleId,
-    correctText,
-    explanation,
-    options,
-    questionText,
-    questionTypeValue,
-  ])
-
-  /**
-   * Builds the full submission result: JSON payload + image files.
-   * The modals use this to decide whether to send JSON or multipart/form-data.
-   */
-  const buildSubmitData = useCallback((): QuestionFormBuildResult => {
-    const payload = buildPayload()
-    const cleanedOptions = options.filter((o) => o.text.trim())
-
-    const optionImageFiles: Record<number, File> = {}
-    const removeOptionImages: Record<number, boolean> = {}
-
-    cleanedOptions.forEach((opt, idx) => {
-      if (opt.imageFile) {
-        optionImageFiles[idx] = opt.imageFile
-      } else if (opt.removeImage) {
-        removeOptionImages[idx] = true
-      }
-    })
-
-    return {
-      payload,
-      questionImageFile,
-      removeQuestionImage,
-      optionImageFiles,
-      removeOptionImages,
-    }
-  }, [buildPayload, options, questionImageFile, removeQuestionImage])
+  }, [correctMultiIds, correctSingleId, correctText, explanation, options, questionText, questionTypeValue])
 
   const toggleMulti = useCallback((id: string) => {
     setCorrectMultiIds((m) => ({ ...m, [id]: !m[id] }))
@@ -332,16 +212,6 @@ export const useTeacherQuestionForm = (
     addOption,
     removeOption,
     updateOptionText,
-    // Image state & handlers
-    questionImageFile,
-    questionImagePreview,
-    removeQuestionImage,
-    handleQuestionImageChange,
-    handleRemoveQuestionImage,
-    handleOptionImageChange,
-    handleRemoveOptionImage,
-    // Payload builders
     buildPayload,
-    buildSubmitData,
   }
 }

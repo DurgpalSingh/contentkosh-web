@@ -63,43 +63,20 @@ export const AddQuestionModal = ({
     setError(null)
 
     try {
-      const { payload, questionImageFile, optionImageFiles } = form.buildSubmitData()
-      const hasFiles =
-        questionImageFile !== null || Object.keys(optionImageFiles).length > 0
+      const payload = form.buildPayload()
 
-      if (hasFiles) {
-        // Build FormData — backend's processQuestionMedia reads `data` + image fields
-        const fd = new FormData()
-        fd.append('data', JSON.stringify(payload))
-        if (questionImageFile) fd.append('questionImage', questionImageFile)
-        Object.entries(optionImageFiles).forEach(([idx, file]) => {
-          fd.append(`option_${idx}_image`, file)
-        })
-
-        if (kind === TEST_KIND.PRACTICE) {
-          await PracticeTestsService.postApiBusinessPracticeTestsQuestionsWithMedia(
-            businessId,
-            testId,
-            fd,
-          )
-        } else {
-          await ExamTestsService.postApiBusinessExamTestsQuestionsWithMedia(
-            businessId,
-            testId,
-            fd,
-          )
-        }
+      if (kind === TEST_KIND.PRACTICE) {
+        await PracticeTestsService.postApiBusinessPracticeTestsQuestions(
+          businessId,
+          testId,
+          payload as CreateQuestionDTO,
+        )
       } else {
-        // No files — plain JSON
-        if (kind === TEST_KIND.PRACTICE) {
-          await PracticeTestsService.postApiBusinessPracticeTestsQuestions(
-            businessId,
-            testId,
-            payload as CreateQuestionDTO,
-          )
-        } else {
-          await ExamTestsService.postApiBusinessExamTestsQuestions(businessId, testId, payload as CreateQuestionDTO)
-        }
+        await ExamTestsService.postApiBusinessExamTestsQuestions(
+          businessId,
+          testId,
+          payload as CreateQuestionDTO,
+        )
       }
 
       toast.success('Question added')

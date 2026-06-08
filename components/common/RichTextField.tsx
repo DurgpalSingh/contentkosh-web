@@ -70,7 +70,7 @@ import {
 } from '@/lib/richText/richTextConstants';
 import { EDITOR_FONTS, EDITOR_FONT_DEFAULT, type EditorFont } from '@/lib/richText/richTextFonts';
 import { normalizePastedHtmlForEditor } from '@/lib/richText/normalizePastedHtmlForEditor';
-import { uploadEditorImage } from '@/lib/editorImage';
+import { EditorImageService } from '@/services/EditorImageService';
 import { resolveAssetUrl } from '@/lib/assets/assetUrl';
 import { cn } from '@/lib/utils';
 
@@ -461,7 +461,7 @@ export function RichTextField({
     setImageUploading(true);
     try {
       // Upload to server (compress → upload → get URL)
-      const rawUrl = await uploadEditorImage(file);
+      const rawUrl = await EditorImageService.upload(file);
       // Resolve to a full absolute URL so the <img> src works everywhere
       const src = resolveAssetUrl(rawUrl) ?? rawUrl;
       editor.chain().focus().setImage({ src, alt: file.name }).run();
@@ -657,6 +657,18 @@ export function RichTextField({
           >
             100%
           </Button>
+          <div className="mx-1 h-4 w-px bg-border" />
+          <ToolbarIconButton
+            tooltip="Remove image"
+            onClick={() => {
+              // Fire-and-forget deletion of the server file
+              const src = editor.getAttributes('image').src as string | undefined;
+              if (src) void EditorImageService.delete(src);
+              editor.chain().focus().deleteSelection().run();
+            }}
+          >
+            <Trash2 className="h-4 w-4 text-destructive" />
+          </ToolbarIconButton>
         </div>
       </BubbleMenu>
       <BubbleMenu
