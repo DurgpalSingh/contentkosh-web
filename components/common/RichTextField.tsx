@@ -608,7 +608,7 @@ export function RichTextField({
         editor={editor}
         pluginKey="richTextImageBubbleMenu"
         shouldShow={shouldShowImageBubbleMenu}
-        tippyOptions={IMAGE_BUBBLE_MENU_OPTIONS}
+        options={TABLE_BUBBLE_MENU_OPTIONS}
       >
         <div
           className="flex items-center gap-0.5 rounded-lg border border-border bg-card px-1 py-1 shadow-md"
