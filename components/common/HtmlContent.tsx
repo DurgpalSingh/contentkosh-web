@@ -31,6 +31,7 @@ const htmlContentRichClassName = cn(
   '[&_[data-type=block-math]]:block [&_[data-type=block-math]]:my-3 [&_[data-type=block-math]]:max-w-full [&_[data-type=block-math]]:overflow-x-auto',
   '[&_.katex-display]:block [&_.katex-display]:my-3 [&_.katex-display]:max-w-full [&_.katex-display]:overflow-x-auto',
   '[&_[data-type=inline-math]]:max-w-full [&_.katex]:max-w-full',
+  '[&_img]:max-w-full [&_img]:h-auto [&_img]:inline-block',
 );
 
 export function HtmlContent({
@@ -42,7 +43,14 @@ export function HtmlContent({
 }) {
   const sanitizedHtml = useMemo(() => {
     const input = html ?? '';
-    return DOMPurify.sanitize(input, QUIll_HTML_DOM_PURIFY_CONFIG);
+    return DOMPurify.sanitize(input, {
+      ...QUIll_HTML_DOM_PURIFY_CONFIG,
+      ADD_TAGS: ['img'],
+      // Explicitly allow Base64 data URIs for images in the student view
+      ADD_DATA_URI_TAGS: ['img'],
+      // Ensure styles for alignment and resizing are preserved
+      ADD_ATTR: ['src', 'style', 'width', 'height', 'alt', 'title'],
+    });
   }, [html]);
 
   const displayHtml = useMemo(() => {

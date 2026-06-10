@@ -12,6 +12,7 @@ import {
     LucideIcon,
     FileText,
     FlaskConical,
+    NotebookPen
 } from 'lucide-react';
 
 export type UserRole = (typeof USER_ROLES)[keyof typeof USER_ROLES];
@@ -47,25 +48,25 @@ export const NAVIGATION_CONFIG: NavigationItem[] = [
         roles: [USER_ROLES.ADMIN, USER_ROLES.TEACHER, USER_ROLES.STUDENT],
     },
 
-    // Teacher View
-    {
-        name: 'My Classes',
-        href: ROUTES.TEACHER.CLASSES,
-        icon: BookOpen,
-        roles: [USER_ROLES.TEACHER],
-    },
+    // // Teacher View
+    // {
+    //     name: 'My Classes',
+    //     href: ROUTES.TEACHER.CLASSES,
+    //     icon: BookOpen,
+    //     roles: [USER_ROLES.TEACHER],
+    // },
 
-    // Student View
-    {
-        name: 'My Classes',
-        href: ROUTES.STUDENT.CLASSES,
-        icon: BookOpen,
-        roles: [USER_ROLES.STUDENT],
-    },
+    // // Student View
+    // {
+    //     name: 'My Classes',
+    //     href: ROUTES.STUDENT.CLASSES,
+    //     icon: BookOpen,
+    //     roles: [USER_ROLES.STUDENT],
+    // },
     {
         name: 'My Tests',
         href: ROUTES.STUDENT.MYTEST,
-        icon: FlaskConical,
+        icon: NotebookPen,
         roles: [USER_ROLES.STUDENT],
     },
 
@@ -91,7 +92,7 @@ export const NAVIGATION_CONFIG: NavigationItem[] = [
     {
         name: 'Tests',
         href: ROUTES.TESTS,
-        icon: FlaskConical,
+        icon: NotebookPen,
         roles: [USER_ROLES.ADMIN, USER_ROLES.TEACHER],
     },
     {

@@ -21,7 +21,12 @@ import TableRow from '@tiptap/extension-table-row';
 import TableCell from '@tiptap/extension-table-cell';
 import TableHeader from '@tiptap/extension-table-header';
 import katex from 'katex';
+import Underline from '@tiptap/extension-underline';
+import Link from '@tiptap/extension-link';
 import {
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
   ArrowDownToLine,
   ArrowLeftToLine,
   ArrowRightToLine,
@@ -39,10 +44,12 @@ import {
   TableColumnsSplit,
   TableRowsSplit,
   Trash2,
-  Underline,
+  Underline as UnderlineIcon,
   Undo2,
   Link2,
 } from 'lucide-react';
+import { Image as ImageIcon } from 'lucide-react';
+import TipTapImage from '@tiptap/extension-image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -63,6 +70,8 @@ import {
 } from '@/lib/richText/richTextConstants';
 import { EDITOR_FONTS, EDITOR_FONT_DEFAULT, type EditorFont } from '@/lib/richText/richTextFonts';
 import { normalizePastedHtmlForEditor } from '@/lib/richText/normalizePastedHtmlForEditor';
+import { EditorImageService } from '@/services/EditorImageService';
+import { resolveAssetUrl } from '@/lib/assets/assetUrl';
 import { cn } from '@/lib/utils';
 
 import 'katex/dist/katex.min.css';
@@ -154,7 +163,12 @@ function shouldShowRichTextTableBubbleMenu(props: { editor: Editor }) {
   return editor.isEditable && editor.isActive('table');
 }
 
+function shouldShowImageBubbleMenu(props: { editor: Editor }) {
+  return props.editor.isEditable && props.editor.isActive('image');
+}
+
 const TABLE_BUBBLE_MENU_OPTIONS = { placement: 'top' as const };
+const IMAGE_BUBBLE_MENU_OPTIONS = { placement: 'top' as const };
 
 const HEADING_LEVELS = [1, 2, 3] as const;
 
@@ -176,6 +190,7 @@ const RICH_TEXT_EDITOR_ROOT_CLASS = cn(
   '[&_p.is-empty]:before:text-muted-foreground',
   '[&_p.is-empty]:before:pointer-events-none',
   '[&_p.is-empty]:before:h-0',
+  '[&_img]:max-w-full [&_img]:h-auto',
   '[&_table]:my-3 [&_table]:w-full [&_table]:border-collapse [&_table]:border [&_table]:border-border [&_table]:text-sm',
   '[&_thead]:bg-muted/30',
   '[&_th]:border [&_th]:border-border [&_th]:bg-muted/30 [&_th]:px-2 [&_th]:py-2 [&_th]:text-left [&_th]:font-medium',
@@ -308,12 +323,13 @@ export function RichTextField({
         code: false,
         codeBlock: false,
         horizontalRule: false,
-        link: {
-          openOnClick: false,
-          HTMLAttributes: {
-            rel: 'noopener noreferrer',
-            target: '_blank',
-          },
+      }),
+      Underline,
+      Link.configure({
+        openOnClick: false,
+        HTMLAttributes: {
+          rel: 'noopener noreferrer',
+          target: '_blank',
         },
       }),
       Table.configure({
@@ -355,6 +371,42 @@ export function RichTextField({
         placeholder: placeholder ?? '',
         emptyEditorClass: 'is-editor-empty',
       }),
+      TipTapImage.extend({
+        addAttributes() {
+          return {
+            ...this.parent?.(),
+            src: {
+              default: null,
+              parseHTML: (element) => element.getAttribute('src'),
+              renderHTML: (attributes) => ({ src: attributes.src }),
+            },
+            alt: {
+              default: null,
+              parseHTML: (element) => element.getAttribute('alt'),
+              renderHTML: (attributes) => ({ alt: attributes.alt }),
+            },
+            width: {
+              default: '100%',
+              parseHTML: (element) => element.getAttribute('width') || element.style.width || '100%',
+              renderHTML: (attributes) => ({
+                width: attributes.width,
+              }),
+            },
+            style: {
+              default: 'display: block; margin: 0 auto; max-width: 100%; height: auto;',
+              parseHTML: (element) => element.getAttribute('style') || element.style.cssText,
+              renderHTML: (attributes) => ({
+                style: attributes.style,
+              }),
+            },
+          };
+        },
+      }).configure({
+        HTMLAttributes: {
+          draggable: 'true',
+          class: 'rounded-lg border border-border shadow-sm max-w-full h-auto',
+        },
+      }),
     ],
     [placeholder],
   );
@@ -383,17 +435,48 @@ export function RichTextField({
     [ariaLabel],
   );
 
+  // Use a ref for onChange to avoid stale closures in the editor's onUpdate hook.
+  // This ensures that when you resize an image, the parent form's "isDirty" state
+  // is correctly updated, enabling the Save button.
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+
   const editor = useEditor({
     immediatelyRender: false,
-    /** Required so toolbar active states and Undo/Redo reflect selection and doc changes */
     shouldRerenderOnTransaction: true,
     extensions,
     content: value || '',
     editorProps,
     onUpdate: ({ editor: ed }) => {
-      onChange(ed.getHTML());
+      onChangeRef.current(ed.getHTML());
     },
   });
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const [imageUploading, setImageUploading] = useState(false);
+
+  const onSelectImageFile = useCallback(async (file?: File | null) => {
+    if (!file || !editor) return;
+    setImageUploading(true);
+    try {
+      // Upload to server (compress → upload → get URL)
+      const rawUrl = await EditorImageService.upload(file);
+      // Resolve to a full absolute URL so the <img> src works everywhere
+      const src = resolveAssetUrl(rawUrl) ?? rawUrl;
+      editor.chain().focus().setImage({ src, alt: file.name }).run();
+    } catch (err) {
+      console.error('[RichTextField] Image upload failed:', err);
+    } finally {
+      setImageUploading(false);
+    }
+  }, [editor]);
+
+  const onFileInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0] ?? null;
+    if (f) void onSelectImageFile(f);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }, [onSelectImageFile]);
 
   useEffect(() => {
     if (!editor) return;
@@ -523,6 +606,73 @@ export function RichTextField({
     <div className="rounded-md border border-slate-200 bg-white overflow-hidden" aria-label={ariaLabel}>
       <BubbleMenu
         editor={editor}
+        pluginKey="richTextImageBubbleMenu"
+        shouldShow={shouldShowImageBubbleMenu}
+        options={TABLE_BUBBLE_MENU_OPTIONS}
+      >
+        <div
+          className="flex items-center gap-0.5 rounded-lg border border-border bg-card px-1 py-1 shadow-md"
+          role="toolbar"
+        >
+          <ToolbarIconButton
+            tooltip="Align Left"
+            onClick={() => editor.chain().focus().updateAttributes('image', { style: 'display: inline; float: left; margin: 0 1rem 1rem 0; max-width: 100%; height: auto;' }).run()}
+          >
+            <AlignLeft className="h-4 w-4" />
+          </ToolbarIconButton>
+          <ToolbarIconButton
+            tooltip="Align Center"
+            onClick={() => editor.chain().focus().updateAttributes('image', { style: 'display: block; margin: 0 auto; max-width: 100%; height: auto;' }).run()}
+          >
+            <AlignCenter className="h-4 w-4" />
+          </ToolbarIconButton>
+          <ToolbarIconButton
+            tooltip="Align Right"
+            onClick={() => editor.chain().focus().updateAttributes('image', { style: 'display: inline; float: right; margin: 0 0 1rem 1rem; max-width: 100%; height: auto;' }).run()}
+          >
+            <AlignRight className="h-4 w-4" />
+          </ToolbarIconButton>
+          <div className="mx-1 h-4 w-px bg-border" />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-1.5 text-[10px] font-bold"
+            onClick={() => editor.chain().focus().updateAttributes('image', { width: '25%' }).run()}
+          >
+            25%
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-1.5 text-[10px] font-bold"
+            onClick={() => editor.chain().focus().updateAttributes('image', { width: '50%' }).run()}
+          >
+            50%
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-1.5 text-[10px] font-bold"
+            onClick={() => editor.chain().focus().updateAttributes('image', { width: '100%' }).run()}
+          >
+            100%
+          </Button>
+          <div className="mx-1 h-4 w-px bg-border" />
+          <ToolbarIconButton
+            tooltip="Remove image"
+            onClick={() => {
+              // Fire-and-forget deletion of the server file
+              const src = editor.getAttributes('image').src as string | undefined;
+              if (src) void EditorImageService.delete(src);
+              editor.chain().focus().deleteSelection().run();
+            }}
+          >
+            <Trash2 className="h-4 w-4 text-destructive" />
+          </ToolbarIconButton>
+        </div>
+      </BubbleMenu>
+      <BubbleMenu
+        editor={editor}
         pluginKey="richTextTableBubbleMenu"
         shouldShow={shouldShowRichTextTableBubbleMenu}
         options={TABLE_BUBBLE_MENU_OPTIONS}
@@ -643,7 +793,7 @@ export function RichTextField({
           pressed={editor.isActive('underline')}
           onClick={() => editor.chain().focus().toggleUnderline().run()}
         >
-          <Underline className="h-4 w-4" />
+          <UnderlineIcon className="h-4 w-4" />
         </ToolbarIconButton>
         <ToolbarIconButton
           tooltip={RICH_TEXT_TOOLTIP.strike}
@@ -811,6 +961,21 @@ export function RichTextField({
         </ToolbarIconButton>
 
         <Popover>
+
+        <ToolbarIconButton
+          tooltip="Insert image"
+          disabled={imageUploading}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          {imageUploading ? (
+            <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+            </svg>
+          ) : (
+            <ImageIcon className="h-4 w-4" />
+          )}
+        </ToolbarIconButton>
+
           <PopoverTrigger asChild>
             <Button
               type="button"
@@ -926,6 +1091,14 @@ export function RichTextField({
           </div>
         </div>
       ) : null}
+      <input
+        type="file"
+        accept="image/*"
+        ref={fileInputRef}
+        onChange={onFileInputChange}
+        className="hidden"
+        aria-hidden
+      />
 
       <EditorContent editor={editor} />
     </div>

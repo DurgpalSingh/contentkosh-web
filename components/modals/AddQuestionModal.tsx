@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { QuestionFormFields } from '@/components/dashboard/tests/questions/QuestionFormFields'
 import { useTeacherQuestionForm } from '@/components/dashboard/tests/questions/useTeacherQuestionForm'
-import { CreateQuestionDTO, ExamTestsService, PracticeTestsService } from '@/lib/api'
+import { ExamTestsService, PracticeTestsService, type CreateQuestionDTO } from '@/lib/api'
 import { getApiErrorDetailMessage } from '@/lib/tests/getApiErrorDetailMessage'
 import { TEST_KIND, type TestKind } from '@/lib/tests/testConstants'
 import {
@@ -61,17 +61,24 @@ export const AddQuestionModal = ({
     setFormErrors({})
     setLoading(true)
     setError(null)
+
     try {
-      const payload = form.buildPayload() as CreateQuestionDTO
+      const payload = form.buildPayload()
+
       if (kind === TEST_KIND.PRACTICE) {
         await PracticeTestsService.postApiBusinessPracticeTestsQuestions(
           businessId,
           testId,
-          payload,
+          payload as CreateQuestionDTO,
         )
       } else {
-        await ExamTestsService.postApiBusinessExamTestsQuestions(businessId, testId, payload)
+        await ExamTestsService.postApiBusinessExamTestsQuestions(
+          businessId,
+          testId,
+          payload as CreateQuestionDTO,
+        )
       }
+
       toast.success('Question added')
       onSaved()
       onClose()

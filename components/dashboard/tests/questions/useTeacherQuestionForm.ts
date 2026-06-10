@@ -5,7 +5,10 @@ import type { TeacherTestQuestion } from '@/lib/tests/teacherQuestionTypes'
 
 const createOptionId = (): string => crypto.randomUUID()
 
-export type QuestionOptionRow = { id: string; text: string }
+export type QuestionOptionRow = {
+  id: string
+  text: string
+}
 
 export type TeacherQuestionFormPayload = Omit<CreateQuestionDTO, 'correctOptionIdsAnswers'> & {
   explanation?: string
@@ -46,7 +49,10 @@ const buildMcqPayload = (
   }
   const withOptions: TeacherQuestionFormPayload = {
     ...base,
-    options: cleaned.map((o) => ({ id: o.id, text: o.text.trim() })),
+    options: cleaned.map((o) => ({
+      id: o.id,
+      text: o.text.trim(),
+    })),
   }
   if (mode === 'single') {
     if (!correctSingleId) throw new Error('Select the correct option')
@@ -152,6 +158,7 @@ export const useTeacherQuestionForm = (
     }
   }, [isOpen, initialQuestion])
 
+  // ── Payload builder ──────────────────────────────────────────────────────
   const buildPayload = useCallback((): TeacherQuestionFormPayload => {
     const trimmedExplanation = explanation.trim()
     const base: TeacherQuestionFormPayload = {
@@ -170,15 +177,7 @@ export const useTeacherQuestionForm = (
       default:
         return buildTextAnswerPayload(base, correctText)
     }
-  }, [
-    correctMultiIds,
-    correctSingleId,
-    correctText,
-    explanation,
-    options,
-    questionText,
-    questionTypeValue,
-  ])
+  }, [correctMultiIds, correctSingleId, correctText, explanation, options, questionText, questionTypeValue])
 
   const toggleMulti = useCallback((id: string) => {
     setCorrectMultiIds((m) => ({ ...m, [id]: !m[id] }))

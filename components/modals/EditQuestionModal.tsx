@@ -48,6 +48,7 @@ export const EditQuestionModal = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!question.id) return
+
     const errors = validateQuestionForm({
       questionTypeValue: form.questionTypeValue,
       questionText: form.questionText,
@@ -63,17 +64,24 @@ export const EditQuestionModal = ({
     setFormErrors({})
     setLoading(true)
     setError(null)
+
     try {
-      const payload = form.buildPayload() as UpdateQuestionDTO
+      const payload = form.buildPayload()
+
       if (kind === TEST_KIND.PRACTICE) {
         await PracticeTestsService.putApiBusinessPracticeTestsQuestions(
           businessId,
           question.id,
-          payload,
+          payload as UpdateQuestionDTO,
         )
       } else {
-        await ExamTestsService.putApiBusinessExamTestsQuestions(businessId, question.id, payload)
+        await ExamTestsService.putApiBusinessExamTestsQuestions(
+          businessId,
+          question.id,
+          payload as UpdateQuestionDTO,
+        )
       }
+
       toast.success('Question updated')
       onSaved()
       onClose()

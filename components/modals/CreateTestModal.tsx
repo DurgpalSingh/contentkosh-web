@@ -92,7 +92,7 @@ export function CreateTestModal({
     const nextList = filteredSubjects
     setSubjectId((prev) => {
       if (prev && nextList.some((s) => s.id === prev)) return prev
-      return nextList[0]?.id ?? 0
+      return undefined
     })
   }, [batchId, filteredSubjects, isOpen])
 
