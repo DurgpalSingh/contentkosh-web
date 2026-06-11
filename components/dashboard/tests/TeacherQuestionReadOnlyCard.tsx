@@ -3,6 +3,7 @@
 import { HtmlContent } from '@/components/common/HtmlContent'
 import type { TeacherTestQuestion } from '@/lib/tests/teacherQuestionTypes'
 import { questionType, questionTypeLabel } from '@/lib/tests/testUiMappers'
+import { resolveMediaUrl } from '@/lib/resolveMediaUrl'
 
 interface TeacherQuestionReadOnlyCardProps {
   question: TeacherTestQuestion
@@ -30,6 +31,15 @@ export const TeacherQuestionReadOnlyCard = ({
       </div>
 
       <div className="px-4 py-4 space-y-4">
+        {question.mediaUrl && (
+          <div className="mb-4">
+            <img 
+              src={resolveMediaUrl(question.mediaUrl) ?? undefined} 
+              alt="Question image" 
+              className="max-w-full h-auto rounded-lg border border-slate-200"
+            />
+          </div>
+        )}
         <div className="text-slate-900 min-w-0">
           <HtmlContent html={body} />
         </div>
@@ -50,7 +60,16 @@ export const TeacherQuestionReadOnlyCard = ({
                   ].join(' ')}
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <span className="leading-snug">{opt.text}</span>
+                    <div className="flex-1">
+                      {opt.mediaUrl && (
+                        <img 
+                          src={resolveMediaUrl(opt.mediaUrl) ?? undefined} 
+                          alt="Option image" 
+                          className="max-w-full h-auto rounded mb-2 border border-slate-200"
+                        />
+                      )}
+                      <span className="leading-snug"><HtmlContent html={opt.text} /></span>
+                    </div>
                     {isCorrect ? (
                       <span className="text-xs font-semibold shrink-0">Correct</span>
                     ) : null}
@@ -66,7 +85,9 @@ export const TeacherQuestionReadOnlyCard = ({
             <p className="text-xs font-semibold uppercase tracking-wide text-emerald-800">
               Correct answer
             </p>
-            <p className="mt-1 text-emerald-900">{question.correctTextAnswer}</p>
+            <div className="mt-1 text-emerald-900">
+              <HtmlContent html={question.correctTextAnswer} />
+            </div>
           </div>
         ) : null}
 

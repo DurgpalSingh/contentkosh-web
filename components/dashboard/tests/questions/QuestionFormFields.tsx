@@ -55,6 +55,7 @@ export const QuestionFormFields = ({ form, formId }: QuestionFormFieldsProps) =>
 
   return (
     <div className="space-y-5">
+      {/* Question type */}
       <div className={sectionClass}>
         <div className="space-y-2">
           <Label id={`${formId}-qtype-label`} htmlFor={`${formId}-qtype`} className="text-foreground">
@@ -71,20 +72,22 @@ export const QuestionFormFields = ({ form, formId }: QuestionFormFieldsProps) =>
         </div>
       </div>
 
+      {/* Question text */}
       <div className={sectionClass}>
-        <div className="space-y-2">
+        <div className="space-y-3">
           <Label htmlFor={`${formId}-qtext`} className="text-foreground">
             Question
           </Label>
           <RichTextField
             value={questionText}
             onChange={setQuestionText}
-            placeholder="Write the question…"
+            placeholder="Write the question… (use the image button in the toolbar to attach images)"
             ariaLabel={`${formId}-qtext`}
           />
         </div>
       </div>
 
+      {/* Explanation */}
       <div className={sectionClass}>
         <div className="space-y-2">
           <Label htmlFor={`${formId}-explanation`} className="text-foreground">
@@ -102,6 +105,7 @@ export const QuestionFormFields = ({ form, formId }: QuestionFormFieldsProps) =>
         </div>
       </div>
 
+      {/* MCQ options */}
       {showOptions && (
         <div className={sectionClass}>
           <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -114,13 +118,14 @@ export const QuestionFormFields = ({ form, formId }: QuestionFormFieldsProps) =>
             {options.map((o, idx) => (
               <div
                 key={o.id}
-                className="flex gap-2 rounded-lg border border-border/60 bg-background/80 p-2 sm:items-center"
+                className="flex gap-2 rounded-lg border border-border/60 bg-background/80 p-2 sm:items-start"
               >
+                {/* Correct marker */}
                 {questionTypeValue === questionType.singleChoice ? (
                   <input
                     type="radio"
                     name={`${formId}-correctOpt`}
-                    className="mt-3 h-4 w-4 shrink-0 self-start sm:mt-0 sm:self-center accent-primary"
+                    className="mt-3 h-4 w-4 shrink-0 self-start sm:mt-3 accent-primary"
                     checked={correctSingleId === o.id}
                     onChange={() => setCorrectSingleId(o.id)}
                     aria-label={`Mark option ${idx + 1} as correct`}
@@ -128,18 +133,24 @@ export const QuestionFormFields = ({ form, formId }: QuestionFormFieldsProps) =>
                 ) : (
                   <input
                     type="checkbox"
-                    className="mt-3 h-4 w-4 shrink-0 self-start sm:mt-0 sm:self-center accent-primary"
+                    className="mt-3 h-4 w-4 shrink-0 self-start sm:mt-3 accent-primary"
                     checked={!!correctMultiIds[o.id]}
                     onChange={() => toggleMulti(o.id)}
                     aria-label={`Mark option ${idx + 1} as correct`}
                   />
                 )}
-                <Input
-                  value={o.text}
-                  onChange={(e) => updateOptionText(o.id, e.target.value)}
-                  placeholder={`Option ${idx + 1}`}
-                  className="border-0 bg-transparent shadow-none focus-visible:ring-1"
-                />
+
+                {/* Option text */}
+                <div className="flex-1">
+                  <RichTextField
+                    value={o.text}
+                    onChange={(next) => updateOptionText(o.id, next)}
+                    placeholder={`Option ${idx + 1} (use image button in toolbar for images)`}
+                    ariaLabel={`${formId}-option-${o.id}`}
+                  />
+                </div>
+
+                {/* Remove option button */}
                 <Button
                   type="button"
                   variant="ghost"
@@ -162,6 +173,7 @@ export const QuestionFormFields = ({ form, formId }: QuestionFormFieldsProps) =>
         </div>
       )}
 
+      {/* True / False */}
       {questionTypeValue === questionType.trueFalse && (
         <div className={sectionClass}>
           <Label className="text-foreground">Correct answer</Label>
@@ -169,7 +181,8 @@ export const QuestionFormFields = ({ form, formId }: QuestionFormFieldsProps) =>
             <label
               className={cn(
                 'flex cursor-pointer items-center gap-2 rounded-lg border border-border/80 bg-background px-4 py-3 text-sm font-medium transition-colors',
-                correctText === 'true' && 'border-primary bg-primary/10 text-foreground ring-1 ring-primary/20',
+                correctText === 'true' &&
+                  'border-primary bg-primary/10 text-foreground ring-1 ring-primary/20',
               )}
             >
               <input
@@ -184,7 +197,8 @@ export const QuestionFormFields = ({ form, formId }: QuestionFormFieldsProps) =>
             <label
               className={cn(
                 'flex cursor-pointer items-center gap-2 rounded-lg border border-border/80 bg-background px-4 py-3 text-sm font-medium transition-colors',
-                correctText === 'false' && 'border-primary bg-primary/10 text-foreground ring-1 ring-primary/20',
+                correctText === 'false' &&
+                  'border-primary bg-primary/10 text-foreground ring-1 ring-primary/20',
               )}
             >
               <input
@@ -200,6 +214,7 @@ export const QuestionFormFields = ({ form, formId }: QuestionFormFieldsProps) =>
         </div>
       )}
 
+      {/* Numerical / Fill in the blank */}
       {(questionTypeValue === questionType.numerical ||
         questionTypeValue === questionType.fillInTheBlank) && (
         <div className={sectionClass}>

@@ -239,7 +239,7 @@ export function AdminAnnouncementModal({
 
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
           <div>
-            <Label htmlFor="ann-heading">Heading</Label>
+            <Label htmlFor="ann-heading">Heading <span className="text-red-400">*</span></Label> 
             <Input
               id="ann-heading"
               value={heading}
@@ -251,7 +251,7 @@ export function AdminAnnouncementModal({
             <p className="mt-1 text-xs text-slate-500">{heading.trim().length}/120</p>
           </div>
           <div>
-            <Label htmlFor="ann-content">Content</Label>
+            <Label htmlFor="ann-content">Content <span className="text-red-400">*</span></Label>
             <Textarea
               id="ann-content"
               value={content}
@@ -263,7 +263,7 @@ export function AdminAnnouncementModal({
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <Label htmlFor="ann-start">Starts</Label>
+              <Label htmlFor="ann-start">Starts <span className="text-red-400">*</span></Label>
               <Input
                 id="ann-start"
                 type="datetime-local"
@@ -274,7 +274,7 @@ export function AdminAnnouncementModal({
               />
             </div>
             <div>
-              <Label htmlFor="ann-end">Ends</Label>
+              <Label htmlFor="ann-end">Ends <span className="text-red-400">*</span></Label>
               <Input
                 id="ann-end"
                 type="datetime-local"
@@ -287,7 +287,7 @@ export function AdminAnnouncementModal({
           </div>
 
           <div>
-            <Label>Scope</Label>
+            <Label>Scope <span className="text-red-400">*</span></Label>
             <div className="mt-2 flex gap-4">
               <label className="flex items-center gap-2 text-sm">
                 <input
@@ -311,7 +311,7 @@ export function AdminAnnouncementModal({
           </div>
 
           <div className="rounded-xl border border-slate-200 p-3">
-            <p className="text-sm font-medium text-slate-800">Audience</p>
+            <p className="text-sm font-medium text-slate-800">Audience <span className="text-red-400">*</span></p>
             <p className="mt-1 text-xs text-slate-500">Select at least one group.</p>
             <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
               <label className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm hover:bg-slate-50">
@@ -349,8 +349,8 @@ export function AdminAnnouncementModal({
                   checked={targetAllCourses}
                   onChange={(ev) => setTargetAllCourses(ev.target.checked)}
                 />
-                All courses in this institute
-              </label>
+                All courses in this institute <span className="text-red-400">*</span>              
+                </label>
               {!targetAllCourses && (
                 <div className="max-h-44 overflow-y-auto rounded-xl border border-slate-200 p-2 space-y-1">
                   {metaLoading ? (
@@ -382,7 +382,7 @@ export function AdminAnnouncementModal({
                   checked={targetAllBatches}
                   onChange={(ev) => setTargetAllBatches(ev.target.checked)}
                 />
-                All batches in this institute
+                All batches in this institute <span className="text-red-400">*</span>
               </label>
               {!targetAllBatches && (
                 <div className="max-h-44 overflow-y-auto rounded-xl border border-slate-200 p-2 space-y-1">

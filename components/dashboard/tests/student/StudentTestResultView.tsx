@@ -322,7 +322,7 @@ function ResultQuestionCard({
                   <li key={oid}>
                     <div className={`rounded-lg border px-3 py-2 text-sm ${cls}`}>
                       <div className="flex items-start justify-between gap-3">
-                        <p className="whitespace-pre-wrap">{opt.text}</p>
+                        <HtmlContent html={opt.text} />
                         {badge && <span className="text-xs font-semibold">{badge}</span>}
                       </div>
                     </div>
@@ -360,14 +360,14 @@ function ResultQuestionCard({
             <div className="mt-3 text-sm border-t border-gray-100 pt-3">
               <p className="font-medium text-gray-700">Correct answer</p>
               {ca.correctTextAnswer != null && ca.correctTextAnswer !== '' && (
-                <p className="text-gray-800 mt-1">{ca.correctTextAnswer}</p>
+                <div className="text-gray-800 mt-1"><HtmlContent html={ca.correctTextAnswer} /></div>
               )}
               {ca.correctOptionIds && ca.correctOptionIds.length > 0 && q.options && (
                 <ul className="mt-1 list-disc pl-5 text-gray-800">
                   {q.options
                     .filter((o) => o.id && ca.correctOptionIds?.includes(o.id))
                     .map((o) => (
-                      <li key={o.id}>{o.text}</li>
+                      <li key={o.id}><HtmlContent html={o.text} /></li>
                     ))}
                 </ul>
               )}
@@ -384,7 +384,7 @@ function AnswerSummary({ qType, row }: { qType: number; row: StudentAttemptQuest
   if (!sa) return <p className="text-gray-500 mt-1">No answer</p>;
 
   if (qType === questionType.numerical || qType === questionType.fillInTheBlank || qType === questionType.trueFalse) {
-    return <p className="text-gray-900 mt-1">{sa.textAnswer ?? '—'}</p>;
+    return <div className="text-gray-900 mt-1"><HtmlContent html={sa.textAnswer ?? '—'} /></div>;
   }
 
   const ids = sa.selectedOptionIds ?? [];
@@ -394,7 +394,7 @@ function AnswerSummary({ qType, row }: { qType: number; row: StudentAttemptQuest
   return (
     <ul className="mt-1 list-disc pl-5 text-gray-900">
       {texts.map((t, i) => (
-        <li key={i}>{t}</li>
+        <li key={i}><HtmlContent html={t} /></li>
       ))}
     </ul>
   );

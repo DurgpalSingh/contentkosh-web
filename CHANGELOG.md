@@ -1,6 +1,15 @@
 # Changelog
 
 All notable changes to this project will be documented in this file
+## Version [1.2.28] - question media feature and ui fixed
+**P.R Raised by** : shubh404-SE on **Date** : 2026-06-09
+
+### Changed
+  - added images atachment in tiptap editor with image upload and delete api.
+  - in production business  logo issue fixed
+  - default subject removed from create test form.
+  - few ui fixed
+--- 
 ## Version [1.2.27] - Settings profile UI + analytics page UI + table filter
 **P.R Raised by** : shubh404-SE on **Date** : 2026-06-03
 
