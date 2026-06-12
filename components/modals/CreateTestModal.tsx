@@ -136,6 +136,7 @@ export function CreateTestModal({
       requireBatch: true,
       requireSubject: false,
       validateTextRules: true,
+      allowHindiName: true,
       disallowPastStart: true,
     });
 

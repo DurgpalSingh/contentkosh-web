@@ -13,17 +13,27 @@ export type TestFormErrors = {
 };
 
 const ALLOWED_TEST_NAME = /^[A-Za-z0-9\s()[\]_-]+$/;
+const ALLOWED_TEST_NAME_WITH_HINDI = /^[A-Za-z\u0900-\u097F0-9\s()[\]_-]+$/;
 
 const hasLetter = (value: string) => /[A-Za-z]/.test(value);
+const hasLatinOrHindiLetter = (value: string) => /[A-Za-z\u0900-\u097F]/.test(value);
 
 const getLocalNow = () => {
   const now = new Date();
   return new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), now.getMinutes());
 };
 
-const getTestNameTextRuleError = (name: string): string | undefined => {
-  if (!ALLOWED_TEST_NAME.test(name)) {
+const getTestNameTextRuleError = (name: string, allowHindiName = false): string | undefined => {
+  const allowedNamePattern = allowHindiName ? ALLOWED_TEST_NAME_WITH_HINDI : ALLOWED_TEST_NAME;
+  if (!allowedNamePattern.test(name)) {
+    if (allowHindiName) {
+      return 'Only Hindi or English letters, numbers, spaces, brackets (), [], hyphen -, and underscore _ are allowed';
+    }
     return 'Only letters, numbers, spaces, brackets (), [], hyphen -, and underscore _ are allowed';
+  }
+  if (allowHindiName) {
+    if (!hasLatinOrHindiLetter(name)) return 'Test name must include at least one letter';
+    return undefined;
   }
   if (!hasLetter(name)) return 'Test name must include at least one letter';
   return undefined;
@@ -48,6 +58,7 @@ export function validateTestForm(values: {
   requireBatch?: boolean;
   requireSubject?: boolean;
   validateTextRules?: boolean;
+  allowHindiName?: boolean;
   disallowPastStart?: boolean;
 }): TestFormErrors {
   const errors: TestFormErrors = {};
@@ -57,7 +68,7 @@ export function validateTestForm(values: {
   }
 
   if (values.validateTextRules && values.name.trim()) {
-    const nameRuleError = getTestNameTextRuleError(values.name);
+    const nameRuleError = getTestNameTextRuleError(values.name, values.allowHindiName);
     if (nameRuleError) errors.name = nameRuleError;
 
     const descriptionError = getDescriptionError(values.description);

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { validateEntityName } from './validation';
+import { PHONE_DIGIT_LIMIT, validateEntityName } from './validation';
 
 /**
  * Base schema fields for date range.
@@ -86,7 +86,13 @@ const genderSchema = z.enum(['male', 'female', 'other']);
 
 export const settingsUserDetailsSchema = z.object({
     name: z.string().trim().min(1, 'Name is required').max(100, 'Name is too long'),
-    mobile: z.string().trim().max(20, 'Mobile number is too long').optional(),
+    mobile: z
+        .string()
+        .trim()
+        .regex(/^\d{10}$/, 'Mobile number must be a valid 10-digit number')
+        .or(z.literal(''))
+        .optional()
+        .transform((value) => (value ? value : undefined)),
 });
 
 export const settingsTeacherProfileSchema = z.object({
@@ -122,7 +128,14 @@ export const settingsStudentProfileSchema = z.object({
 export const settingsBusinessDetailsSchema = z.object({
     instituteName: optionalTrimmedString,
     tagline: optionalTrimmedString,
-    contactNumber: optionalTrimmedString,
+    contactNumber: z
+        .string()
+        .trim()
+        .max(PHONE_DIGIT_LIMIT, `Contact number cannot exceed ${PHONE_DIGIT_LIMIT} digits`)
+        .regex(/^\d{10}$/, 'Contact number must be a valid 10-digit number')
+        .or(z.literal(''))
+        .optional()
+        .transform((value) => (value ? value : undefined)),
     email: optionalEmail,
     address: optionalTrimmedString,
 });

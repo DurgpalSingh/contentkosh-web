@@ -1,6 +1,13 @@
 # Changelog
 
 All notable changes to this project will be documented in this file
+## Version [1.2.29] - content page and settings page UI fixes
+**P.R Raised by** : shubh404-SE on **Date** : 2026-06-13
+
+### Changes
+  - Settings page ui improved and added validations for mobile number
+  - Contentpage ui fixed and implimented pdf and image viewer modal.
+---
 ## Version [1.2.28] - question media feature and ui fixed
 **P.R Raised by** : shubh404-SE on **Date** : 2026-06-09
 
