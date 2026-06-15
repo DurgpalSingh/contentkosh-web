@@ -53,8 +53,6 @@ export function ContentGridCard({ content, onView, onEdit, onDelete }: ContentGr
     </span>
   ) : null;
 
-  const filePath = content.filePath || 'No file path';
-
   return (
     <OverviewCard
       icon={

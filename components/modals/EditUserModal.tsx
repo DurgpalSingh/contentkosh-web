@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { UsersService, UpdateUserRequest, BusinessUser } from '@/lib/api';
-import { validateEntityName, validateMobile } from '@/lib/validation';
+import { normalizePhoneDigits, validateEntityName, validateMobile } from '@/lib/validation';
 import { toast } from 'sonner';
 
 interface EditUserModalProps {
@@ -160,9 +160,11 @@ export function EditUserModal({
                         <input
                             id="edit-user-mobile"
                             type="tel"
+                            inputMode="numeric"
                             value={mobile}
-                            onChange={(e) => setMobile(e.target.value)}
+                            onChange={(e) => setMobile(normalizePhoneDigits(e.target.value))}
                             placeholder="e.g., 9876543210"
+                            maxLength={10}
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                             disabled={loading}
                         />
