@@ -5,6 +5,15 @@ import Image from 'next/image';
 import { Download, FileText, Image as ImageIcon, Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ContentsService, type Content } from '@/lib/api';
+import {
+  CONTENT_FILE_VIEWER_BYTE_UNITS,
+  CONTENT_FILE_VIEWER_DEFAULT_DEVICE_PIXEL_RATIO,
+  CONTENT_FILE_VIEWER_FILE_MATCHERS,
+  CONTENT_FILE_VIEWER_IMAGE,
+  CONTENT_FILE_VIEWER_PDF,
+  type ContentFileViewerFileKind,
+  type ContentFileViewerMode,
+} from '@/lib/contentFileViewer.config';
 
 type ViewerStatus = 'idle' | 'fetching' | 'loading-preview' | 'ready' | 'error';
 
@@ -18,23 +27,36 @@ function getContentType(content: Content | null, blob: Blob | null): string {
   return (blob?.type || content?.type || '').toLowerCase();
 }
 
-function getFileKind(content: Content | null, blob: Blob | null): 'pdf' | 'image' | 'doc' | 'unknown' {
+type ContentFileKind = ContentFileViewerFileKind | 'unknown';
+
+function getFileViewerMode(fileKind: ContentFileKind): ContentFileViewerMode {
+  return CONTENT_FILE_VIEWER_FILE_MATCHERS.find((matcher) => matcher.kind === fileKind)?.viewer ?? 'download';
+}
+
+function getFileKind(content: Content | null, blob: Blob | null): ContentFileKind {
   const type = getContentType(content, blob);
   const path = (content?.filePath || content?.title || '').toLowerCase();
 
-  if (type.includes('pdf') || path.endsWith('.pdf')) return 'pdf';
-  if (type.includes('image') || /\.(jpg|jpeg|png|webp)$/i.test(path)) return 'image';
-  if (type.includes('word') || type.includes('doc') || /\.(doc|docx)$/i.test(path)) return 'doc';
-  return 'unknown';
+  return (
+    CONTENT_FILE_VIEWER_FILE_MATCHERS.find((matcher) => {
+      const matchesMime = matcher.mimeFragments.some((fragment) => type.includes(fragment));
+      const matchesExtension = 'extensions' in matcher && matcher.extensions.some((extension) => path.endsWith(extension));
+      const matchesPattern = 'extensionPattern' in matcher && matcher.extensionPattern.test(path);
+
+      return matchesMime || matchesExtension || matchesPattern;
+    })?.kind ?? 'unknown'
+  );
 }
 
 function formatBytes(bytes?: number): string {
   if (bytes === undefined || bytes === null) return 'Unknown size';
   if (bytes === 0) return '0 B';
-  const units = ['B', 'KB', 'MB', 'GB'];
-  const exp = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+  const exp = Math.min(
+    Math.floor(Math.log(bytes) / Math.log(1024)),
+    CONTENT_FILE_VIEWER_BYTE_UNITS.length - 1
+  );
   const value = bytes / Math.pow(1024, exp);
-  return `${value.toFixed(exp === 0 ? 0 : 1)} ${units[exp]}`;
+  return `${value.toFixed(exp === 0 ? 0 : 1)} ${CONTENT_FILE_VIEWER_BYTE_UNITS[exp]}`;
 }
 
 type PdfCanvasPreviewProps = {
@@ -59,7 +81,7 @@ function PdfCanvasPreview({ blob, title, onReady, onError }: PdfCanvasPreviewPro
 
       try {
         const pdfjs = await import('pdfjs-dist');
-        pdfjs.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString();
+        pdfjs.GlobalWorkerOptions.workerSrc = CONTENT_FILE_VIEWER_PDF.workerSrc;
 
         const data = await blob.arrayBuffer();
         const task = pdfjs.getDocument({ data });
@@ -70,18 +92,21 @@ function PdfCanvasPreview({ blob, title, onReady, onError }: PdfCanvasPreviewPro
           if (cancelled) return;
 
           const page = await pdf.getPage(pageNumber);
-          const baseViewport = page.getViewport({ scale: 1 });
-          const availableWidth = Math.max(container.clientWidth - 32, 320);
-          const scale = Math.min(1.8, availableWidth / baseViewport.width);
+          const baseViewport = page.getViewport({ scale: CONTENT_FILE_VIEWER_PDF.baseScale });
+          const availableWidth = Math.max(
+            container.clientWidth - CONTENT_FILE_VIEWER_PDF.horizontalPaddingPx,
+            CONTENT_FILE_VIEWER_PDF.minAvailableWidthPx
+          );
+          const scale = Math.min(CONTENT_FILE_VIEWER_PDF.maxScale, availableWidth / baseViewport.width);
           const viewport = page.getViewport({ scale });
-          const outputScale = window.devicePixelRatio || 1;
+          const outputScale = window.devicePixelRatio || CONTENT_FILE_VIEWER_DEFAULT_DEVICE_PIXEL_RATIO;
 
           const pageShell = document.createElement('div');
           pageShell.className = 'mx-auto mb-5 flex w-fit max-w-full flex-col gap-2';
 
           const pageLabel = document.createElement('div');
           pageLabel.className = 'text-center text-xs font-medium text-slate-500';
-          pageLabel.textContent = `Page ${pageNumber} of ${pdf.numPages}`;
+          pageLabel.textContent = CONTENT_FILE_VIEWER_PDF.pageLabel(pageNumber, pdf.numPages);
 
           const canvas = document.createElement('canvas');
           const context = canvas.getContext('2d');
@@ -118,7 +143,7 @@ function PdfCanvasPreview({ blob, title, onReady, onError }: PdfCanvasPreviewPro
   }, [blob, onError, onReady]);
 
   return (
-    <div className="h-full overflow-auto bg-slate-100 px-3 py-5 sm:px-5" aria-label={`${title} PDF preview`}>
+    <div className="h-full overflow-auto bg-slate-100 px-3 py-5 sm:px-5" aria-label={CONTENT_FILE_VIEWER_PDF.previewLabel(title)}>
       <div ref={containerRef} />
     </div>
   );
@@ -131,6 +156,7 @@ export function ContentFileViewerModal({ content, isOpen, onClose }: ContentFile
   const [error, setError] = useState<string | null>(null);
 
   const fileKind = useMemo(() => getFileKind(content, blob), [content, blob]);
+  const fileViewerMode = useMemo(() => getFileViewerMode(fileKind), [fileKind]);
   const showLoading = status === 'fetching' || status === 'loading-preview';
 
   useEffect(() => {
@@ -162,7 +188,7 @@ export function ContentFileViewerModal({ content, isOpen, onClose }: ContentFile
         setFileUrl(nextUrl);
 
         const kind = getFileKind(content, nextBlob);
-        setStatus(kind === 'doc' || kind === 'unknown' ? 'ready' : 'loading-preview');
+        setStatus(getFileViewerMode(kind) === 'download' ? 'ready' : 'loading-preview');
       })
       .catch((err) => {
         if (cancelled) return;
@@ -216,10 +242,12 @@ export function ContentFileViewerModal({ content, isOpen, onClose }: ContentFile
         <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
           <div className="flex min-w-0 items-center gap-3">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
-              {fileKind === 'image' ? <ImageIcon className="h-5 w-5" /> : <FileText className="h-5 w-5" />}
+              {fileViewerMode === 'image' ? <ImageIcon className="h-5 w-5" /> : <FileText className="h-5 w-5" />}
             </div>
             <div className="min-w-0">
-              <h2 className="truncate text-base font-semibold text-slate-900 sm:text-lg">{content.title || 'Content file'}</h2>
+              <h2 className="truncate text-base font-semibold text-slate-900 sm:text-lg">
+                {content.title || 'Content file'}
+              </h2>
               <p className="text-xs text-slate-500">
                 {fileKind.toUpperCase()} | {formatBytes(content.fileSize)}
               </p>
@@ -260,7 +288,7 @@ export function ContentFileViewerModal({ content, isOpen, onClose }: ContentFile
             </div>
           )}
 
-          {blob && fileKind === 'pdf' && (
+          {blob && fileViewerMode === 'pdf' && (
             <PdfCanvasPreview
               blob={blob}
               title={content.title || 'Content file'}
@@ -269,13 +297,13 @@ export function ContentFileViewerModal({ content, isOpen, onClose }: ContentFile
             />
           )}
 
-          {fileUrl && fileKind === 'image' && (
+          {fileUrl && fileViewerMode === 'image' && (
             <div className="flex h-full items-center justify-center overflow-auto p-4">
               <Image
                 src={fileUrl}
                 alt={content.title || 'Content image'}
-                width={1200}
-                height={900}
+                width={CONTENT_FILE_VIEWER_IMAGE.previewWidth}
+                height={CONTENT_FILE_VIEWER_IMAGE.previewHeight}
                 unoptimized
                 className="max-h-full w-auto max-w-full rounded-lg bg-white object-contain shadow-sm"
                 onLoad={() => setStatus('ready')}
@@ -283,7 +311,7 @@ export function ContentFileViewerModal({ content, isOpen, onClose }: ContentFile
             </div>
           )}
 
-          {fileUrl && (fileKind === 'doc' || fileKind === 'unknown') && status === 'ready' && (
+          {fileUrl && fileViewerMode === 'download' && status === 'ready' && (
             <div className="flex h-full items-center justify-center p-6">
               <div className="max-w-lg rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm">
                 <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl bg-amber-50 text-amber-700">
