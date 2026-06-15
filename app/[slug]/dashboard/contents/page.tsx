@@ -11,6 +11,7 @@ import { EditContentModal } from '@/components/modals/EditContentModal';
 import { DeleteConfirmModal } from '@/components/modals/DeleteConfirmModal';
 import { ContentsService, BatchesService, SubjectsService, Content, Batch, Subject } from '@/lib/api';
 import { ContentGridCard } from '@/components/dashboard/contents/ContentGridCard';
+import { ContentFileViewerModal } from '@/components/dashboard/contents/ContentFileViewerModal';
 import { ContentsFilterModal } from '@/components/dashboard/contents/ContentsFilterModal';
 import { USER_ROLES } from '@/lib/constants';
 import { EmptyState } from '@/components/common/EmptyState';
@@ -40,6 +41,7 @@ export default function ContentsPage() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [selectedContent, setSelectedContent] = useState<Content | null>(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [viewerContent, setViewerContent] = useState<Content | null>(null);
 
   const isAdmin = user?.role === USER_ROLES.ADMIN;
   const isStudent = user?.role === USER_ROLES.STUDENT;
@@ -194,21 +196,8 @@ export default function ContentsPage() {
     setIsAddOpen(true);
   }, []);
 
-  const handleView = useCallback(async (c: Content) => {
-    try {
-      const blob = await ContentsService.getApiContentsFile({ contentId: c.id! }).then(r => r as Blob);
-      const url = URL.createObjectURL(blob);
-      const newTab = window.open(url, '_blank');
-      // Revoke later so the new tab has time to load the blob URL.
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-
-      if (!newTab) {
-        // Optional fallback if popup blocked
-        window.location.href = url;
-      }
-    } catch (err) {
-      console.error('Failed to open file:', err);
-    }
+  const handleView = useCallback((c: Content) => {
+    setViewerContent(c);
   }, []);
 
   const handleEdit = useCallback((c: Content) => {
@@ -373,6 +362,12 @@ export default function ContentsPage() {
           itemName={selectedContent?.title ?? 'this content'}
         />
       )}
+
+      <ContentFileViewerModal
+        isOpen={Boolean(viewerContent)}
+        content={viewerContent}
+        onClose={() => setViewerContent(null)}
+      />
     </>
   );
 }

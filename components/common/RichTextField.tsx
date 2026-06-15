@@ -184,6 +184,7 @@ const RICH_TEXT_EDITOR_ROOT_CLASS = cn(
   '[&_h1]:text-2xl [&_h1]:font-semibold [&_h2]:text-xl [&_h2]:font-semibold [&_h3]:text-lg [&_h3]:font-semibold',
   '[&_blockquote]:border-l-[3px] [&_blockquote]:border-border [&_blockquote]:pl-3 [&_blockquote]:my-2 [&_blockquote]:text-muted-foreground',
   '[&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-6 [&_ol]:pl-6 [&_ul]:my-2 [&_ol]:my-2 [&_li]:list-item',
+  "[&_ol[type='i']]:list-[lower-roman]",
   '[&_ul_ul]:list-[circle] [&_ul_ul_ul]:list-[square]',
   '[&_p.is-empty]:before:content-[attr(data-placeholder)]',
   '[&_p.is-empty]:before:float-left',
@@ -238,6 +239,15 @@ function ToolbarIconButton({
   );
 }
 
+function RomanListIcon() {
+  return (
+    <span className="h-4 w-4 flex flex-col items-center gap-x-1" aria-hidden>
+      <span className="text-[8px] font-semibold leading-none">I-</span>
+      <span className="text-[8px] font-semibold leading-none">II-</span>
+    </span>
+  );
+}
+
 function toggleBulletListWithHeadingFallback(editor: Editor | null) {
   if (!editor) return;
   let chain = editor.chain().focus();
@@ -250,7 +260,7 @@ function toggleBulletListWithHeadingFallback(editor: Editor | null) {
   chain.toggleBulletList().run();
 }
 
-function toggleOrderedListWithHeadingFallback(editor: Editor | null) {
+function toggleOrderedListStyleWithHeadingFallback(editor: Editor | null, type: 'decimal' | 'roman') {
   if (!editor) return;
   let chain = editor.chain().focus();
   if (editor.isActive('heading')) {
@@ -259,7 +269,22 @@ function toggleOrderedListWithHeadingFallback(editor: Editor | null) {
   if (editor.isActive('blockquote')) {
     chain = chain.toggleBlockquote();
   }
-  chain.toggleOrderedList().run();
+
+  const listType = type === 'roman' ? 'i' : null;
+  const currentType = editor.getAttributes('orderedList').type ?? null;
+  const isSameStyle = editor.isActive('orderedList') && currentType === listType;
+
+  if (isSameStyle) {
+    chain.toggleOrderedList().run();
+    return;
+  }
+
+  if (editor.isActive('orderedList')) {
+    chain.updateAttributes('orderedList', { type: listType }).run();
+    return;
+  }
+
+  chain.toggleOrderedList().updateAttributes('orderedList', { type: listType }).run();
 }
 
 type MathEditState = {
@@ -608,7 +633,7 @@ export function RichTextField({
         editor={editor}
         pluginKey="richTextImageBubbleMenu"
         shouldShow={shouldShowImageBubbleMenu}
-        options={TABLE_BUBBLE_MENU_OPTIONS}
+        options={IMAGE_BUBBLE_MENU_OPTIONS}
       >
         <div
           className="flex items-center gap-0.5 rounded-lg border border-border bg-card px-1 py-1 shadow-md"
@@ -818,10 +843,17 @@ export function RichTextField({
         </ToolbarIconButton>
         <ToolbarIconButton
           tooltip={RICH_TEXT_TOOLTIP.orderedList}
-          pressed={editor.isActive('orderedList')}
-          onClick={() => toggleOrderedListWithHeadingFallback(editor)}
+          pressed={editor.isActive('orderedList') && (editor.getAttributes('orderedList').type ?? null) !== 'i'}
+          onClick={() => toggleOrderedListStyleWithHeadingFallback(editor, 'decimal')}
         >
           <ListOrdered className="h-4 w-4" />
+        </ToolbarIconButton>
+        <ToolbarIconButton
+          tooltip={RICH_TEXT_TOOLTIP.romanList}
+          pressed={editor.isActive('orderedList') && editor.getAttributes('orderedList').type === 'i'}
+          onClick={() => toggleOrderedListStyleWithHeadingFallback(editor, 'roman')}
+        >
+          <RomanListIcon />
         </ToolbarIconButton>
 
         <Popover open={tablePopoverOpen} onOpenChange={setTablePopoverOpen}>

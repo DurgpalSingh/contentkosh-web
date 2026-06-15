@@ -21,6 +21,7 @@ const htmlContentRichClassName = cn(
   '[&_h3]:text-lg [&_h3]:font-semibold [&_h3]:my-2 [&_h3]:mb-1.5',
   '[&_blockquote]:border-l-[3px] [&_blockquote]:border-border [&_blockquote]:pl-3 [&_blockquote]:my-2 [&_blockquote]:text-muted-foreground',
   '[&_ul]:list-disc [&_ol]:list-decimal [&_ul]:my-2 [&_ol]:my-2 [&_ul]:pl-5 [&_ol]:pl-5 [&_li]:list-item',
+  "[&_ol[type='i']]:list-[lower-roman]",
   '[&_ul_ul]:list-[circle]',
   '[&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2',
   '[&_table]:my-3 [&_table]:block [&_table]:w-full [&_table]:max-w-full [&_table]:border-collapse [&_table]:border [&_table]:border-border [&_table]:text-sm',

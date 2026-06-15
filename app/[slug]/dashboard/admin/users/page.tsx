@@ -187,12 +187,22 @@ const restoreScrollPosition = () => {
   };
 
   const handleDeleteClick = (userToDelete: BusinessUser) => {
+    if (userToDelete.user?.id === user?.id) {
+      toast.error('You cannot remove your own account');
+      return;
+    }
     setSelectedUser(userToDelete);
     setIsDeleteModalOpen(true);
   };
 
   const handleConfirmDelete = async () => {
     if (!selectedUser?.user?.id) return;
+    if (selectedUser.user.id === user?.id) {
+      toast.error('You cannot remove your own account');
+      setIsDeleteModalOpen(false);
+      setSelectedUser(null);
+      return;
+    }
 
     try {
       await UsersService.deleteApiUsers(selectedUser.user.id);
@@ -333,6 +343,7 @@ const restoreScrollPosition = () => {
                     onRowClick={() => handleRowClick(row.user)}
                     onEdit={() => handleEditClick(row.user)}
                     onDelete={() => handleDeleteClick(row.user)}
+                    currentUserId={user.id}
                   />
                 ))}
               </div>
@@ -381,7 +392,19 @@ const restoreScrollPosition = () => {
   );
 }
 
-function UserRowComponent({ user, onRowClick, onEdit, onDelete }: { user: BusinessUser; onRowClick: () => void; onEdit: () => void; onDelete: () => void }) {
+function UserRowComponent({
+  user,
+  currentUserId,
+  onRowClick,
+  onEdit,
+  onDelete,
+}: {
+  user: BusinessUser;
+  currentUserId?: number;
+  onRowClick: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
   const getRoleColor = (role?: string) => {
     switch (role) {
       case 'ADMIN':
@@ -411,6 +434,7 @@ function UserRowComponent({ user, onRowClick, onEdit, onDelete }: { user: Busine
   };
 
   const isClickable = user.role === 'TEACHER' || user.role === 'STUDENT';
+  const canDelete = user.user?.id !== currentUserId;
   const profilePicturePath = (user.user as { profilePicture?: string | null } | undefined)?.profilePicture;
   const profilePictureUrl = useMemo(() => resolveAssetUrl(profilePicturePath ?? null), [profilePicturePath]);
 
@@ -464,17 +488,19 @@ function UserRowComponent({ user, onRowClick, onEdit, onDelete }: { user: Busine
               <Edit className="h-4 w-4 mr-1" />
               <span className="hidden sm:inline">Edit</span>
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-red-600 hover:text-red-800 hover:bg-red-50 text-xs sm:text-sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete();
-              }}
-            >
-              Remove
-            </Button>
+            {canDelete && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-red-600 hover:text-red-800 hover:bg-red-50 text-xs sm:text-sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
+              >
+                Remove
+              </Button>
+            )}
           </div>
         </div>
       </div>

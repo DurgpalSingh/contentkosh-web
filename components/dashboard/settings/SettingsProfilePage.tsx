@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState, type ChangeEvent } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { SettingsService } from '@/lib/api/services/SettingsService';
 import type { SettingsProfileResponse, UpdateSettingsProfilePayload } from '@/lib/api/models/SettingsProfile';
@@ -12,9 +12,9 @@ import {
   settingsTeacherProfileSchema,
   settingsUserDetailsSchema
 } from '@/lib/schemas';
+import { normalizePhoneDigits } from '@/lib/validation';
 import { resolveAssetUrl } from '@/lib/assets/assetUrl';
 import {
-  PROFILE_IMAGE_UPLOAD_ACCEPT,
   PROFILE_IMAGE_UPLOAD_CONFIG,
   PROFILE_IMAGE_UPLOAD_MAX_SIZE_BYTES,
 } from '@/lib/content-upload.config';
@@ -82,8 +82,6 @@ export function SettingsProfilePage() {
   const isAdmin = profile?.role === 'ADMIN';
   const isTeacher = profile?.role === 'TEACHER';
   const isStudent = profile?.role === 'STUDENT';
-  const hasTeacherProfile = Boolean(profile?.teacher?.id);
-  const hasStudentProfile = Boolean(profile?.student?.id);
   // Allow teachers and students to create/edit their own profile from settings
   const profileSectionReadOnly = false;
 
@@ -164,11 +162,14 @@ export function SettingsProfilePage() {
   const onInput =
     (key: SettingsTextFieldKey) =>
     (event: SettingsInputChangeEvent) => {
-      setValue(key, event.target.value);
+      const phoneFields: SettingsTextFieldKey[] = ['mobile', 'businessContactNumber'];
+      const nextValue = phoneFields.includes(key)
+        ? normalizePhoneDigits(event.target.value)
+        : event.target.value;
+      setValue(key, nextValue);
     };
 
-  const onProfilePictureChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = event.target.files?.[0] || null;
+  const onProfilePictureChange = (selectedFile: File | null) => {
     if (!selectedFile) {
       setProfilePictureFile(null);
       setProfilePicturePreviewUrl(null);
@@ -177,15 +178,13 @@ export function SettingsProfilePage() {
     const validationError = getImageValidationError(selectedFile);
     if (validationError) {
       toast.error(validationError);
-      event.target.value = '';
       return;
     }
     setProfilePictureFile(selectedFile);
     setProfilePicturePreviewUrl(URL.createObjectURL(selectedFile));
   };
 
-  const onBusinessLogoChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = event.target.files?.[0] || null;
+  const onBusinessLogoChange = (selectedFile: File | null) => {
     if (!selectedFile) {
       setBusinessLogoFile(null);
       setBusinessLogoPreviewUrl(null);
@@ -194,7 +193,6 @@ export function SettingsProfilePage() {
     const validationError = getImageValidationError(selectedFile);
     if (validationError) {
       toast.error(validationError);
-      event.target.value = '';
       return;
     }
     setBusinessLogoFile(selectedFile);
@@ -312,18 +310,12 @@ export function SettingsProfilePage() {
   };
 
   if (loading) {
-    return <div className="rounded-2xl border border-slate-200 bg-white/80 p-6 shadow-sm backdrop-blur">Loading profile...</div>;
+    return <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">Loading profile...</div>;
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[240px_1fr]">
-      <aside className="rounded-2xl border border-slate-200 bg-gradient-to-b from-blue-50 to-white p-4 shadow-sm">
-        <button className="w-full rounded-xl border border-blue-100 bg-white px-4 py-2 text-left text-sm font-semibold text-blue-700 shadow-sm">
-          Profile
-        </button>
-      </aside>
-
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div className="mx-auto max-w-6xl space-y-6">
+      <section>
         {activeTab === 'profile' && (
           isEditing ? (
             <SettingsProfileEditForm
@@ -334,7 +326,6 @@ export function SettingsProfilePage() {
               isStudent={isStudent}
               isAdmin={isAdmin}
               saving={saving}
-              profileImageUploadAccept={PROFILE_IMAGE_UPLOAD_ACCEPT}
               onCancel={handleCancel}
               onSave={handleSave}
               onInput={onInput}
@@ -342,6 +333,8 @@ export function SettingsProfilePage() {
               onProfilePictureChange={onProfilePictureChange}
               onBusinessLogoChange={onBusinessLogoChange}
               displayedBusinessLogo={displayedBusinessLogo}
+              profilePictureFile={profilePictureFile}
+              businessLogoFile={businessLogoFile}
             />
           ) : (
             <SettingsProfilePreview
