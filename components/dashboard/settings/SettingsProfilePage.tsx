@@ -214,7 +214,7 @@ export function SettingsProfilePage() {
   const handleSave = async () => {
     const parsedUserDetails = settingsUserDetailsSchema.safeParse({
       name: form.name,
-      mobile: form.mobile || undefined
+      mobile: form.mobile
     });
     if (!parsedUserDetails.success) {
       toast.error(parsedUserDetails.error.issues[0]?.message || 'Please check your input');
@@ -224,7 +224,10 @@ export function SettingsProfilePage() {
     setSaving(true);
     try {
       const payload: UpdateSettingsProfilePayload = {
-        userDetails: parsedUserDetails.data
+        userDetails: {
+          ...parsedUserDetails.data,
+          mobile: form.mobile.trim() ? parsedUserDetails.data.mobile : ''
+        }
       };
 
       if (isTeacher) {
@@ -264,7 +267,7 @@ export function SettingsProfilePage() {
       if (isAdmin) {
         const parsedBusinessDetails = settingsBusinessDetailsSchema.safeParse({
           instituteName: form.businessInstituteName,
-          contactNumber: form.businessContactNumber,
+          contactNumber: form.businessContactNumber.trim() ? form.businessContactNumber : '',
           email: form.businessEmail,
           tagline: form.businessTagline,
           address: form.businessAddress
@@ -273,7 +276,10 @@ export function SettingsProfilePage() {
           toast.error(parsedBusinessDetails.error.issues[0]?.message || 'Please check business details');
           return;
         }
-        payload.businessDetails = parsedBusinessDetails.data;
+        payload.businessDetails = {
+          ...parsedBusinessDetails.data,
+          contactNumber: form.businessContactNumber.trim() ? parsedBusinessDetails.data.contactNumber : ''
+        };
       }
 
       payload.profilePictureFile = profilePictureFile;

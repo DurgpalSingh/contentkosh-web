@@ -98,8 +98,13 @@ export function TeacherDashboard() {
         {data.recentAnnouncements.length === 0 && <EmptyState message="No announcements found." />}
         {data.recentAnnouncements.map((announcement) => (
           <div key={announcement.id} className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 sm:px-4 sm:py-3">
-            <p className="font-semibold text-slate-900 truncate" title={announcement.heading}>{announcement.heading}</p>
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="font-semibold text-slate-900 break-words" title={announcement.heading}>{announcement.heading}</p>
+            {announcement.content && (
+              <p className="mt-1 text-sm text-slate-600 line-clamp-3 break-words" title={announcement.content}>
+                {announcement.content}
+              </p>
+            )}
+            <p className="mt-2 text-xs text-slate-500">
               {formatDate(announcement.startDate)} - {formatDate(announcement.endDate)}
             </p>
           </div>

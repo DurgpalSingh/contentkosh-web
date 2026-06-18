@@ -1,6 +1,13 @@
 # Changelog
 
 All notable changes to this project will be documented in this file
+## Version [1.2.30]- Profile setting page and Student Dashboard
+**P.R Raised by** : shubh404-SE on **Date** : 2026-06-19
+
+### Changes
+  - Profile setting page ui improved and added validations for mobile number
+  - Student dashboard ui improved and added a new component to show student profile details.  
+---
 ## Version [1.2.29] - content page and settings page UI fixes
 **P.R Raised by** : shubh404-SE on **Date** : 2026-06-13
 

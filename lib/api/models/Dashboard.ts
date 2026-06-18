@@ -19,6 +19,7 @@ export type AdminDashboardData = {
   recentAnnouncements: Array<{
     id: number;
     heading: string;
+    content?: string;
     startDate: string;
     endDate: string;
   }>;
@@ -41,6 +42,7 @@ export type TeacherDashboardData = {
   recentAnnouncements: Array<{
     id: number;
     heading: string;
+    content?: string;
     startDate: string;
     endDate: string;
   }>;
@@ -80,6 +82,13 @@ export type StudentDashboardData = {
     type: string;
     createdAt: string;
   }>;
+  recentExams: Array<{
+    id: string;
+    name: string;
+    batchName: string;
+    startAt: string;
+    deadlineAt: string;
+  }>;
 }
 
 export type DashboardData = AdminDashboardData | TeacherDashboardData | StudentDashboardData;
@@ -98,6 +107,6 @@ export const isTeacherDashboardData = (data: object): data is TeacherDashboardDa
 
 export const isStudentDashboardData = (data: object): data is StudentDashboardData => {
   if (!data || typeof data !== 'object') return false;
-  const d = data as { stats?: { enrolledBatches?: number } };
-  return !!d.stats && typeof d.stats.enrolledBatches === 'number';
+  const d = data as { stats?: { enrolledBatches?: number }; recentExams?: unknown[] };
+  return !!d.stats && typeof d.stats.enrolledBatches === 'number' && Array.isArray(d.recentExams);
 };
