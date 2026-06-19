@@ -1,13 +1,19 @@
 'use client';
 
-import { ReactNode, useEffect, useState } from 'react';
-import { Bell, BookOpen, FileText, GraduationCap } from 'lucide-react';
+import { ReactNode, useEffect, useMemo, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { ArrowRight, Bell, BookOpen, Clock, FileText, GraduationCap } from 'lucide-react';
 import { DashboardService } from '@/lib/api';
 import { isStudentDashboardData, StudentDashboardData } from '@/lib/api/models/Dashboard';
+import { studentTestBasePath } from '@/lib/tests/studentTestCatalog';
+import { formatDateTime } from '@/lib/tests/testUiMappers';
 
 const formatDate = (value: string) => new Date(value).toLocaleDateString();
 
 export function StudentDashboard() {
+  const params = useParams();
+  const router = useRouter();
+  const slug = params.slug as string;
   const [data, setData] = useState<StudentDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,6 +37,28 @@ export function StudentDashboard() {
 
     loadDashboard();
   }, []);
+
+  const highlightedExam = useMemo(() => {
+    const now = Date.now();
+
+    return (data?.recentExams ?? [])
+      .map((exam) => {
+        const startMs = new Date(exam.startAt).getTime();
+        const deadlineMs = new Date(exam.deadlineAt).getTime();
+        return {
+          ...exam,
+          isLive: startMs <= now && now <= deadlineMs,
+          startMs,
+          deadlineMs,
+        };
+      })
+      .filter((exam) => now <= exam.deadlineMs)
+      .sort((a, b) => {
+        const priorityDiff = Number(b.isLive) - Number(a.isLive);
+        if (priorityDiff !== 0) return priorityDiff;
+        return (a.isLive ? a.deadlineMs : a.startMs) - (b.isLive ? b.deadlineMs : b.startMs);
+      })[0];
+  }, [data?.recentExams]);
 
   if (loading) {
     return (
@@ -67,6 +95,47 @@ export function StudentDashboard() {
         <StatCard title="Recent Content" value={data.recentContent.length} tone="indigo" icon={<FileText className="h-5 w-5 sm:h-8 sm:w-8" />} />
       </section>
 
+      {highlightedExam && (
+        <section
+          role="button"
+          tabIndex={0}
+          onClick={() => router.push(studentTestBasePath(slug))}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              router.push(studentTestBasePath(slug));
+            }
+          }}
+          className="cursor-pointer rounded-2xl border border-blue-200 bg-blue-50/70 p-4 shadow-sm transition hover:border-blue-300 hover:bg-blue-50 sm:p-5"
+        >
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <div className="mb-2 flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-blue-700">
+                  <Clock className="h-3.5 w-3.5" />
+                  {highlightedExam.isLive ? 'Live exam' : 'Upcoming exam'}
+                </span>
+                <span className="rounded-full bg-blue-600 px-2.5 py-1 text-xs font-semibold text-white">
+                  {highlightedExam.isLive ? 'Available now' : 'Starts soon'}
+                </span>
+              </div>
+              <h2 className="text-lg font-semibold text-slate-900 break-words">{highlightedExam.name}</h2>
+              <p className="mt-1 text-sm text-slate-600">
+                {highlightedExam.batchName || 'Batch'}
+              </p>
+              <p className="mt-2 text-xs text-slate-600">
+                {highlightedExam.isLive
+                  ? `Deadline: ${formatDateTime(highlightedExam.deadlineAt)}`
+                  : `Starts: ${formatDateTime(highlightedExam.startAt)}`}
+              </p>
+            </div>
+            <div className="inline-flex shrink-0 items-center justify-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white">
+              Open My Tests <ArrowRight className="h-4 w-4" />
+            </div>
+          </div>
+        </section>
+      )}
+
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
         <Panel title="My Batches" subtitle="Current batches you are enrolled in">
           {data.myBatches.length === 0 && <EmptyState message="No batches found." />}
@@ -99,8 +168,8 @@ export function StudentDashboard() {
         {data.recentAnnouncements.length === 0 && <EmptyState message="No announcements found." />}
         {data.recentAnnouncements.map((announcement) => (
           <div key={announcement.id} className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 sm:px-4 sm:py-3">
-            <p className="font-semibold text-slate-900 truncate" title={announcement.heading}>{announcement.heading}</p>
-            <p className="mt-1 text-sm text-slate-600 line-clamp-2" title={announcement.content}>{announcement.content}</p>
+            <p className="font-semibold text-slate-900 break-words" title={announcement.heading}>{announcement.heading}</p>
+            <p className="mt-1 text-sm text-slate-600 line-clamp-3 break-words" title={announcement.content}>{announcement.content}</p>
             <p className="mt-2 text-xs text-slate-500">
               {formatDate(announcement.startDate)} - {formatDate(announcement.endDate)}
             </p>

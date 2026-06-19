@@ -85,7 +85,12 @@ const optionalLanguagesArray = z
 const genderSchema = z.enum(['male', 'female', 'other']);
 
 export const settingsUserDetailsSchema = z.object({
-    name: z.string().trim().min(1, 'Name is required').max(100, 'Name is too long'),
+    name: z
+        .string()
+        .trim()
+        .min(1, 'Name is required')
+        .max(100, 'Name is too long')
+        .regex(/\p{L}/u, 'Name must contain at least one alphabet'),
     mobile: z
         .string()
         .trim()
@@ -126,7 +131,12 @@ export const settingsStudentProfileSchema = z.object({
 });
 
 export const settingsBusinessDetailsSchema = z.object({
-    instituteName: optionalTrimmedString,
+    instituteName: z
+        .string()
+        .trim()
+        .min(1, 'Business name is required')
+        .max(100, 'Business name is too long')
+        .regex(/\p{L}/u, 'Business name must contain at least one alphabet'),
     tagline: optionalTrimmedString,
     contactNumber: z
         .string()
