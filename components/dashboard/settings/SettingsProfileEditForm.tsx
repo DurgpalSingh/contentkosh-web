@@ -53,6 +53,10 @@ function SectionHeader({
   );
 }
 
+function RequiredMark() {
+  return <span className="text-red-500">*</span>;
+}
+
 export function SettingsProfileEditForm({
   form,
   displayedProfilePicture,
@@ -107,14 +111,17 @@ export function SettingsProfileEditForm({
             />
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">Name</label>
-                <Input value={form.name || ''} onChange={onInput('name')} maxLength={100} />
+                <label className="mb-1 flex items-center gap-1 text-sm font-medium text-slate-700">
+                  Name <RequiredMark />
+                </label>
+                <Input value={form.name || ''} onChange={onInput('name')} maxLength={100} required />
               </div>
               <div>
                 <label className="mb-1 block text-sm font-medium text-slate-700">Mobile</label>
                 <Input
                   type="tel"
                   inputMode="numeric"
+                  pattern="[0-9]*"
                   value={form.mobile || ''}
                   onChange={onInput('mobile')}
                   maxLength={10}
@@ -202,15 +209,26 @@ export function SettingsProfileEditForm({
                 description="Institute branding and contact information."
               />
               <div className="grid gap-4 sm:grid-cols-2">
-                <Input placeholder="Institute Name" value={form.businessInstituteName || ''} onChange={onInput('businessInstituteName')} />
-                <Input
-                  placeholder="Contact Number"
-                  type="tel"
-                  inputMode="numeric"
-                  value={form.businessContactNumber || ''}
-                  onChange={onInput('businessContactNumber')}
-                  maxLength={10}
-                />
+                <div>
+                  <label className="mb-1 flex items-center gap-1 text-sm font-medium text-slate-700">
+                    Institute Name <RequiredMark />
+                  </label>
+                  <Input placeholder="Institute Name" value={form.businessInstituteName || ''} onChange={onInput('businessInstituteName')} required />
+                </div>
+                <div>
+                  <label className="mb-1 flex items-center gap-1 text-sm font-medium text-slate-700">
+                    Contact Number
+                  </label>
+                  <Input
+                    placeholder="Contact Number"
+                    type="tel"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={form.businessContactNumber || ''}
+                    onChange={onInput('businessContactNumber')}
+                    maxLength={10}
+                  />
+                </div>
                 <Input placeholder="Business Email" value={form.businessEmail || ''} onChange={onInput('businessEmail')} />
                 <Input placeholder="Tagline" value={form.businessTagline || ''} onChange={onInput('businessTagline')} />
               </div>

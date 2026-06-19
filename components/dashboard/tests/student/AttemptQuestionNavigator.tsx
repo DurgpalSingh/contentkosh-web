@@ -116,7 +116,7 @@ export function AttemptQuestionNavigator({
             <li className="flex items-center justify-between gap-2">
               <span className="flex items-center gap-2.5 min-w-0">
                 <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-slate-300" />
-                <span>Unanswered</span>
+                <span>Unattempted</span>
               </span>
               <span className="tabular-nums font-medium text-slate-500">{stats.unanswered}</span>
             </li>
