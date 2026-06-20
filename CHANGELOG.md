@@ -1,12 +1,6 @@
 # Changelog
 
 All notable changes to this project will be documented in this file
-## Version [1.2.31]- build issue about lightingcss
-**P.R Raised by** : shubh404-SE on **Date** : 2026-06-19
-
-### Change
-  - updated `package-lock` file after removing node module and .next.
----
 ## Version [1.2.30]- Profile setting page and Student Dashboard
 **P.R Raised by** : shubh404-SE on **Date** : 2026-06-19
 

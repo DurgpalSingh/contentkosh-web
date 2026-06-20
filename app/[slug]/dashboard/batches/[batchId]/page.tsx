@@ -16,8 +16,11 @@ import { BatchMemberRole } from '@/components/dashboard/batches/BatchMemberCard'
 import { Input } from '@/components/ui/input';
 import { AddBatchMemberModal } from '@/components/modals/AddBatchMemberModal';
 import { toast } from 'sonner';
-import { TAB_ROLES } from '@/lib/api/models/BatchUser';
 
+export const TAB_ROLES = {
+  TEACHER: 'Teacher',
+  STUDENT: 'Student',
+} as const;
 
 type MemberTab = typeof TAB_ROLES.STUDENT | typeof TAB_ROLES.TEACHER;
 
