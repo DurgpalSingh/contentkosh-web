@@ -128,3 +128,11 @@ export type {
   SettingsProfileResponse,
   UpdateSettingsProfilePayload,
 } from './models/SettingsProfile';
+export { BulkUploadService } from './services/BulkUploadService';
+export type {
+  BulkUploadParsedQuestion,
+  BulkUploadInvalidBlock,
+  BulkUploadPreviewResponse,
+  BulkUploadConfirmRequest,
+  BulkUploadConfirmResponse,
+} from './models/BulkUpload';

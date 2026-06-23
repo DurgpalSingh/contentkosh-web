@@ -8,6 +8,7 @@ import { TeacherTestDetailHeader } from '@/components/dashboard/tests/TeacherTes
 import { TeacherTestQuestionsTab } from '@/components/dashboard/tests/TeacherTestQuestionsTab'
 import { TeacherTestSettingsTab } from '@/components/dashboard/tests/TeacherTestSettingsTab'
 import { AddQuestionModal } from '@/components/modals/AddQuestionModal'
+import { BulkUploadModal } from '@/components/modals/BulkUploadModal'
 import { DeleteConfirmModal } from '@/components/modals/DeleteConfirmModal'
 import { PublishConfirmModal } from '@/components/modals/PublishConfirmModal'
 import { EditQuestionModal } from '@/components/modals/EditQuestionModal'
@@ -62,6 +63,7 @@ export function TeacherTestDetailView({
   const [subjects, setSubjects] = useState<Subject[]>([])
 
   const [addQuestionOpen, setAddQuestionOpen] = useState(false)
+  const [bulkUploadOpen, setBulkUploadOpen] = useState(false)
   const [editQuestion, setEditQuestion] = useState<TeacherTestQuestion | null>(null)
   const [deleteQuestionTarget, setDeleteQuestionTarget] = useState<TeacherTestQuestion | null>(null)
   const [publishConfirmOpen, setPublishConfirmOpen] = useState(false)
@@ -264,6 +266,7 @@ export function TeacherTestDetailView({
           onAddQuestion={() => setAddQuestionOpen(true)}
           onEditQuestion={(q) => setEditQuestion(q)}
           onDeleteQuestion={(q) => setDeleteQuestionTarget(q)}
+          onBulkUpload={() => setBulkUploadOpen(true)}
         />
       )}
 
@@ -294,6 +297,18 @@ export function TeacherTestDetailView({
         businessId={businessId}
         kind={kind}
         testId={testId}
+        onSaved={() => {
+          void loadQuestions()
+          void loadTest()
+        }}
+      />
+
+      <BulkUploadModal
+        isOpen={bulkUploadOpen}
+        onClose={() => setBulkUploadOpen(false)}
+        businessId={businessId}
+        testId={testId}
+        testType={kind === TEST_KIND.PRACTICE ? 'practice' : 'exam'}
         onSaved={() => {
           void loadQuestions()
           void loadTest()
