@@ -1,6 +1,14 @@
 # Changelog
 
 All notable changes to this project will be documented in this file
+## Version [1.2.32] - Bulk import questions with doc/excel
+**P.R Raised by** : shubh404-SE on **Date** : 2026-04-23
+
+### Added
+  - intigrated apis to import questions directly from doc and excel.
+  - added a component to drag drop file and to see preview of questions?
+  - providing a preview api to see parsed questions before adding.
+---
 ## Version [1.2.31]- build issue about lightingcss
 **P.R Raised by** : shubh404-SE on **Date** : 2026-06-19
 
