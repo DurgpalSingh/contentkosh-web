@@ -19,10 +19,12 @@ export class CoursesService {
      */
     public static postApiExamsCourses(
         examId: number,
-        requestBody: CreateCourseRequest,
+        requestBody: CreateCourseRequest | FormData,
     ): CancelablePromise<(ApiResponse & {
         data?: Course;
     })> {
+        const isMultipart = requestBody instanceof FormData;
+
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/exams/{examId}/courses',
@@ -30,7 +32,7 @@ export class CoursesService {
                 'examId': examId,
             },
             body: requestBody,
-            mediaType: 'application/json',
+            mediaType: isMultipart ? undefined : 'application/json',
             errors: {
                 400: `Invalid input data`,
                 404: `Exam not found`,
@@ -150,10 +152,12 @@ export class CoursesService {
     public static putApiExamsCourses(
         examId: number,
         courseId: number,
-        requestBody: UpdateCourseRequest,
+        requestBody: UpdateCourseRequest | FormData,
     ): CancelablePromise<(ApiResponse & {
         data?: Course;
     })> {
+        const isMultipart = requestBody instanceof FormData;
+
         return __request(OpenAPI, {
             method: 'PUT',
             url: '/api/exams/{examId}/courses/{courseId}',
@@ -162,7 +166,7 @@ export class CoursesService {
                 'courseId': courseId,
             },
             body: requestBody,
-            mediaType: 'application/json',
+            mediaType: isMultipart ? undefined : 'application/json',
             errors: {
                 400: `Invalid input data`,
                 404: `Course not found`,

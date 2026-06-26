@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import NextImage from 'next/image';
 import {
     Clock,
     MoreVertical,
@@ -14,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Course } from '@/lib/api';
 import { USER_ROLES } from '@/lib/constants';
 import { useAuthStore } from '@/store/useAuthStore';
+import { getCourseThumbnailUrl } from '@/lib/courses/courseThumbnail';
 
 interface CourseGridCardProps {
     course: Course;
@@ -43,9 +45,21 @@ export function CourseGridCard({
 
     const startDate = formatDate(course.startDate);
     const endDate = formatDate(course.endDate);
+    const thumbnailUrl = getCourseThumbnailUrl(course.thumbnail);
 
     return (
         <div className="bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden flex flex-col h-full">
+            <div className="relative aspect-[16/9] w-full overflow-hidden bg-slate-100">
+                <NextImage
+                    src={thumbnailUrl}
+                    alt={course.name ? `${course.name} thumbnail` : 'Course thumbnail'}
+                    width={640}
+                    height={360}
+                    sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                    className="h-full w-full object-cover"
+                    unoptimized={thumbnailUrl.startsWith('http')}
+                />
+            </div>
             <div className="p-5 flex-1">
                 {/* Header */}
                 <div className="flex justify-between items-start mb-2">

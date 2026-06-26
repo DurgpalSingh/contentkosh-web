@@ -12,6 +12,14 @@ export type UpdateCourseRequest = {
      */
     description?: string;
     /**
+     * Course thumbnail URL or file path
+     */
+    thumbnail?: string | null;
+    /**
+     * Clear the existing course thumbnail
+     */
+    removeThumbnail?: boolean;
+    /**
      * Duration of the course (e.g., 6 months, 1 year)
      */
     duration?: string;
