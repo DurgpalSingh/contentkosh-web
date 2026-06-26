@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { StartAttemptConfirmModal, type StartAttemptTestInfo } from '@/components/modals/StartAttemptConfirmModal';
+import { StartAttemptConfirmModal } from '@/components/modals/StartAttemptConfirmModal';
 import type { TestLanguage } from '@/lib/api/models/TestLanguage';
 import type { PracticeTestAttemptDetails, ExamTestAttemptDetails } from '@/lib/api';
 import { PracticeTestsService } from '@/lib/api';
@@ -296,12 +296,6 @@ function ResultQuestionCard({
       <div className="mt-2 text-gray-800 min-w-0">
         <HtmlContent html={body} />
       </div>
-
-      {hiddenByPolicy && (
-        <p className="mt-3 text-sm text-amber-800 bg-amber-50 border border-amber-100 rounded-md px-3 py-2">
-          Detailed results for this exam are hidden until they are released.
-        </p>
-      )}
 
       {!hiddenByPolicy && (
         <>

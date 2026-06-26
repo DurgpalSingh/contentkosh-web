@@ -133,7 +133,7 @@ export function StartAttemptConfirmModal({
 
           {rulesDescription && (
             <div className="space-y-1.5">
-              <p className="text-sm font-medium text-gray-700">Rules</p>
+              <p className="text-sm font-medium text-gray-700">Instructions</p>
               <p className="text-sm text-gray-600 whitespace-pre-wrap">{rulesDescription}</p>
             </div>
           )}
