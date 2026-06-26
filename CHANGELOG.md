@@ -1,6 +1,12 @@
 # Changelog
 
 All notable changes to this project will be documented in this file
+## Version [1.2.33] - Test module fixes + announcement course scope
+**P.R Raised by** : shubh404-SE on **Date** : 2026-06-26
+
+### Changes
+  - Test module fixes for result page and test attempt confirm page for instructions.
+  - Announcement module fixes for course scope and audience selection when no batch in a course.
 ## Version [1.2.32] - Bulk import questions with doc/excel
 **P.R Raised by** : shubh404-SE on **Date** : 2026-04-23
 
