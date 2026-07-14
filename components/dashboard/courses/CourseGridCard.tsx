@@ -42,6 +42,7 @@ export function CourseGridCard({
         const d = new Date(date);
         return isNaN(d.getTime()) ? null : d.toLocaleDateString();
     };
+    const alt = course.name || 'Course Thumbnail';
 
     const startDate = formatDate(course.startDate);
     const endDate = formatDate(course.endDate);
@@ -52,7 +53,7 @@ export function CourseGridCard({
             <div className="relative aspect-[16/9] w-full overflow-hidden bg-slate-100">
                 <NextImage
                     src={thumbnailUrl}
-                    alt={course.name ? `${course.name} thumbnail` : 'Course thumbnail'}
+                    alt={alt}
                     width={640}
                     height={360}
                     sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
