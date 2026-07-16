@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { Image as ImageIcon, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,6 +11,9 @@ import { validateDateRange, validateEntityName } from '@/lib/validation';
 import { DatePicker } from '@/components/ui/date-picker';
 import { toISODateTime } from '@/lib/utils';
 import { toast } from 'sonner';
+import { FileUploadArea } from '@/components/dashboard/contents/FileUploadArea';
+import { PROFILE_IMAGE_UPLOAD_ACCEPT } from '@/lib/content-upload.config';
+import { buildCourseFormData, getCourseThumbnailUrl } from '@/lib/courses/courseThumbnail';
 
 interface EditCourseModalProps {
     isOpen: boolean;
@@ -32,6 +35,9 @@ export function EditCourseModal({
     const [startDate, setStartDate] = useState<Date | undefined>(undefined);
     const [endDate, setEndDate] = useState<Date | undefined>(undefined);
     const [isActive, setIsActive] = useState(course.status === 'ACTIVE');
+    const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+    const [thumbnailPreviewUrl, setThumbnailPreviewUrl] = useState<string | null>(null);
+    const [thumbnailRemoved, setThumbnailRemoved] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -41,6 +47,8 @@ export function EditCourseModal({
         setStartDate(course.startDate ? new Date(course.startDate) : undefined);
         setEndDate(course.endDate ? new Date(course.endDate) : undefined);
         setIsActive(course.status === 'ACTIVE');
+        setThumbnailFile(null);
+        setThumbnailRemoved(false);
         setError(null);
     }, [isOpen, course]);
 
@@ -54,6 +62,17 @@ export function EditCourseModal({
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
     }, [isOpen, onClose]);
+
+    useEffect(() => {
+        if (!thumbnailFile) {
+            setThumbnailPreviewUrl(null);
+            return;
+        }
+
+        const objectUrl = URL.createObjectURL(thumbnailFile);
+        setThumbnailPreviewUrl(objectUrl);
+        return () => URL.revokeObjectURL(objectUrl);
+    }, [thumbnailFile]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -90,10 +109,13 @@ export function EditCourseModal({
                 status: isActive ? UpdateCourseRequest.status.ACTIVE : UpdateCourseRequest.status.INACTIVE,
             };
 
+            const hasThumbnailChange = Boolean(thumbnailFile) || thumbnailRemoved;
             await CoursesService.putApiExamsCourses(
                 examId,
                 course.id!,
-                request,
+                hasThumbnailChange
+                    ? buildCourseFormData(request, thumbnailFile, thumbnailRemoved)
+                    : request,
             );
 
             onCourseUpdated();
@@ -109,6 +131,10 @@ export function EditCourseModal({
     };
 
     if (!isOpen) return null;
+
+    const existingThumbnailPreview = thumbnailRemoved || !course.thumbnail ? null : getCourseThumbnailUrl(course.thumbnail);
+    const displayedThumbnailPreview = thumbnailPreviewUrl ?? existingThumbnailPreview;
+    const canClearThumbnail = Boolean(course.thumbnail) && !thumbnailRemoved && !thumbnailFile;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-4">
@@ -201,6 +227,62 @@ export function EditCourseModal({
                         <Label htmlFor="edit-course-active" className="font-normal">
                             Active (visible to students)
                         </Label>
+                    </div>
+
+                    <div className="space-y-2">
+                        <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                                <ImageIcon className="h-4 w-4 text-gray-500" />
+                                Course Thumbnail
+                            </div>
+                            {canClearThumbnail && (
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                                    onClick={() => {
+                                        setThumbnailRemoved(true);
+                                        setThumbnailFile(null);
+                                    }}
+                                    disabled={loading}
+                                >
+                                    Clear
+                                </Button>
+                            )}
+                            {thumbnailRemoved && (
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setThumbnailRemoved(false)}
+                                    disabled={loading}
+                                >
+                                    Undo
+                                </Button>
+                            )}
+                        </div>
+                        <FileUploadArea
+                            accept={PROFILE_IMAGE_UPLOAD_ACCEPT}
+                            value={thumbnailFile}
+                            onChange={(file) => {
+                                setThumbnailFile(file);
+                                if (file) setThumbnailRemoved(false);
+                            }}
+                            onError={(message) => {
+                                if (message) {
+                                    setError(message);
+                                    toast.error(message);
+                                } else {
+                                    setError(null);
+                                }
+                            }}
+                            acceptedLabel="JPG, PNG, or WebP"
+                            previewUrl={displayedThumbnailPreview}
+                            previewAlt="Course thumbnail preview"
+                            isUploading={loading && Boolean(thumbnailFile)}
+                            disabled={loading}
+                        />
                     </div>
 
                     {/* Actions */}

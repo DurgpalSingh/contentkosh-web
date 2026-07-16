@@ -1,13 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { Image as ImageIcon, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CoursesService, CreateCourseRequest, Exam } from '@/lib/api';
 import { validateEntityName, validateDateRange } from '@/lib/validation';
 import { toISODateTime } from '@/lib/utils';
 import { DatePicker } from '../ui/date-picker';
 import { toast } from 'sonner';
+import { FileUploadArea } from '@/components/dashboard/contents/FileUploadArea';
+import { PROFILE_IMAGE_UPLOAD_ACCEPT } from '@/lib/content-upload.config';
+import { buildCourseFormData } from '@/lib/courses/courseThumbnail';
 
 interface AddCourseModalProps {
     isOpen: boolean;
@@ -30,6 +33,8 @@ export function AddCourseModal({
     const [endDate, setEndDate] = useState<Date | undefined>(undefined);
     const [isActive, setIsActive] = useState(true);
     const [selectedExamId, setSelectedExamId] = useState<number | undefined>(defaultExamId ?? exams[0]?.id);
+    const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+    const [thumbnailPreviewUrl, setThumbnailPreviewUrl] = useState<string | null>(null);
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -47,12 +52,24 @@ export function AddCourseModal({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen]);
 
+    useEffect(() => {
+        if (!thumbnailFile) {
+            setThumbnailPreviewUrl(null);
+            return;
+        }
+
+        const objectUrl = URL.createObjectURL(thumbnailFile);
+        setThumbnailPreviewUrl(objectUrl);
+        return () => URL.revokeObjectURL(objectUrl);
+    }, [thumbnailFile]);
+
     const resetForm = () => {
         setName('');
         setDescription('');
         setStartDate(undefined);
         setEndDate(undefined);
         setIsActive(true);
+        setThumbnailFile(null);
         // Reset to default or first available, effectively handled by the useEffect on open
         if (defaultExamId) {
             setSelectedExamId(defaultExamId);
@@ -100,7 +117,10 @@ export function AddCourseModal({
                 examId: selectedExamId,
             };
 
-            await CoursesService.postApiExamsCourses(selectedExamId, request);
+            await CoursesService.postApiExamsCourses(
+                selectedExamId,
+                buildCourseFormData(request, thumbnailFile),
+            );
 
             handleClose();
             onCourseCreated();
@@ -257,6 +277,31 @@ export function AddCourseModal({
                         <label htmlFor="course-active" className="text-sm text-gray-700">
                             Active (visible to students)
                         </label>
+                    </div>
+
+                    <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                            <ImageIcon className="h-4 w-4 text-gray-500" />
+                            Course Thumbnail
+                        </div>
+                        <FileUploadArea
+                            accept={PROFILE_IMAGE_UPLOAD_ACCEPT}
+                            value={thumbnailFile}
+                            onChange={setThumbnailFile}
+                            onError={(message) => {
+                                if (message) {
+                                    setError(message);
+                                    toast.error(message);
+                                } else {
+                                    setError(null);
+                                }
+                            }}
+                            acceptedLabel="JPG, PNG, or WebP"
+                            previewUrl={thumbnailPreviewUrl}
+                            previewAlt="Course thumbnail preview"
+                            isUploading={loading && Boolean(thumbnailFile)}
+                            disabled={loading || noExamsAvailable}
+                        />
                     </div>
 
                     {/* Actions */}
