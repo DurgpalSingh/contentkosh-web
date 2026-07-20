@@ -36,6 +36,7 @@ export function StudentTestsListView({
   subjects,
   loading,
   error,
+  onRefreshCatalog,
 }: {
   slug: string;
   practiceRows: PracticeCatalogRow[];
@@ -44,6 +45,7 @@ export function StudentTestsListView({
   subjects: Subject[];
   loading: boolean;
   error: string | null;
+  onRefreshCatalog?: () => Promise<{ practiceRows: PracticeCatalogRow[]; examRows: ExamCatalogRow[] } | undefined>;
 }) {
   const router = useRouter();
   const { business, isAuthenticated, isInitialized } = useAuthStore();
@@ -140,13 +142,28 @@ export function StudentTestsListView({
 
   const startExam = async (testId: string, language: TestLanguage): Promise<void> => {
     if (typeof businessId !== 'number') throw new Error('Not authorized');
-    const res = await ExamTestsService.postApiBusinessExamTestsAttempts(businessId, {
-      examTestId: testId,
-      language,
-    });
-    const aid = res.data?.attemptId;
-    if (!aid) throw new Error('Could not start attempt');
-    router.push(studentExamAttemptPath(slug, aid));
+    try {
+      const res = await ExamTestsService.postApiBusinessExamTestsAttempts(businessId, {
+        examTestId: testId,
+        language,
+      });
+      const aid = res.data?.attemptId;
+      if (!aid) throw new Error('Could not start attempt');
+      router.push(studentExamAttemptPath(slug, aid));
+    } catch (e) {
+      const refreshed = await onRefreshCatalog?.();
+      const existing = refreshed?.examRows.find((row) => row.id === testId);
+      if (existing) {
+        const resumeAction = buildCardViewModel({ kind: 'exam', row: existing }).actions.find(
+          (action) => action.type === TEST_CARD_ACTION.RESUME,
+        );
+        if (resumeAction?.type === TEST_CARD_ACTION.RESUME) {
+          router.push(studentExamAttemptPath(slug, resumeAction.attemptId));
+          return;
+        }
+      }
+      throw e;
+    }
   };
 
   const closeStartConfirm = () => {

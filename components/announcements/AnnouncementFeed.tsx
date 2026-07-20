@@ -2,7 +2,7 @@
 
 import type { Announcement } from '@/lib/api';
 import { OverviewCard, type OverviewCardMenuItem } from '@/components/common/OverviewCard';
-import { Calendar, Clock, Edit, Target, Trash2, Users } from 'lucide-react';
+import { Calendar, Clock, Target, Trash2, Users } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { USER_ROLES } from '@/lib/constants';
 
@@ -47,7 +47,6 @@ export interface AnnouncementFeedProps {
   items: Announcement[];
   emptyLabel: string;
   showActions?: boolean;
-  onEdit?: (a: Announcement) => void;
   onDelete?: (a: Announcement) => void;
 }
 
@@ -55,7 +54,6 @@ export function AnnouncementFeed({
   items,
   emptyLabel,
   showActions = false,
-  onEdit,
   onDelete,
 }: AnnouncementFeedProps) {
   const { user } = useAuthStore();
@@ -102,17 +100,8 @@ export function AnnouncementFeed({
               </span>,
             ]}
             menuItems={
-              showActions && (onEdit || onDelete)
+              showActions && onDelete
                 ? ([
-                    ...(onEdit
-                      ? ([
-                          {
-                            label: 'Edit',
-                            icon: Edit,
-                            onClick: () => onEdit(a),
-                          },
-                        ] satisfies OverviewCardMenuItem[])
-                      : []),
                     ...(onDelete
                       ? ([
                           {
