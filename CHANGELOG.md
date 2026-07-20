@@ -1,6 +1,19 @@
 # Changelog
 
 All notable changes to this project will be documented in this file
+## Version [1.2.35] - edit announcement restrict + resume exam test
+**P.R Raised by** : shubh404-SE on **Date** : 2026-06-30
+
+### Changes
+  - once announcement is saved by admin/teacher, it can not be edited by them.
+  - student can resume his exam if he exist by mistake.
+---
+## Version [1.2.34] - integrated add thumbnail in course 
+**P.R Raised by** : shubh404-SE on **Date** : 2026-06-27
+
+### Change
+  - in add course and edit course modal added a new field to add thumbnail picture for course.
+---
 ## Version [1.2.33] - Test module fixes + announcement course scope
 **P.R Raised by** : shubh404-SE on **Date** : 2026-06-26
 

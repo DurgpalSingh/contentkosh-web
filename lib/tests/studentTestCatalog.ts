@@ -40,6 +40,13 @@ export function isAttemptFinished(status: number | null | undefined): boolean {
   );
 }
 
+function hasActiveExamAttempt(row: ExamCatalogRow, attemptStatus: number | null | undefined): boolean {
+  if (!row.attemptId || isAttemptFinished(attemptStatus)) return false;
+  if (isAttemptInProgress(attemptStatus)) return true;
+  if (typeof row.timeRemainingSeconds === 'number' && row.timeRemainingSeconds > 0) return true;
+  return attemptStatus == null && row.hasAttempt === true && row.canAttempt !== false;
+}
+
 export function lockedReasonLabel(reason: number | undefined): string {
   switch (reason) {
     case 0:
@@ -165,7 +172,7 @@ export function computeTestCardActions(item: UnifiedStudentRow, displayStatus: S
   if (er.canAttempt === false) {
     return [{ type: TEST_CARD_ACTION.LOCKED, reason: er.lockedReason }];
   }
-  if (isAttemptInProgress(attemptStatus) && attemptId) {
+  if (hasActiveExamAttempt(er, attemptStatus) && attemptId) {
     return [{ type: TEST_CARD_ACTION.RESUME, attemptId }];
   }
 

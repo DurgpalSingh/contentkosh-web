@@ -90,7 +90,6 @@ export default function AnnouncementPage() {
   const [loading, setLoading] = useState(true);
   const [adminModalOpen, setAdminModalOpen] = useState(false);
   const [teacherModalOpen, setTeacherModalOpen] = useState(false);
-  const [editTarget, setEditTarget] = useState<Announcement | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Announcement | null>(null);
   const [deleteRole, setDeleteRole] = useState<'ADMIN' | 'TEACHER' | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -128,22 +127,10 @@ export default function AnnouncementPage() {
   useAnnouncementsListRefreshListener(loadAnnouncements, Boolean(businessId && isInitialized));
 
   const openCreateAdmin = () => {
-    setEditTarget(null);
     setAdminModalOpen(true);
   };
 
   const openCreateTeacher = () => {
-    setEditTarget(null);
-    setTeacherModalOpen(true);
-  };
-
-  const openEditAdmin = (a: Announcement) => {
-    setEditTarget(a);
-    setAdminModalOpen(true);
-  };
-
-  const openEditTeacher = (a: Announcement) => {
-    setEditTarget(a);
     setTeacherModalOpen(true);
   };
 
@@ -234,7 +221,6 @@ export default function AnnouncementPage() {
             items={managedAnnouncements}
             emptyLabel="No announcements yet."
             showActions
-            onEdit={openEditAdmin}
             onDelete={(a) => requestDelete(a, 'ADMIN')}
           />
         </SectionCard>
@@ -259,7 +245,6 @@ export default function AnnouncementPage() {
               items={managedAnnouncements}
               emptyLabel="You have not created any announcements yet."
               showActions
-              onEdit={openEditTeacher}
               onDelete={(a) => requestDelete(a, 'TEACHER')}
             />
           </SectionCard>
@@ -282,19 +267,17 @@ export default function AnnouncementPage() {
             isOpen={adminModalOpen}
             onClose={() => {
               setAdminModalOpen(false);
-              setEditTarget(null);
             }}
             businessId={businessId}
-            initial={editTarget}
+            initial={null}
             onSuccess={loadAnnouncements}
           />
           <TeacherAnnouncementModal
             isOpen={teacherModalOpen}
             onClose={() => {
               setTeacherModalOpen(false);
-              setEditTarget(null);
             }}
-            initial={editTarget}
+            initial={null}
             onSuccess={loadAnnouncements}
           />
         </>

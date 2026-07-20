@@ -12,6 +12,10 @@ export type CreateCourseRequest = {
      */
     description?: string;
     /**
+     * Course thumbnail URL or file path
+     */
+    thumbnail?: string | null;
+    /**
      * Duration of the course (e.g., 6 months, 1 year)
      */
     duration?: string;

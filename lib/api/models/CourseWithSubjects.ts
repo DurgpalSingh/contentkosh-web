@@ -17,6 +17,10 @@ export type CourseWithSubjects = {
      */
     description?: string;
     /**
+     * Course thumbnail URL or file path
+     */
+    thumbnail?: string | null;
+    /**
      * Duration of the course
      */
     duration?: string;

@@ -39,7 +39,14 @@ export const isBlob = (value: any): value is Blob => {
 };
 
 export const isFormData = (value: any): value is FormData => {
-    return value instanceof FormData;
+    return (
+        value instanceof FormData ||
+        (
+            typeof globalThis !== 'undefined' &&
+            typeof globalThis.FormData !== 'undefined' &&
+            value instanceof globalThis.FormData
+        )
+    );
 };
 
 export const isSuccess = (status: number): boolean => {
