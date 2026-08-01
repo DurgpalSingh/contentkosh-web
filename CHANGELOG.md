@@ -1,6 +1,11 @@
 # Changelog
 
-All notable changes to this project will be documented in this file
+All notable changes to this project will be documented in this file.
+## Version [1.2.36] - course price tag
+**P.R Raised by** : shubh404-SE on **Date** : 2026-08-01
+### Added
+  - added a new field in course to add price tag for course.
+---
 ## Version [1.2.35] - edit announcement restrict + resume exam test
 **P.R Raised by** : shubh404-SE on **Date** : 2026-06-30
 
