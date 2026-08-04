@@ -16,9 +16,9 @@ export type CreateCourseRequest = {
      */
     thumbnail?: string | null;
     /**
-     * Duration of the course (e.g., 6 months, 1 year)
+     * Course price as a whole number. Use 0 for free courses.
      */
-    duration?: string;
+    price?: number;
     /**
      * Status of the course
      */
