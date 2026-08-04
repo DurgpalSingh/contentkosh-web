@@ -11,6 +11,8 @@ import { toast } from 'sonner';
 import { FileUploadArea } from '@/components/dashboard/contents/FileUploadArea';
 import { PROFILE_IMAGE_UPLOAD_ACCEPT } from '@/lib/content-upload.config';
 import { buildCourseFormData } from '@/lib/courses/courseThumbnail';
+import { CoursePriceField } from '@/components/dashboard/courses/CoursePriceField';
+import { parseCoursePrice, validateCoursePrice } from '@/lib/courses/coursePricing';
 
 interface AddCourseModalProps {
     isOpen: boolean;
@@ -31,6 +33,7 @@ export function AddCourseModal({
     const [description, setDescription] = useState('');
     const [startDate, setStartDate] = useState<Date | undefined>(undefined);
     const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+    const [price, setPrice] = useState('0');
     const [isActive, setIsActive] = useState(true);
     const [selectedExamId, setSelectedExamId] = useState<number | undefined>(defaultExamId ?? exams[0]?.id);
     const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
@@ -68,6 +71,7 @@ export function AddCourseModal({
         setDescription('');
         setStartDate(undefined);
         setEndDate(undefined);
+        setPrice('0');
         setIsActive(true);
         setThumbnailFile(null);
         // Reset to default or first available, effectively handled by the useEffect on open
@@ -104,13 +108,21 @@ export function AddCourseModal({
             return;
         }
 
+        const priceError = validateCoursePrice(price);
+        if (priceError) {
+            setError(priceError);
+            return;
+        }
+
         setLoading(true);
         setError(null);
 
         try {
+            const normalizedPrice = parseCoursePrice(price);
             const request: CreateCourseRequest = {
                 name: name.trim(),
                 description: description.length ? description.trim() : description,
+                price: normalizedPrice,
                 startDate: toISODateTime(startDate),
                 endDate: toISODateTime(endDate),
                 status: isActive ? CreateCourseRequest.status.ACTIVE : CreateCourseRequest.status.INACTIVE,
@@ -264,6 +276,12 @@ export function AddCourseModal({
                             />
                         </div>
                     </div>
+
+                    <CoursePriceField
+                        value={price}
+                        onChange={setPrice}
+                        disabled={loading || noExamsAvailable}
+                    />
 
                     <div className="flex items-center space-x-2">
                         <input

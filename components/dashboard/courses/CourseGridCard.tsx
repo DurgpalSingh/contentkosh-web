@@ -10,12 +10,14 @@ import {
     Calendar,
     FileText,
     Layers,
+    IndianRupee,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Course } from '@/lib/api';
 import { USER_ROLES } from '@/lib/constants';
 import { useAuthStore } from '@/store/useAuthStore';
 import { getCourseThumbnailUrl } from '@/lib/courses/courseThumbnail';
+import { formatCoursePrice } from '@/lib/courses/coursePricing';
 
 interface CourseGridCardProps {
     course: Course;
@@ -47,9 +49,11 @@ export function CourseGridCard({
     const startDate = formatDate(course.startDate);
     const endDate = formatDate(course.endDate);
     const thumbnailUrl = getCourseThumbnailUrl(course.thumbnail);
+    const priceLabel = formatCoursePrice(course.price);
+    const isFree = Number(course.price ?? 0) <= 0;
 
     return (
-        <div className="bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden flex flex-col h-full">
+        <div className="flex h-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-shadow duration-200 hover:shadow-md">
             <div className="relative aspect-[16/9] w-full overflow-hidden bg-slate-100">
                 <NextImage
                     src={thumbnailUrl}
@@ -60,8 +64,19 @@ export function CourseGridCard({
                     className="h-full w-full object-cover"
                     unoptimized={thumbnailUrl.startsWith('http')}
                 />
+                <div className="absolute left-3 top-3 flex flex-wrap gap-2">
+                    <span
+                        className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold shadow-sm ${isFree
+                            ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100'
+                            : 'bg-white text-slate-900 ring-1 ring-slate-200'
+                            }`}
+                    >
+                        {!isFree && <IndianRupee className="mr-1 h-3.5 w-3.5" />}
+                        {priceLabel}
+                    </span>
+                </div>
             </div>
-            <div className="p-5 flex-1">
+            <div className="flex-1 p-5">
                 {/* Header */}
                 <div className="flex justify-between items-start mb-2">
                     <div className="flex-1 min-w-0">
@@ -78,7 +93,6 @@ export function CourseGridCard({
                         </h3>
                     </div>
 
-                    {/* Menu */}
                     {isAdmin && <div className="relative ml-2 shrink-0">
                         <Button
                             variant="ghost"
@@ -139,42 +153,39 @@ export function CourseGridCard({
                     {course.description || 'No description available'}
                 </p>
 
-                {/* Course Duration */}
-                {(startDate || endDate) && (
-                    <div className="flex items-center text-sm text-slate-500 mb-3">
-                        <Clock className="h-4 w-4 mr-2 text-slate-400" />
-                        <span>
-                            {startDate && endDate && (
-                                <>
-                                    {startDate} - {endDate}
-                                </>
-                            )}
-                            {startDate && !endDate && <>Starts on {startDate}</>}
-                            {!startDate && endDate && <>Until {endDate}</>}
-                        </span>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div className="rounded-lg bg-slate-50 p-2">
+                        <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
+                            <Clock className="h-3.5 w-3.5 text-slate-400" />
+                            Dates
+                        </div>
+                        <div className="mt-1 truncate font-semibold text-slate-800" title={startDate || endDate ? `${startDate ?? ''}${startDate && endDate ? ' - ' : ''}${endDate ?? ''}` : 'Not set'}>
+                            {startDate && endDate && `${startDate} - ${endDate}`}
+                            {startDate && !endDate && `Starts ${startDate}`}
+                            {!startDate && endDate && `Until ${endDate}`}
+                            {!startDate && !endDate && 'Not set'}
+                        </div>
                     </div>
-                )}
-
-                {/* Meta Info */}
-                <div className="space-y-2">
-                    <div className="flex items-center text-sm text-slate-500">
-                        <Calendar className="h-4 w-4 mr-2 text-slate-400" />
-                        <span>
-                            Created{' '}
-                            {course.createdAt
-                                ? new Date(course.createdAt).toLocaleDateString()
-                                : 'N/A'}
-                        </span>
+                    <div className="rounded-lg bg-slate-50 p-2">
+                        <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
+                            <Calendar className="h-3.5 w-3.5 text-slate-400" />
+                            Created
+                        </div>
+                        <div className="mt-1 font-semibold text-slate-800">
+                            {course.createdAt ? new Date(course.createdAt).toLocaleDateString() : 'N/A'}
+                        </div>
                     </div>
-
-                    <div className="flex items-center text-sm text-slate-500">
-                        <FileText className="h-4 w-4 mr-2 text-slate-400" />
-                        <span>{course.subjects?.length || 0} Subjects</span>
+                    <div className="rounded-lg bg-slate-50 p-2">
+                        <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
+                            <FileText className="h-3.5 w-3.5 text-slate-400" />
+                            Subjects
+                        </div>
+                        <div className="mt-1 font-semibold text-slate-800">{course.subjects?.length || 0}</div>
                     </div>
-
-                    <div>
+                    <div className="rounded-lg bg-slate-50 p-2">
+                        <div className="mb-1 text-xs font-medium text-slate-500">Status</div>
                         <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${course.status === 'ACTIVE'
+                            className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${course.status === 'ACTIVE'
                                 ? 'bg-green-100 text-green-800'
                                 : 'bg-slate-100 text-slate-800'
                                 }`}

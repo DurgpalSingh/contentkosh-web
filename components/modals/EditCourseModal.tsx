@@ -14,6 +14,8 @@ import { toast } from 'sonner';
 import { FileUploadArea } from '@/components/dashboard/contents/FileUploadArea';
 import { PROFILE_IMAGE_UPLOAD_ACCEPT } from '@/lib/content-upload.config';
 import { buildCourseFormData, getCourseThumbnailUrl } from '@/lib/courses/courseThumbnail';
+import { CoursePriceField } from '@/components/dashboard/courses/CoursePriceField';
+import { parseCoursePrice, validateCoursePrice } from '@/lib/courses/coursePricing';
 
 interface EditCourseModalProps {
     isOpen: boolean;
@@ -34,6 +36,7 @@ export function EditCourseModal({
     const [description, setDescription] = useState(course.description || '');
     const [startDate, setStartDate] = useState<Date | undefined>(undefined);
     const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+    const [price, setPrice] = useState(String(course.price ?? 0));
     const [isActive, setIsActive] = useState(course.status === 'ACTIVE');
     const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
     const [thumbnailPreviewUrl, setThumbnailPreviewUrl] = useState<string | null>(null);
@@ -46,6 +49,7 @@ export function EditCourseModal({
         setDescription(course.description || '');
         setStartDate(course.startDate ? new Date(course.startDate) : undefined);
         setEndDate(course.endDate ? new Date(course.endDate) : undefined);
+        setPrice(String(course.price ?? 0));
         setIsActive(course.status === 'ACTIVE');
         setThumbnailFile(null);
         setThumbnailRemoved(false);
@@ -92,6 +96,12 @@ export function EditCourseModal({
             return;
         }
 
+        const priceError = validateCoursePrice(price);
+        if (priceError) {
+            setError(priceError);
+            return;
+        }
+
         if (!course.id) {
             setError('Course ID is missing');
             return;
@@ -101,9 +111,11 @@ export function EditCourseModal({
         setError(null);
 
         try {
+            const normalizedPrice = parseCoursePrice(price);
             const request: UpdateCourseRequest = {
                 name: name.trim(),
                 description: description.length ? description.trim() : description,
+                price: normalizedPrice,
                 startDate: toISODateTime(startDate),
                 endDate: toISODateTime(endDate),
                 status: isActive ? UpdateCourseRequest.status.ACTIVE : UpdateCourseRequest.status.INACTIVE,
@@ -214,6 +226,12 @@ export function EditCourseModal({
                             />
                         </div>
                     </div>
+
+                    <CoursePriceField
+                        value={price}
+                        onChange={setPrice}
+                        disabled={loading}
+                    />
 
                     <div className="flex items-center space-x-2">
                         <input
