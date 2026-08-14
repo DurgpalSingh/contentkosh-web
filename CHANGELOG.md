@@ -1,6 +1,11 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.2.37] - course card ui
+**P.R Raised by** : shubh404-SE on **Date** : 2026-08-14
+
+### Changed
+  - Simplify Course Card by Removing Unnecessary Information
 ## Version [1.2.36] - course price tag
 **P.R Raised by** : shubh404-SE on **Date** : 2026-08-01
 ### Added
