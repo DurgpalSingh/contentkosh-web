@@ -71,7 +71,7 @@ export function CourseGridCard({
                             : 'bg-white text-slate-900 ring-1 ring-slate-200'
                             }`}
                     >
-                        {!isFree && <IndianRupee className="mr-1 h-3.5 w-3.5" />}
+                        {/* {!isFree && <IndianRupee className="mr-1 h-3.5 w-3.5" />} */}
                         {priceLabel}
                     </span>
                 </div>
@@ -149,9 +149,9 @@ export function CourseGridCard({
                 </div>
 
                 {/* Description */}
-                <p className="mb-3 min-h-10 text-sm text-slate-600 line-clamp-2">
+                {/* <p className="mb-3 min-h-10 text-sm text-slate-600 line-clamp-2">
                     {course.description || 'No description available'}
-                </p>
+                </p> */}
 
                 <div className="grid grid-cols-2 gap-2 text-sm">
                     <div className="rounded-lg bg-slate-50 p-2">
@@ -175,6 +175,7 @@ export function CourseGridCard({
                             {course.createdAt ? new Date(course.createdAt).toLocaleDateString() : 'N/A'}
                         </div>
                     </div>
+                    {/* <>
                     <div className="rounded-lg bg-slate-50 p-2">
                         <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
                             <FileText className="h-3.5 w-3.5 text-slate-400" />
@@ -193,6 +194,7 @@ export function CourseGridCard({
                             {course.status === 'ACTIVE' ? 'Active' : 'Inactive'}
                         </span>
                     </div>
+                    </> */}
                 </div>
             </div>
 
