@@ -81,7 +81,8 @@ export default function LoginPage() {
 
         const safeNextPath = getSafeNextPath();
         if (profile?.role === USER_ROLES.SUPERADMIN) {
-          router.push(safeNextPath || ROUTES.SUPERADMIN.BUSINESSES);
+          const isSuperAdminNextPath = safeNextPath?.startsWith(ROUTES.SUPERADMIN.ROOT);
+          router.push(isSuperAdminNextPath ? safeNextPath! : ROUTES.SUPERADMIN.BUSINESSES);
         } else if (profile?.business?.slug) {
           router.push(safeNextPath || `/${profile.business.slug}/dashboard`);
         } else {

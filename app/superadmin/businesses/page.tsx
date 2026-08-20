@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Building2, Filter, Search, Calendar, Info, PauseCircle, PlayCircle, Trash2 } from 'lucide-react';
+import { Building2, Filter, Search, Calendar, Info, Mail, Phone, PauseCircle, PlayCircle, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useSuperAdminStore, BusinessStatusFilter } from '@/store/useSuperAdminStore';
@@ -206,8 +206,15 @@ function BusinessRow({
                 {status}
               </span>
             </div>
-            <div className="flex items-center mt-1 text-xs sm:text-sm text-gray-500">
-              <span className="truncate">/{business.slug || 'no-slug'}</span>
+            <div className="flex flex-col gap-0.5 mt-1 text-xs sm:text-sm text-gray-500 sm:flex-row sm:items-center sm:gap-4">
+              <span className="flex items-center min-w-0">
+                <Mail className="h-3.5 w-3.5 mr-1.5 flex-shrink-0" />
+                <span className="truncate">{business.email || 'No email'}</span>
+              </span>
+              <span className="flex items-center min-w-0">
+                <Phone className="h-3.5 w-3.5 mr-1.5 flex-shrink-0" />
+                <span className="truncate">{business.contactNumber || 'No number'}</span>
+              </span>
             </div>
             {business.statusReason && (
               <div className="flex items-start gap-1 mt-1 text-xs text-gray-500">
