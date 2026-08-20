@@ -55,6 +55,7 @@ export namespace User {
      * User role
      */
     export enum role {
+        SUPERADMIN = 'SUPERADMIN',
         ADMIN = 'ADMIN',
         TEACHER = 'TEACHER',
         STUDENT = 'STUDENT',

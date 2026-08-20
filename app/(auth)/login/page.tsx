@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -10,7 +10,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/store/useAuthStore';
 import { authApi } from '@/lib/auth';
-import { ROUTES } from '@/lib/constants';
+import { ROUTES, USER_ROLES } from '@/lib/constants';
 import { LoginRequest } from '@/lib/api';
 import { toast } from 'sonner';
 
@@ -36,6 +36,12 @@ export default function LoginPage() {
   // useSearchParams can cause prerender/suspense issues during SSR; use a client-only fallback
   const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams('');
   const { login, setProfile } = useAuthStore();
+
+  useEffect(() => {
+    const reason = searchParams.get('reason');
+    if (reason) setError(reason);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const {
     register,
@@ -73,11 +79,12 @@ export default function LoginPage() {
           setProfile(profile);
         }
 
-        if (profile?.business?.slug) {
-          const safeNextPath = getSafeNextPath();
+        const safeNextPath = getSafeNextPath();
+        if (profile?.role === USER_ROLES.SUPERADMIN) {
+          router.push(safeNextPath || ROUTES.SUPERADMIN.BUSINESSES);
+        } else if (profile?.business?.slug) {
           router.push(safeNextPath || `/${profile.business.slug}/dashboard`);
         } else {
-          const safeNextPath = getSafeNextPath();
           router.push(safeNextPath || ROUTES.DASHBOARD);
         }
         toast.success('Login successful');
