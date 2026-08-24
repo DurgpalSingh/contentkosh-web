@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { AuthService } from '@/lib/api';
-import { ROUTES } from '@/lib/constants';
+import { API_CODES, ROUTES } from '@/lib/constants';
 
 let isRefreshing = false;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -27,6 +27,19 @@ export const setupAxiosInterceptors = () => {
         },
         async (error) => {
             const originalRequest = error.config;
+
+            // A business the user belongs to has been paused/deleted by Super Admin - this
+            // will never be fixed by a token refresh, so skip straight to logging the user out
+            // with the reason instead of wasting a refresh round-trip that will fail the same way.
+            if (error.response?.data?.apiCode === API_CODES.BUSINESS_SUSPENDED) {
+                if (typeof window !== 'undefined') {
+                    const message = error.response.data.message || 'This institute is not currently active.';
+                    const loginUrl = new URL(ROUTES.LOGIN, window.location.origin);
+                    loginUrl.searchParams.set('reason', message);
+                    window.location.href = loginUrl.toString();
+                }
+                return Promise.reject(error);
+            }
 
             // If auth fails and we haven't tried to refresh yet
             if ((error.response?.status === 401 || error.response?.status === 403) && !originalRequest._retry) {
