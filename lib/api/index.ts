@@ -129,6 +129,7 @@ export type {
   UpdateSettingsProfilePayload,
 } from './models/SettingsProfile';
 export { BulkUploadService } from './services/BulkUploadService';
+export { SuperAdminService } from './services/SuperAdminService';
 export type {
   BulkUploadParsedQuestion,
   BulkUploadInvalidBlock,

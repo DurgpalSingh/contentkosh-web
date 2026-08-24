@@ -1,6 +1,13 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.2.38] - Super admin flow
+**P.R Raised by** : shubh404-SE on **Date** : 2026-08-21
+
+### Added
+  - added super admin flow to manage all business, 
+  - super admin can pause/resume or delete any business from the page /superadmin/businesses.
+---
 ## Version [1.2.37] - course card ui
 **P.R Raised by** : shubh404-SE on **Date** : 2026-08-14
 
