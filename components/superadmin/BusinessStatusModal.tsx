@@ -22,11 +22,11 @@ const ACTION_CONFIG: Record<
   { title: string; icon: typeof PauseCircle; iconClass: string; bgClass: string; confirmLabel: string; requiresReason: boolean; description: string }
 > = {
   [BUSINESS_STATUS_ACTIONS.PAUSE]: {
-    title: 'Pause Business',
+    title: 'Hold Business',
     icon: PauseCircle,
     iconClass: 'text-amber-600',
     bgClass: 'bg-amber-100',
-    confirmLabel: 'Pause',
+    confirmLabel: 'Hold',
     requiresReason: true,
     description: 'This immediately blocks every user of this business from logging in and using the platform. You can resume access at any time.',
   },
