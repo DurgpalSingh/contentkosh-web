@@ -1,6 +1,13 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.2.39] - Bussiness suspend refersh token infinite loop issue fixed
+**P.R Raised by** : shubh404-SE on **Date** : 2026-08-25
+
+### Changed
+  - fixed infinite loop issue in refresh token api when business is suspended.
+  - changes "Pause" bussiness status to "Hold"
+---
 ## Version [1.2.38] - Super admin flow
 **P.R Raised by** : shubh404-SE on **Date** : 2026-08-21
 
