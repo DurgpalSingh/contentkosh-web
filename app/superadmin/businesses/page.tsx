@@ -28,6 +28,18 @@ function getStatusBadgeClass(status?: string) {
   }
 }
 
+/** Display-only label - the underlying status value/API contract is unchanged. */
+function getStatusLabel(status?: string) {
+  switch (status) {
+    case BUSINESS_STATUS.PAUSED:
+      return 'On Hold';
+    case BUSINESS_STATUS.DELETED:
+      return 'Deleted';
+    default:
+      return 'Active';
+  }
+}
+
 export default function SuperAdminBusinessesPage() {
   const {
     businesses,
@@ -73,7 +85,7 @@ export default function SuperAdminBusinessesPage() {
 
     if (modalAction === BUSINESS_STATUS_ACTIONS.PAUSE) {
       await pauseBusiness(selectedBusiness.id, reason!);
-      toast.success(`${selectedBusiness.instituteName} paused`);
+      toast.success(`${selectedBusiness.instituteName} put on hold`);
     } else if (modalAction === BUSINESS_STATUS_ACTIONS.RESUME) {
       await resumeBusiness(selectedBusiness.id);
       toast.success(`${selectedBusiness.instituteName} resumed`);
@@ -117,7 +129,7 @@ export default function SuperAdminBusinessesPage() {
               >
                 {STATUS_OPTIONS.map((option) => (
                   <option key={option} value={option}>
-                    {option === BUSINESS_STATUS_FILTER.ALL ? 'All Statuses' : option}
+                    {option === BUSINESS_STATUS_FILTER.ALL ? 'All Statuses' : getStatusLabel(option)}
                   </option>
                 ))}
               </select>
@@ -203,7 +215,7 @@ function BusinessRow({
             <div className="flex items-center space-x-2 sm:space-x-3 flex-wrap">
               <h4 className="text-sm font-medium text-gray-900 truncate">{business.instituteName}</h4>
               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeClass(status)}`}>
-                {status}
+                {getStatusLabel(status)}
               </span>
             </div>
             <div className="flex flex-col gap-0.5 mt-1 text-xs sm:text-sm text-gray-500 sm:flex-row sm:items-center sm:gap-4">
@@ -251,7 +263,7 @@ function BusinessRow({
                 onClick={() => onAction(business, BUSINESS_STATUS_ACTIONS.PAUSE)}
               >
                 <PauseCircle className="h-4 w-4 mr-1" />
-                <span className="hidden sm:inline">Pause</span>
+                <span className="hidden sm:inline">Hold</span>
               </Button>
             )}
             {status !== BUSINESS_STATUS.DELETED && (
