@@ -6,6 +6,7 @@ export const ROUTES = {
   VERIFY_EMAIL: '/verify-email',
   RESEND_VERIFICATION: '/resend-verification',
   DASHBOARD: '/dashboard',
+  AI: '/dashboard/ai',
   /** Singular path; slug is applied in `DashboardLayout` for `/dashboard/*` links. */
   ANNOUNCEMENT: '/dashboard/announcement',
   TESTS: '/dashboard/tests',
