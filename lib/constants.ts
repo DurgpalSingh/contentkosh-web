@@ -4,6 +4,7 @@ export const ROUTES = {
   LOGIN: '/login',
   REGISTER: '/register',
   DASHBOARD: '/dashboard',
+  AI: '/dashboard/ai',
   /** Singular path; slug is applied in `DashboardLayout` for `/dashboard/*` links. */
   ANNOUNCEMENT: '/dashboard/announcement',
   TESTS: '/dashboard/tests',

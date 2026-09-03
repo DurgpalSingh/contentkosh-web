@@ -12,7 +12,8 @@ import {
     LucideIcon,
     FileText,
     FlaskConical,
-    NotebookPen
+    NotebookPen,
+    Bot
 } from 'lucide-react';
 
 export type UserRole = (typeof USER_ROLES)[keyof typeof USER_ROLES];
@@ -100,6 +101,12 @@ export const NAVIGATION_CONFIG: NavigationItem[] = [
         href: '/dashboard/contents',
         icon: FileText,
         roles: [USER_ROLES.ADMIN, USER_ROLES.TEACHER, USER_ROLES.STUDENT],
+    },
+    {
+        name: 'Contentkosh AI',
+        href: ROUTES.AI,
+        icon: Bot,
+        roles: [USER_ROLES.STUDENT],
     },
     {
         name: 'Settings',

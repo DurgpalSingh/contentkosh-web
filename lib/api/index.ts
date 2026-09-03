@@ -13,6 +13,7 @@ export type { Announcement } from './models/Announcement';
 export type { AnnouncementScope } from './models/AnnouncementScope';
 export type { AnnouncementTarget } from './models/AnnouncementTarget';
 export type { ApiResponse } from './models/ApiResponse';
+export type { KnowledgeBaseQueryRequest, KnowledgeBaseQueryResponse } from './models/Ai';
 export { AssignUserToBusinessRequest } from './models/AssignUserToBusinessRequest';
 export type { attemptId } from './models/attemptId';
 export { AttemptStatus } from './models/AttemptStatus';
@@ -102,6 +103,7 @@ export type { TeacherWithUser } from './models/TeacherWithUser';
 export { TeacherStatus, Gender } from './models/Teacher';
 
 export { AnnouncementsService } from './services/AnnouncementsService';
+export { AiService } from './services/AiService';
 export { AuthService } from './services/AuthService';
 export { BatchesService } from './services/BatchesService';
 export { BatchUsersService } from './services/BatchUsersService';
