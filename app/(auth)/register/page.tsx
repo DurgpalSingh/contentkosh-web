@@ -481,7 +481,24 @@ export default function RegisterPage() {
                     className="mt-1 h-4 w-4 rounded border-slate-300 text-cyan-700 focus:ring-cyan-200"
                   />
                   <span>
-                    I agree to the Terms and Conditions
+                    I agree to the{' '}
+                    <Link
+                      href="/terms-and-conditions"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-semibold text-cyan-700 hover:text-cyan-800"
+                    >
+                      Terms and Conditions
+                    </Link>
+                    {' '}and{' '}
+                    <Link
+                      href="/privacy-policy"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-semibold text-cyan-700 hover:text-cyan-800"
+                    >
+                      Privacy Policy
+                    </Link>
                   </span>
                 </label>
                 {errors.termsAccepted && (

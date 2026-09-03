@@ -1,6 +1,13 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.2.40] - Terms & conditions and privacy policy pages
+**P.R Raised by** : shubh404-SE on **Date** : 2026-08-31
+
+### Added
+  - added terms & conditions and privacy policy pages.
+  - added linked in register page.
+
 ## Version [1.2.39] - Bussiness suspend refersh token infinite loop issue fixed
 **P.R Raised by** : shubh404-SE on **Date** : 2026-08-25
 
