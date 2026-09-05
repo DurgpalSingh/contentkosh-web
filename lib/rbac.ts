@@ -103,7 +103,7 @@ export const NAVIGATION_CONFIG: NavigationItem[] = [
         roles: [USER_ROLES.ADMIN, USER_ROLES.TEACHER, USER_ROLES.STUDENT],
     },
     {
-        name: 'Contentkosh AI',
+        name: 'CK Agent',
         href: ROUTES.AI,
         icon: Bot,
         roles: [USER_ROLES.STUDENT],
