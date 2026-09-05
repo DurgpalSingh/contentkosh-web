@@ -1,7 +1,7 @@
 'use client';
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
-import { Bot, Loader2, Send, Sparkles } from 'lucide-react';
+import { Bot, Loader2, Send, Sparkles, Trash2 } from 'lucide-react';
 import { BatchesService, AiService, Batch, KnowledgeBaseQueryResponse } from '@/lib/api';
 import { useAuthStore } from '@/store/useAuthStore';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -15,10 +15,11 @@ type CourseOption = {
 };
 
 type ChatMessage = {
-  id: string;
+  id: string | number;
   role: 'student' | 'assistant';
   content: string;
   source?: KnowledgeBaseQueryResponse;
+  dbId?: number; // For storing database ID of saved chats
 };
 
 const createMessageId = () => `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -40,6 +41,7 @@ export default function ContentkoshAiPage() {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [loadingChats, setLoadingChats] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
@@ -67,6 +69,7 @@ export default function ContentkoshAiPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [messages, sending]);
 
+  // Load batches on mount
   useEffect(() => {
     const loadBatches = async () => {
       if (!isAuthenticated || !business?.id) return;
@@ -84,6 +87,54 @@ export default function ContentkoshAiPage() {
 
     loadBatches();
   }, [business?.id, isAuthenticated]);
+
+  // Load old chats when course changes
+  useEffect(() => {
+    const loadOldChats = async () => {
+      if (!isAuthenticated || !business?.id || !selectedCourseId) return;
+
+      try {
+        setLoadingChats(true);
+        const response = await AiService.getChats({
+          businessId: business.id,
+          courseId: selectedCourseId,
+          limit: 50,
+          offset: 0,
+        });
+
+        if (response.data?.data) {
+          const oldMessages: ChatMessage[] = [];
+          // API returns newest-first (for pagination); reverse to chronological order for display.
+          [...response.data.data].reverse().forEach((chat) => {
+            // Add user message
+            oldMessages.push({
+              id: `user-${chat.id}`,
+              role: 'student',
+              content: chat.userMessage,
+              dbId: chat.id,
+            });
+            // Add assistant response
+            oldMessages.push({
+              id: `assistant-${chat.id}`,
+              role: 'assistant',
+              content: chat.assistantResponse,
+              source: chat.source || undefined,
+              dbId: chat.id,
+            });
+          });
+          setMessages(oldMessages);
+        }
+      } catch (err) {
+        console.error('Failed to load chat history:', err);
+        // Don't show error to user, just clear messages
+        setMessages([]);
+      } finally {
+        setLoadingChats(false);
+      }
+    };
+
+    loadOldChats();
+  }, [selectedCourseId, business?.id, isAuthenticated]);
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -110,19 +161,54 @@ export default function ContentkoshAiPage() {
         },
       });
       const answer = response.data;
-      setMessages((current) => [
-        ...current,
-        {
-          id: createMessageId(),
-          role: 'assistant',
-          content: answer?.answer || 'No answer was returned.',
-          source: answer,
-        },
-      ]);
+      
+      const assistantMessage: ChatMessage = {
+        id: createMessageId(),
+        role: 'assistant',
+        content: answer?.answer || 'No answer was returned.',
+        source: answer,
+      };
+
+      setMessages((current) => [...current, assistantMessage]);
+
+      // Save chat to database
+      try {
+        await AiService.saveChat({
+          businessId: business.id,
+          requestBody: {
+            courseId: selectedCourseId,
+            userMessage: trimmedQuery,
+            assistantResponse: answer?.answer || 'No answer was returned.',
+            source: answer,
+          },
+        });
+      } catch (saveErr) {
+        console.error('Failed to save chat:', saveErr);
+        // Don't show error to user, chat is still displayed locally
+      }
     } catch (err) {
       setError(extractErrorMessage(err));
     } finally {
       setSending(false);
+    }
+  };
+
+  const handleDeleteChat = async (chatId: number | string) => {
+    if (!business?.id || typeof chatId === 'string') return;
+
+    try {
+      await AiService.deleteChat({
+        businessId: business.id,
+        chatId,
+      });
+
+      // Remove both user and assistant messages for this chat from local state
+      setMessages((current) =>
+        current.filter((msg) => msg.dbId !== chatId),
+      );
+    } catch (err) {
+      console.error('Failed to delete chat:', err);
+      setError('Failed to delete chat message');
     }
   };
 
@@ -179,9 +265,13 @@ export default function ContentkoshAiPage() {
           </section>
 
           <section className="flex min-h-0 flex-1 flex-col rounded-2xl border border-slate-200 bg-slate-50/70 shadow-sm">
-            <div className="min-h-[22rem] flex-1 space-y-4 overflow-y-auto p-4 sm:p-5">
-              {messages.length === 0 ? (
-                <div className="flex h-full min-h-[18rem] items-center justify-center text-center">
+            <div className="min-h-88 flex-1 space-y-4 overflow-y-auto p-4 sm:p-5">
+              {loadingChats ? (
+                <div className="flex h-full min-h-72 items-center justify-center">
+                  <Loader2 className="h-6 w-6 animate-spin text-cyan-600" />
+                </div>
+              ) : messages.length === 0 ? (
+                <div className="flex h-full min-h-72 items-center justify-center text-center">
                   <div>
                     <Sparkles className="mx-auto h-9 w-9 text-cyan-600" />
                     <h2 className="mt-3 text-base font-semibold text-slate-900">Start with a question</h2>
@@ -196,20 +286,31 @@ export default function ContentkoshAiPage() {
                     key={message.id}
                     className={`flex ${message.role === 'student' ? 'justify-end' : 'justify-start'}`}
                   >
-                    <div
-                      className={`max-w-[88%] rounded-2xl px-4 py-3 text-sm shadow-sm sm:max-w-[76%] ${
-                        message.role === 'student'
-                          ? 'bg-cyan-600 text-white'
-                          : 'border border-slate-200 bg-white text-slate-800'
-                      }`}
-                    >
-                      <p className="whitespace-pre-wrap break-words leading-6">{message.content}</p>
-                      {message.role === 'assistant' && message.source?.source ? (
-                        <p className="mt-3 border-t border-slate-100 pt-2 text-xs text-slate-500">
-                          Source: {message.source.title || message.source.source}
-                          {message.source.page ? `, page ${message.source.page}` : ''}
-                        </p>
-                      ) : null}
+                    <div className="flex w-full max-w-[88%] items-end gap-2 sm:max-w-[76%]">
+                      <div
+                        className={`flex-1 rounded-2xl px-4 py-3 text-sm shadow-sm ${
+                          message.role === 'student'
+                            ? 'bg-cyan-600 text-white'
+                            : 'border border-slate-200 bg-white text-slate-800'
+                        }`}
+                      >
+                        <p className="whitespace-pre-wrap break-normal leading-6">{message.content}</p>
+                        {message.role === 'assistant' && message.source?.source ? (
+                          <p className="mt-3 border-t border-slate-100 pt-2 text-xs text-slate-500">
+                            Source: {message.source.title || message.source.source}
+                            {message.source.page ? `, page ${message.source.page}` : ''}
+                          </p>
+                        ) : null}
+                      </div>
+                      {message.dbId && (
+                        <button
+                          onClick={() => handleDeleteChat(message.dbId!)}
+                          className="shrink-0 text-slate-400 hover:text-red-600 transition-colors"
+                          title="Delete this chat"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
                     </div>
                   </article>
                 ))
@@ -237,7 +338,7 @@ export default function ContentkoshAiPage() {
                   onChange={(event) => setQuery(event.target.value)}
                   placeholder="Ask a question..."
                   maxLength={1000}
-                  className="min-h-[84px] resize-none border-slate-300 focus-visible:ring-cyan-500"
+                  className="min-h-21 resize-none border-slate-300 focus-visible:ring-cyan-500"
                   disabled={sending}
                   onKeyDown={(event) => {
                     if (event.key === 'Enter' && !event.shiftKey) {
