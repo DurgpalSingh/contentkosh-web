@@ -1,18 +1,12 @@
 'use client';
 
-import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 import { Bot, Loader2, Send, Sparkles, Trash2 } from 'lucide-react';
 import { BatchesService, AiService, Batch, KnowledgeBaseQueryResponse } from '@/lib/api';
 import { useAuthStore } from '@/store/useAuthStore';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Button } from '@/components/ui/button';
-import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-
-type CourseOption = {
-  id: number;
-  name: string;
-};
 
 type ChatMessage = {
   id: string | number;
@@ -36,7 +30,6 @@ const extractErrorMessage = (error: unknown): string => {
 export default function ContentkoshAiPage() {
   const { user, business, isAuthenticated, isLoading, isInitialized } = useAuthStore();
   const [batches, setBatches] = useState<Batch[]>([]);
-  const [selectedCourseId, setSelectedCourseId] = useState<number | undefined>(undefined);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
@@ -44,26 +37,6 @@ export default function ContentkoshAiPage() {
   const [loadingChats, setLoadingChats] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
-
-  const courseOptions = useMemo<CourseOption[]>(() => {
-    const byId = new Map<number, CourseOption>();
-
-    for (const batch of batches) {
-      const id = batch.course?.id ?? batch.courseId;
-      if (typeof id !== 'number') continue;
-      const name = batch.course?.name || `Course ${id}`;
-      if (!byId.has(id)) {
-        byId.set(id, { id, name });
-      }
-    }
-
-    return Array.from(byId.values()).sort((a, b) => a.name.localeCompare(b.name));
-  }, [batches]);
-
-  useEffect(() => {
-    if (selectedCourseId || courseOptions.length === 0) return;
-    setSelectedCourseId(courseOptions[0].id);
-  }, [courseOptions, selectedCourseId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
@@ -88,16 +61,15 @@ export default function ContentkoshAiPage() {
     loadBatches();
   }, [business?.id, isAuthenticated]);
 
-  // Load old chats when course changes
+  // Load chat history on mount
   useEffect(() => {
     const loadOldChats = async () => {
-      if (!isAuthenticated || !business?.id || !selectedCourseId) return;
+      if (!isAuthenticated || !business?.id) return;
 
       try {
         setLoadingChats(true);
         const response = await AiService.getChats({
           businessId: business.id,
-          courseId: selectedCourseId,
           limit: 50,
           offset: 0,
         });
@@ -134,12 +106,12 @@ export default function ContentkoshAiPage() {
     };
 
     loadOldChats();
-  }, [selectedCourseId, business?.id, isAuthenticated]);
+  }, [business?.id, isAuthenticated]);
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     const trimmedQuery = query.trim();
-    if (!trimmedQuery || !business?.id || !selectedCourseId || sending) return;
+    if (!trimmedQuery || !business?.id || sending) return;
 
     const studentMessage: ChatMessage = {
       id: createMessageId(),
@@ -156,7 +128,6 @@ export default function ContentkoshAiPage() {
       const response = await AiService.queryKnowledgeBase({
         businessId: business.id,
         requestBody: {
-          courseId: selectedCourseId,
           query: trimmedQuery,
         },
       });
@@ -176,7 +147,6 @@ export default function ContentkoshAiPage() {
         await AiService.saveChat({
           businessId: business.id,
           requestBody: {
-            courseId: selectedCourseId,
             userMessage: trimmedQuery,
             assistantResponse: answer?.answer || 'No answer was returned.',
             source: answer,
@@ -222,7 +192,7 @@ export default function ContentkoshAiPage() {
 
   if (!isAuthenticated || !user) return null;
 
-  const hasCourses = courseOptions.length > 0;
+  const hasCourses = batches.length > 0;
 
   return (
     <div className="flex min-h-[calc(100vh-8rem)] flex-col gap-4 sm:gap-5">
@@ -248,22 +218,6 @@ export default function ContentkoshAiPage() {
         </div>
       ) : (
         <>
-          <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <label className="mb-2 block text-sm font-medium text-slate-700" htmlFor="ai-course">
-              Course
-            </label>
-            <Select
-              id="ai-course"
-              value={selectedCourseId ?? ''}
-              onChange={(value) => setSelectedCourseId(Number(value))}
-              options={courseOptions.map((course) => ({
-                value: course.id,
-                label: course.name,
-              }))}
-              triggerClassName="w-full border border-gray-300 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors"
-            />
-          </section>
-
           <section className="flex min-h-0 flex-1 flex-col rounded-2xl border border-slate-200 bg-slate-50/70 shadow-sm">
             <div className="min-h-88 flex-1 space-y-4 overflow-y-auto p-4 sm:p-5">
               {loadingChats ? (
@@ -276,7 +230,7 @@ export default function ContentkoshAiPage() {
                     <Sparkles className="mx-auto h-9 w-9 text-cyan-600" />
                     <h2 className="mt-3 text-base font-semibold text-slate-900">Start with a question</h2>
                     <p className="mt-1 max-w-md text-sm text-slate-500">
-                      Choose a course and ask about uploaded PDF content from that course.
+                      Ask about uploaded PDF content from your enrolled courses.
                     </p>
                   </div>
                 </div>
@@ -349,7 +303,7 @@ export default function ContentkoshAiPage() {
                 />
                 <Button
                   type="submit"
-                  disabled={sending || !query.trim() || !selectedCourseId}
+                  disabled={sending || !query.trim()}
                   className="h-11 shrink-0 bg-cyan-600 px-4 text-white hover:bg-cyan-700"
                 >
                   {sending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
