@@ -59,12 +59,10 @@ export class AiService {
 
   public static getChats({
     businessId,
-    courseId,
     limit = 50,
     offset = 0,
   }: {
     businessId: number;
-    courseId: number;
     limit?: number;
     offset?: number;
   }): CancelablePromise<(ApiResponse & { data?: AIChatListResponse })> {
@@ -75,7 +73,6 @@ export class AiService {
         businessId,
       },
       query: {
-        courseId,
         limit,
         offset,
       },

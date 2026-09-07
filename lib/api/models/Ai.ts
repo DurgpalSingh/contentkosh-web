@@ -1,5 +1,4 @@
 export type KnowledgeBaseQueryRequest = {
-  courseId: number;
   query: string;
 };
 
@@ -15,7 +14,6 @@ export type KnowledgeBaseQueryResponse = {
 };
 
 export type SaveAIChatRequest = {
-  courseId: number;
   userMessage: string;
   assistantResponse: string;
   source?: KnowledgeBaseQueryResponse;
@@ -24,7 +22,6 @@ export type SaveAIChatRequest = {
 export type AIChatResponse = {
   id: number;
   userId: number;
-  courseId: number;
   businessId: number;
   userMessage: string;
   assistantResponse: string;
