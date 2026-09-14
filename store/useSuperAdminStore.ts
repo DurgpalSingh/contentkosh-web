@@ -26,6 +26,7 @@ interface SuperAdminState {
   pauseBusiness: (id: number, reason: string) => Promise<void>;
   resumeBusiness: (id: number) => Promise<void>;
   deleteBusiness: (id: number, reason: string) => Promise<void>;
+  impersonateBusiness: (id: number) => Promise<void>;
 }
 
 function extractErrorMessage(error: unknown, fallback: string): string {
@@ -81,5 +82,9 @@ export const useSuperAdminStore = create<SuperAdminState>()((set, get) => ({
   deleteBusiness: async (id, reason) => {
     await SuperAdminService.patchApiSuperadminBusinessesStatus(id, { status: BUSINESS_STATUS.DELETED, reason });
     await get().fetchBusinesses();
+  },
+
+  impersonateBusiness: async (id) => {
+    await SuperAdminService.postApiSuperadminBusinessesImpersonate(id);
   },
 }));

@@ -1,6 +1,12 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.2.41] - bussiness workspace access
+**P.R Raised by** : shubh404-SE on **Date** : 2026-09-11
+
+### Changes
+  - Now superadmin can access a bussiness workspace without login as a bussiness admin, superadmin can access all the pages of bussiness workspace.
+---
 ## Version [1.2.40] - Terms & conditions and privacy policy pages
 **P.R Raised by** : shubh404-SE on **Date** : 2026-08-31
 

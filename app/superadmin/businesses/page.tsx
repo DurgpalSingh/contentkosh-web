@@ -1,10 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Building2, Filter, Search, Calendar, Info, Mail, Phone, PauseCircle, PlayCircle, Trash2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Building2, ExternalLink, Filter, Search, Calendar, Info, Mail, Phone, PauseCircle, PlayCircle, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useSuperAdminStore, BusinessStatusFilter } from '@/store/useSuperAdminStore';
+import { useAuthStore } from '@/store/useAuthStore';
 import { Business } from '@/lib/api';
 import { BusinessStatusModal, BusinessStatusAction } from '@/components/superadmin/BusinessStatusModal';
 import { toast } from 'sonner';
@@ -54,10 +56,13 @@ export default function SuperAdminBusinessesPage() {
     pauseBusiness,
     resumeBusiness,
     deleteBusiness,
+    impersonateBusiness,
   } = useSuperAdminStore();
+  const router = useRouter();
 
   const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
   const [modalAction, setModalAction] = useState<BusinessStatusAction | null>(null);
+  const [openingBusinessId, setOpeningBusinessId] = useState<number | null>(null);
 
   useEffect(() => {
     fetchBusinesses(1);
@@ -92,6 +97,20 @@ export default function SuperAdminBusinessesPage() {
     } else {
       await deleteBusiness(selectedBusiness.id, reason!);
       toast.success(`${selectedBusiness.instituteName} deleted`);
+    }
+  };
+
+  const handleOpenBusiness = async (business: Business) => {
+    if (!business.id) return;
+    setOpeningBusinessId(business.id);
+    try {
+      await impersonateBusiness(business.id);
+      await useAuthStore.getState().initializeAuth();
+      router.push(business.slug ? `/${business.slug}/dashboard` : '/dashboard');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      toast.error(error?.body?.message || 'Could not open this business');
+      setOpeningBusinessId(null);
     }
   };
 
@@ -150,7 +169,13 @@ export default function SuperAdminBusinessesPage() {
         ) : (
           <div className="divide-y divide-gray-200">
             {businesses.map((business) => (
-              <BusinessRow key={business.id} business={business} onAction={openModal} />
+              <BusinessRow
+                key={business.id}
+                business={business}
+                onAction={openModal}
+                onOpen={handleOpenBusiness}
+                isOpening={openingBusinessId === business.id}
+              />
             ))}
           </div>
         )}
@@ -198,9 +223,13 @@ export default function SuperAdminBusinessesPage() {
 function BusinessRow({
   business,
   onAction,
+  onOpen,
+  isOpening,
 }: {
   business: Business;
   onAction: (business: Business, action: BusinessStatusAction) => void;
+  onOpen: (business: Business) => void;
+  isOpening: boolean;
 }) {
   const status = business.status || BUSINESS_STATUS.ACTIVE;
 
@@ -244,6 +273,18 @@ function BusinessRow({
           </div>
 
           <div className="flex space-x-2 sm:space-x-3">
+            {status === BUSINESS_STATUS.ACTIVE && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 text-xs sm:text-sm"
+                disabled={isOpening}
+                onClick={() => onOpen(business)}
+              >
+                <ExternalLink className="h-4 w-4 mr-1" />
+                <span className="hidden sm:inline">{isOpening ? 'Opening…' : 'Open business'}</span>
+              </Button>
+            )}
             {status !== BUSINESS_STATUS.ACTIVE && (
               <Button
                 variant="ghost"
