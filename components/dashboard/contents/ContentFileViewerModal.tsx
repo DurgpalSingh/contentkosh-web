@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { Download, FileText, Image as ImageIcon, Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ContentsService, type Content } from '@/lib/api';
+import { PdfAnnotationEditor } from './PdfAnnotationEditor';
 import {
   CONTENT_FILE_VIEWER_BYTE_UNITS,
   CONTENT_FILE_VIEWER_DEFAULT_DEVICE_PIXEL_RATIO,
@@ -21,6 +22,7 @@ type ContentFileViewerModalProps = {
   content: Content | null;
   isOpen: boolean;
   onClose: () => void;
+  canAnnotate?: boolean;
 };
 
 function getContentType(content: Content | null, blob: Blob | null): string {
@@ -149,11 +151,12 @@ function PdfCanvasPreview({ blob, title, onReady, onError }: PdfCanvasPreviewPro
   );
 }
 
-export function ContentFileViewerModal({ content, isOpen, onClose }: ContentFileViewerModalProps) {
+export function ContentFileViewerModal({ content, isOpen, onClose, canAnnotate = false }: ContentFileViewerModalProps) {
   const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [blob, setBlob] = useState<Blob | null>(null);
   const [status, setStatus] = useState<ViewerStatus>('idle');
   const [error, setError] = useState<string | null>(null);
+  const [isAnnotating, setIsAnnotating] = useState(false);
 
   const fileKind = useMemo(() => getFileKind(content, blob), [content, blob]);
   const fileViewerMode = useMemo(() => getFileViewerMode(fileKind), [fileKind]);
@@ -178,6 +181,7 @@ export function ContentFileViewerModal({ content, isOpen, onClose }: ContentFile
     setError(null);
     setBlob(null);
     setFileUrl(null);
+    setIsAnnotating(false);
 
     ContentsService.getApiContentsFile({ contentId: content.id })
       .then((response) => {
@@ -212,6 +216,7 @@ export function ContentFileViewerModal({ content, isOpen, onClose }: ContentFile
       setBlob(null);
       setStatus('idle');
       setError(null);
+      setIsAnnotating(false);
     }
   }, [isOpen]);
 
@@ -256,6 +261,11 @@ export function ContentFileViewerModal({ content, isOpen, onClose }: ContentFile
           <div className="flex shrink-0 items-center gap-2">
             {fileUrl && (
               <>
+                {canAnnotate && fileViewerMode === 'pdf' && blob && (
+                  <Button type="button" variant={isAnnotating ? 'secondary' : 'outline'} size="sm" onClick={() => setIsAnnotating((current) => !current)}>
+                    {isAnnotating ? 'Exit annotate' : 'Annotate'}
+                  </Button>
+                )}
                 <Button type="button" variant="outline" size="sm" onClick={handleDownload}>
                   <Download className="mr-2 h-4 w-4" />
                   Download
@@ -288,7 +298,14 @@ export function ContentFileViewerModal({ content, isOpen, onClose }: ContentFile
             </div>
           )}
 
-          {blob && fileViewerMode === 'pdf' && (
+          {isAnnotating && blob && fileViewerMode === 'pdf' ? (
+            <PdfAnnotationEditor
+              blob={blob}
+              contentId={content.id!}
+              title={content.title || 'Content file'}
+              onExit={() => setIsAnnotating(false)}
+            />
+          ) : blob && fileViewerMode === 'pdf' && (
             <PdfCanvasPreview
               blob={blob}
               title={content.title || 'Content file'}

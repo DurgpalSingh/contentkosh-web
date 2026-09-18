@@ -366,6 +366,7 @@ export default function ContentsPage() {
       <ContentFileViewerModal
         isOpen={Boolean(viewerContent)}
         content={viewerContent}
+        canAnnotate={isAdmin}
         onClose={() => setViewerContent(null)}
       />
     </>
