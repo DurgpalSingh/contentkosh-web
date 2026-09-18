@@ -1,5 +1,4 @@
 # Changelog
-
 All notable changes to this project will be documented in this file.
 ## Version [1.2.41] - bussiness workspace access
 **P.R Raised by** : shubh404-SE on **Date** : 2026-09-11
