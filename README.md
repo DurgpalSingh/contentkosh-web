@@ -1,7 +1,6 @@
 # ContentKosh — Web (Next.js)
 
 Frontend application for ContentKosh built with Next.js (app-router).
-
 ## Quick start
 
 1. Install dependencies:
