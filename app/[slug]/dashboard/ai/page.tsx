@@ -1,8 +1,9 @@
 'use client';
 
 import { FormEvent, useEffect, useRef, useState } from 'react';
-import { Bot, Loader2, Send, Sparkles, Trash2 } from 'lucide-react';
+import { Bot, Loader2, Send, Sparkles, Trash2, X } from 'lucide-react';
 import { BatchesService, AiService, Batch, KnowledgeBaseQueryResponse } from '@/lib/api';
+import { CancelError } from '@/lib/api/core/CancelablePromise';
 import { useAuthStore } from '@/store/useAuthStore';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Button } from '@/components/ui/button';
@@ -37,6 +38,7 @@ export default function ContentkoshAiPage() {
   const [loadingChats, setLoadingChats] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const activeQueryRef = useRef<ReturnType<typeof AiService.queryKnowledgeBase> | null>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
@@ -125,12 +127,14 @@ export default function ContentkoshAiPage() {
     setError(null);
 
     try {
-      const response = await AiService.queryKnowledgeBase({
+      const queryRequest = AiService.queryKnowledgeBase({
         businessId: business.id,
         requestBody: {
           query: trimmedQuery,
         },
       });
+      activeQueryRef.current = queryRequest;
+      const response = await queryRequest;
       const answer = response.data;
       
       const assistantMessage: ChatMessage = {
@@ -157,10 +161,19 @@ export default function ContentkoshAiPage() {
         // Don't show error to user, chat is still displayed locally
       }
     } catch (err) {
+      if (err instanceof CancelError) {
+        setMessages((current) => current.filter((message) => message.id !== studentMessage.id));
+        return;
+      }
       setError(extractErrorMessage(err));
     } finally {
+      activeQueryRef.current = null;
       setSending(false);
     }
+  };
+
+  const handleCancel = () => {
+    activeQueryRef.current?.cancel();
   };
 
   const handleDeleteChat = async (chatId: number | string) => {
@@ -309,6 +322,17 @@ export default function ContentkoshAiPage() {
                   {sending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                   Send
                 </Button>
+                {sending ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleCancel}
+                    className="h-11 shrink-0 border-slate-300 text-slate-700 hover:bg-slate-100"
+                  >
+                    <X className="mr-2 h-4 w-4" />
+                    Cancel
+                  </Button>
+                ) : null}
               </div>
             </form>
           </section>
