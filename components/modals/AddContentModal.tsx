@@ -192,7 +192,7 @@ export function AddContentModal({
       onCreated?.();
       const count = selectedFiles.length;
       reset();
-      toast.success(count === 1 ? 'Content uploaded successfully' : `${count} contents uploaded successfully`);
+      toast.success('Content uploaded to the backend. CK Agent processing is continuing in the background.');
       onClose();
     } catch (err: unknown) {
       console.error('Create content failed:', err);
