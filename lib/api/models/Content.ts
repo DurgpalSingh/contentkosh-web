@@ -11,6 +11,8 @@ export type Content = {
     filePath: string;
     fileSize: number;
     status?: Content.status;
+    agentUploadStatus?: Content.agentUploadStatus;
+    agentUploadError?: string;
     uploadedBy?: number;
     updatedBy?: number;
     batch?: {
@@ -36,6 +38,15 @@ export type Content = {
     updatedAt?: string;
 };
 
+export namespace Content {
+    export enum agentUploadStatus {
+        NOT_APPLICABLE = 'NOT_APPLICABLE',
+        PENDING = 'PENDING',
+        PROCESSING = 'PROCESSING',
+        SUCCEEDED = 'SUCCEEDED',
+        FAILED = 'FAILED',
+    }
+}
 export namespace Content {
     /**
      * Status of the content

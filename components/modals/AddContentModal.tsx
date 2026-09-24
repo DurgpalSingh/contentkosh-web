@@ -104,7 +104,7 @@ export function AddContentModal({
       });
       onCreated?.();
       reset();
-      toast.success('Content uploaded successfully');
+      toast.success('Content uploaded to the backend. CK Agent processing is continuing in the background.');
       onClose();
     } catch (err: unknown) {
       console.error('Create content failed:', err);

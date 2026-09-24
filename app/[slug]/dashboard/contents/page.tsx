@@ -34,6 +34,7 @@ export default function ContentsPage() {
   const contentsByBatchIdRef = useRef<Map<number, Content[]>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const agentStatusesRef = useRef<Map<number, string>>(new Map());
 
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -155,6 +156,40 @@ export default function ContentsPage() {
       setContents([]);
     }
   }, [selectedBatchId, batches, loadContentsForBatch]);
+
+  useEffect(() => {
+    if (!selectedBatchId || !contents.some((content) =>
+      content.agentUploadStatus === 'PENDING' || content.agentUploadStatus === 'PROCESSING'
+    )) return;
+
+    const pollAgentStatuses = async () => {
+      try {
+        const response = await ContentsService.getApiBatchesContents({
+          batchId: selectedBatchId,
+          status: Content.status.ACTIVE,
+        });
+        const fetched = (response.data ?? []) as Content[];
+        fetched.forEach((content) => {
+          if (!content.id || !content.agentUploadStatus) return;
+          const previousStatus = agentStatusesRef.current.get(content.id);
+          if (previousStatus && previousStatus !== 'SUCCEEDED' && content.agentUploadStatus === 'SUCCEEDED') {
+            toast.success(`"${content.title}" is ready in CK Agent.`);
+          }
+          if (previousStatus && previousStatus !== 'FAILED' && content.agentUploadStatus === 'FAILED') {
+            toast.error(content.agentUploadError || `"${content.title}" could not be uploaded to CK Agent.`);
+          }
+          agentStatusesRef.current.set(content.id, content.agentUploadStatus);
+        });
+        setContents(fetched);
+        contentsByBatchIdRef.current.set(selectedBatchId, fetched);
+      } catch (pollError) {
+        console.error('Failed to poll CK Agent upload status:', pollError);
+      }
+    };
+
+    const intervalId = window.setInterval(() => void pollAgentStatuses(), 4000);
+    return () => window.clearInterval(intervalId);
+  }, [contents, selectedBatchId]);
 
   const selectedBatch = useMemo(
     () => batches.find((b) => b.id === selectedBatchId),

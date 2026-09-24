@@ -1,6 +1,6 @@
 'use client';
 
-import { Edit, Trash2, Eye, FileText, FileImage, Calendar, HardDrive, User, BookOpen } from 'lucide-react';
+import { Edit, Trash2, Eye, FileText, FileImage, Calendar, HardDrive, User, BookOpen, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { OverviewCard, OverviewCardMenuItem } from '@/components/common/OverviewCard';
 import { Content } from '@/lib/api';
@@ -53,6 +53,35 @@ export function ContentGridCard({ content, onView, onEdit, onDelete }: ContentGr
     </span>
   ) : null;
 
+  const agentUploadStatus = content.agentUploadStatus || 'NOT_APPLICABLE';
+  const agentStatusBadge = (
+    <span
+      title={content.agentUploadError || undefined}
+      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold ${
+        agentUploadStatus === 'SUCCEEDED'
+          ? 'border-green-200 bg-green-50 text-green-700'
+          : agentUploadStatus === 'FAILED'
+            ? 'border-red-200 bg-red-50 text-red-700'
+            : agentUploadStatus === 'NOT_APPLICABLE'
+              ? 'border-slate-200 bg-slate-50 text-slate-600'
+              : 'border-blue-200 bg-blue-50 text-blue-700'
+      }`}
+    >
+      {agentUploadStatus === 'SUCCEEDED' ? <CheckCircle2 className="h-3.5 w-3.5" /> : null}
+      {agentUploadStatus === 'FAILED' ? <AlertCircle className="h-3.5 w-3.5" /> : null}
+      {agentUploadStatus === 'PENDING' || agentUploadStatus === 'PROCESSING' ? (
+        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+      ) : null}
+      {agentUploadStatus === 'SUCCEEDED'
+        ? 'AI Agent ready'
+        : agentUploadStatus === 'FAILED'
+          ? 'AI Agent failed'
+          : agentUploadStatus === 'NOT_APPLICABLE'
+            ? 'AI Agent not required'
+            : 'AI Agent processing'}
+    </span>
+  );
+
   return (
     <OverviewCard
       icon={
@@ -61,7 +90,7 @@ export function ContentGridCard({ content, onView, onEdit, onDelete }: ContentGr
         </div>
       }
       title={content.title || 'Untitled'}
-      badges={[statusBadge].filter(Boolean)}
+      badges={[statusBadge, agentStatusBadge].filter(Boolean)}
       menuItems={menuItems}
       footer={
         <div className="flex gap-2">
