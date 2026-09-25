@@ -19,13 +19,17 @@ export type SaveAIChatRequest = {
   source?: KnowledgeBaseQueryResponse;
 };
 
+export type AIChatStatus = 'PENDING' | 'COMPLETED' | 'FAILED';
+
 export type AIChatResponse = {
   id: number;
   userId: number;
   businessId: number;
   userMessage: string;
-  assistantResponse: string;
+  assistantResponse: string | null;
   source?: KnowledgeBaseQueryResponse | null;
+  status: AIChatStatus;
+  errorMessage: string | null;
   createdAt: string;
   updatedAt: string;
 };

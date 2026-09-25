@@ -13,7 +13,7 @@ export type { Announcement } from './models/Announcement';
 export type { AnnouncementScope } from './models/AnnouncementScope';
 export type { AnnouncementTarget } from './models/AnnouncementTarget';
 export type { ApiResponse } from './models/ApiResponse';
-export type { KnowledgeBaseQueryRequest, KnowledgeBaseQueryResponse } from './models/Ai';
+export type { KnowledgeBaseQueryRequest, KnowledgeBaseQueryResponse, AIChatResponse, AIChatStatus } from './models/Ai';
 export { AssignUserToBusinessRequest } from './models/AssignUserToBusinessRequest';
 export type { attemptId } from './models/attemptId';
 export { AttemptStatus } from './models/AttemptStatus';

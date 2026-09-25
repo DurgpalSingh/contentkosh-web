@@ -1,7 +1,6 @@
 import type { ApiResponse } from '../models/ApiResponse';
 import type {
   KnowledgeBaseQueryRequest,
-  KnowledgeBaseQueryResponse,
   SaveAIChatRequest,
   AIChatResponse,
   AIChatListResponse,
@@ -11,13 +10,14 @@ import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
 
 export class AiService {
+  /** Returns the chat as PENDING; poll getChat until it is COMPLETED or FAILED. */
   public static queryKnowledgeBase({
     businessId,
     requestBody,
   }: {
     businessId: number;
     requestBody: KnowledgeBaseQueryRequest;
-  }): CancelablePromise<(ApiResponse & { data?: KnowledgeBaseQueryResponse })> {
+  }): CancelablePromise<(ApiResponse & { data?: AIChatResponse })> {
     return __request(OpenAPI, {
       method: 'POST',
       url: '/api/business/{businessId}/ai/kb/query',
@@ -79,6 +79,29 @@ export class AiService {
       errors: {
         400: 'Invalid input data',
         403: 'Forbidden',
+        500: 'Internal server error',
+      },
+    });
+  }
+
+  public static getChat({
+    businessId,
+    chatId,
+  }: {
+    businessId: number;
+    chatId: number;
+  }): CancelablePromise<(ApiResponse & { data?: AIChatResponse })> {
+    return __request(OpenAPI, {
+      method: 'GET',
+      url: '/api/business/{businessId}/ai/chats/{chatId}',
+      path: {
+        businessId,
+        chatId,
+      },
+      errors: {
+        400: 'Invalid input data',
+        403: 'Forbidden',
+        404: 'Chat not found',
         500: 'Internal server error',
       },
     });
