@@ -1,23 +1,14 @@
 'use client';
 
-import { FormEvent, useEffect, useRef, useState } from 'react';
-import { Bot, Loader2, Send, Sparkles, Trash2, X } from 'lucide-react';
-import { BatchesService, AiService, Batch, KnowledgeBaseQueryResponse } from '@/lib/api';
-import { CancelError } from '@/lib/api/core/CancelablePromise';
+import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
+import { AlertCircle, Bot, Loader2, Send, Sparkles, Trash2, X } from 'lucide-react';
+import { BatchesService, AiService, Batch, AIChatResponse } from '@/lib/api';
 import { useAuthStore } from '@/store/useAuthStore';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 
-type ChatMessage = {
-  id: string | number;
-  role: 'student' | 'assistant';
-  content: string;
-  source?: KnowledgeBaseQueryResponse;
-  dbId?: number; // For storing database ID of saved chats
-};
-
-const createMessageId = () => `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+const PENDING_POLL_INTERVAL_MS = 2000;
 
 const extractErrorMessage = (error: unknown): string => {
   if (typeof error !== 'object' || error === null) return String(error);
@@ -28,21 +19,30 @@ const extractErrorMessage = (error: unknown): string => {
   return 'Contentkosh AI could not answer right now';
 };
 
+const getErrorStatus = (error: unknown): number | undefined => {
+  if (typeof error !== 'object' || error === null) return undefined;
+  const status = (error as Record<string, unknown>).status;
+  return typeof status === 'number' ? status : undefined;
+};
+
 export default function ContentkoshAiPage() {
   const { user, business, isAuthenticated, isLoading, isInitialized } = useAuthStore();
   const [batches, setBatches] = useState<Batch[]>([]);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  // Chats are persisted by the backend (question first, answer later), so they survive refreshes and tab switches.
+  const [chats, setChats] = useState<AIChatResponse[]>([]);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
-  const [sending, setSending] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [loadingChats, setLoadingChats] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
-  const activeQueryRef = useRef<ReturnType<typeof AiService.queryKnowledgeBase> | null>(null);
+
+  const pendingChatId = chats.find((chat) => chat.status === 'PENDING')?.id;
+  const sending = submitting || pendingChatId !== undefined;
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-  }, [messages, sending]);
+  }, [chats, sending]);
 
   // Load batches on mount
   useEffect(() => {
@@ -63,121 +63,121 @@ export default function ContentkoshAiPage() {
     loadBatches();
   }, [business?.id, isAuthenticated]);
 
-  // Load chat history on mount
+  const loadChats = useCallback(async () => {
+    if (!isAuthenticated || !business?.id) return;
+
+    try {
+      const response = await AiService.getChats({
+        businessId: business.id,
+        limit: 50,
+        offset: 0,
+      });
+      // API returns newest-first (for pagination); reverse to chronological order for display.
+      setChats([...(response.data?.data ?? [])].reverse());
+    } catch (err) {
+      console.error('Failed to load chat history:', err);
+      // Don't show error to user, just clear messages
+      setChats([]);
+    }
+  }, [business?.id, isAuthenticated]);
+
+  // Load chat history on mount (includes a question still waiting for its answer)
   useEffect(() => {
-    const loadOldChats = async () => {
-      if (!isAuthenticated || !business?.id) return;
+    const loadInitialChats = async () => {
+      setLoadingChats(true);
+      await loadChats();
+      setLoadingChats(false);
+    };
 
+    loadInitialChats();
+  }, [loadChats]);
+
+  // Poll the pending chat until the backend stores its answer.
+  useEffect(() => {
+    if (pendingChatId === undefined || !business?.id) return;
+    const businessId = business.id;
+    let polling = false;
+
+    const pollPendingChat = async () => {
+      if (polling) return;
+      polling = true;
       try {
-        setLoadingChats(true);
-        const response = await AiService.getChats({
-          businessId: business.id,
-          limit: 50,
-          offset: 0,
-        });
-
-        if (response.data?.data) {
-          const oldMessages: ChatMessage[] = [];
-          // API returns newest-first (for pagination); reverse to chronological order for display.
-          [...response.data.data].reverse().forEach((chat) => {
-            // Add user message
-            oldMessages.push({
-              id: `user-${chat.id}`,
-              role: 'student',
-              content: chat.userMessage,
-              dbId: chat.id,
-            });
-            // Add assistant response
-            oldMessages.push({
-              id: `assistant-${chat.id}`,
-              role: 'assistant',
-              content: chat.assistantResponse,
-              source: chat.source || undefined,
-              dbId: chat.id,
-            });
-          });
-          setMessages(oldMessages);
+        const response = await AiService.getChat({ businessId, chatId: pendingChatId });
+        const updated = response.data;
+        if (updated && updated.status !== 'PENDING') {
+          setChats((current) => current.map((chat) => (chat.id === updated.id ? updated : chat)));
         }
       } catch (err) {
-        console.error('Failed to load chat history:', err);
-        // Don't show error to user, just clear messages
-        setMessages([]);
+        if (getErrorStatus(err) === 404) {
+          setChats((current) => current.filter((chat) => chat.id !== pendingChatId));
+        } else {
+          console.error('Failed to check Contentkosh AI answer:', err);
+        }
       } finally {
-        setLoadingChats(false);
+        polling = false;
       }
     };
 
-    loadOldChats();
-  }, [business?.id, isAuthenticated]);
+    // Background tabs throttle timers, so check right away when the student comes back.
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') void pollPendingChat();
+    };
+
+    const intervalId = window.setInterval(() => void pollPendingChat(), PENDING_POLL_INTERVAL_MS);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      window.clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [pendingChatId, business?.id]);
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     const trimmedQuery = query.trim();
     if (!trimmedQuery || !business?.id || sending) return;
 
-    const studentMessage: ChatMessage = {
-      id: createMessageId(),
-      role: 'student',
-      content: trimmedQuery,
-    };
-
-    setMessages((current) => [...current, studentMessage]);
     setQuery('');
-    setSending(true);
+    setSubmitting(true);
     setError(null);
 
     try {
-      const queryRequest = AiService.queryKnowledgeBase({
+      const response = await AiService.queryKnowledgeBase({
         businessId: business.id,
         requestBody: {
           query: trimmedQuery,
         },
       });
-      activeQueryRef.current = queryRequest;
-      const response = await queryRequest;
-      const answer = response.data;
-      
-      const assistantMessage: ChatMessage = {
-        id: createMessageId(),
-        role: 'assistant',
-        content: answer?.answer || 'No answer was returned.',
-        source: answer,
-      };
-
-      setMessages((current) => [...current, assistantMessage]);
-
-      // Save chat to database
-      try {
-        await AiService.saveChat({
-          businessId: business.id,
-          requestBody: {
-            userMessage: trimmedQuery,
-            assistantResponse: answer?.answer || 'No answer was returned.',
-            source: answer,
-          },
-        });
-      } catch (saveErr) {
-        console.error('Failed to save chat:', saveErr);
-        // Don't show error to user, chat is still displayed locally
+      const pendingChat = response.data;
+      if (pendingChat) {
+        setChats((current) => [...current, pendingChat]);
       }
     } catch (err) {
-      if (err instanceof CancelError) {
-        setMessages((current) => current.filter((message) => message.id !== studentMessage.id));
-        return;
-      }
+      setQuery(trimmedQuery);
       setError(extractErrorMessage(err));
+      // A question may already be in flight (e.g. sent from another tab); resync so it shows up.
+      await loadChats();
     } finally {
-      activeQueryRef.current = null;
-      setSending(false);
+      setSubmitting(false);
     }
   };
 
-  const handleCancel = () => {
-    activeQueryRef.current?.cancel();
+  const handleCancel = async () => {
+    if (pendingChatId === undefined || !business?.id) return;
+
+    try {
+      await AiService.deleteChat({
+        businessId: business.id,
+        chatId: pendingChatId,
+      });
+      setChats((current) => current.filter((chat) => chat.id !== pendingChatId));
+    } catch (err) {
+      console.error('Failed to cancel question:', err);
+      setError('Failed to cancel the question');
+    }
   };
 
-  const handleDeleteChat = async (chatId: number | string) => {
-    if (!business?.id || typeof chatId === 'string') return;
+  const handleDeleteChat = async (chatId: number) => {
+    if (!business?.id) return;
 
     try {
       await AiService.deleteChat({
@@ -186,9 +186,7 @@ export default function ContentkoshAiPage() {
       });
 
       // Remove both user and assistant messages for this chat from local state
-      setMessages((current) =>
-        current.filter((msg) => msg.dbId !== chatId),
-      );
+      setChats((current) => current.filter((chat) => chat.id !== chatId));
     } catch (err) {
       console.error('Failed to delete chat:', err);
       setError('Failed to delete chat message');
@@ -237,7 +235,7 @@ export default function ContentkoshAiPage() {
                 <div className="flex h-full min-h-72 items-center justify-center">
                   <Loader2 className="h-6 w-6 animate-spin text-cyan-600" />
                 </div>
-              ) : messages.length === 0 ? (
+              ) : chats.length === 0 ? (
                 <div className="flex h-full min-h-72 items-center justify-center text-center">
                   <div>
                     <Sparkles className="mx-auto h-9 w-9 text-cyan-600" />
@@ -248,46 +246,61 @@ export default function ContentkoshAiPage() {
                   </div>
                 </div>
               ) : (
-                messages.map((message) => (
-                  <article
-                    key={message.id}
-                    className={`flex ${message.role === 'student' ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div className="flex w-full max-w-[88%] items-end gap-2 sm:max-w-[76%]">
-                      <div
-                        className={`flex-1 rounded-2xl px-4 py-3 text-sm shadow-sm ${
-                          message.role === 'student'
-                            ? 'bg-cyan-600 text-white'
-                            : 'border border-slate-200 bg-white text-slate-800'
-                        }`}
-                      >
-                        <p className="whitespace-pre-wrap break-normal leading-6">{message.content}</p>
-                        {message.role === 'assistant' && message.source?.source ? (
-                          <p className="mt-3 border-t border-slate-100 pt-2 text-xs text-slate-500">
-                            Source: {message.source.title || message.source.source}
-                            {message.source.page ? `, page ${message.source.page}` : ''}
-                          </p>
+                chats.map((chat) => (
+                  <div key={chat.id} className="space-y-4">
+                    <article className="flex justify-end">
+                      <div className="flex w-full max-w-[88%] items-end justify-end gap-2 sm:max-w-[76%]">
+                        <div className="rounded-2xl bg-cyan-600 px-4 py-3 text-sm text-white shadow-sm">
+                          <p className="whitespace-pre-wrap break-normal leading-6">{chat.userMessage}</p>
+                        </div>
+                        {chat.status !== 'PENDING' ? (
+                          <button
+                            onClick={() => handleDeleteChat(chat.id)}
+                            className="shrink-0 text-slate-400 hover:text-red-600 transition-colors"
+                            title="Delete this chat"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
                         ) : null}
                       </div>
-                      {message.dbId && (
-                        <button
-                          onClick={() => handleDeleteChat(message.dbId!)}
-                          className="shrink-0 text-slate-400 hover:text-red-600 transition-colors"
-                          title="Delete this chat"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                    </article>
+
+                    <article className="flex justify-start">
+                      {chat.status === 'PENDING' ? (
+                        <div className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Thinking...
+                        </div>
+                      ) : chat.status === 'FAILED' ? (
+                        <div className="inline-flex max-w-[88%] items-start gap-2 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700 shadow-sm sm:max-w-[76%]">
+                          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                          <p className="whitespace-pre-wrap leading-6">
+                            {chat.errorMessage || 'Contentkosh AI could not answer right now'}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="max-w-[88%] rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm sm:max-w-[76%]">
+                          <p className="whitespace-pre-wrap break-normal leading-6">
+                            {chat.assistantResponse || 'No answer was returned.'}
+                          </p>
+                          {chat.source?.source ? (
+                            <p className="mt-3 border-t border-slate-100 pt-2 text-xs text-slate-500">
+                              Source: {chat.source.title || chat.source.source}
+                              {chat.source.page ? `, page ${chat.source.page}` : ''}
+                            </p>
+                          ) : null}
+                        </div>
                       )}
-                    </div>
-                  </article>
+                    </article>
+                  </div>
                 ))
               )}
 
-              {sending ? (
+              {submitting ? (
                 <div className="flex justify-start">
                   <div className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Thinking...
+                    Sending...
                   </div>
                 </div>
               ) : null}
@@ -322,7 +335,7 @@ export default function ContentkoshAiPage() {
                   {sending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                   Send
                 </Button>
-                {sending ? (
+                {pendingChatId !== undefined ? (
                   <Button
                     type="button"
                     variant="outline"
