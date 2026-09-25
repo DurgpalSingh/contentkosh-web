@@ -1,6 +1,11 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.2.42] - user set password logic
+**P.R Raised by** : shubh404-SE on **Date** : 2026-09-25
+### Updated
+  - added strict rules to user set password like register page password.
+---
 ## Version [1.2.41] - bussiness workspace access
 **P.R Raised by** : shubh404-SE on **Date** : 2026-09-11
 
