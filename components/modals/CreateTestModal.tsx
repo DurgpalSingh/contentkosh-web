@@ -12,7 +12,9 @@ import {
   ExamTestsService,
   PracticeTestsService,
   ResultVisibilityExam,
+  SubjectiveTestsService,
   TestLanguage,
+  type CreateSubjectiveTestRequest,
 } from '@/lib/api';
 import { resultVisibilityExamLabel } from '@/lib/tests/testUiMappers';
 import { validateTestForm, type TestFormErrors } from '@/lib/tests/testFormValidation';
@@ -22,6 +24,11 @@ import { Select } from '@/components/ui/select';
 import { TEST_KIND, TEST_KIND_LABEL, type TestKind } from '@/lib/tests/testConstants';
 import { TEST_LANGUAGE_OPTIONS } from '@/lib/tests/testLanguage';
 import { toISODateTime } from '@/lib/utils';
+import {
+  SubjectiveTestFormFields,
+  type SubjectiveFieldValues,
+} from '@/components/dashboard/tests/subjective/SubjectiveTestFormFields';
+import { validateSubjectiveFields, type SubjectiveFieldErrors } from '@/lib/tests/subjectiveTestFormValidation';
 
 interface CreateTestModalProps {
   isOpen: boolean;
@@ -38,6 +45,8 @@ interface CreateTestModalProps {
   onCreated: (kind: TestKind, testId: string) => void;
 }
 export type { TestKind };
+
+const DEFAULT_SUBJECTIVE_FIELDS: SubjectiveFieldValues = { paperType: '', totalMarks: 100, instructions: '' };
 
 function defaultExamWindow(): { startAt: string; deadlineAt: string } {
   const start = new Date();
@@ -70,6 +79,11 @@ export function CreateTestModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formErrors, setFormErrors] = useState<TestFormErrors>({});
+  const [subjectiveFields, setSubjectiveFields] = useState<SubjectiveFieldValues>(DEFAULT_SUBJECTIVE_FIELDS);
+  const [questionPaper, setQuestionPaper] = useState<File | null>(null);
+  const [subjectiveErrors, setSubjectiveErrors] = useState<SubjectiveFieldErrors>({});
+  const isSubjective = kind === TEST_KIND.SUBJECTIVE;
+  const isTimed = kind === TEST_KIND.EXAM || isSubjective;
   const minStartAt = toISODateTime(new Date(), { format: 'datetimeLocal' }) ?? '';
 
   useEffect(() => {
@@ -115,6 +129,9 @@ export function CreateTestModal({
     setLanguage(TestLanguage.EN);
     setResultVisibility(ResultVisibilityExam._0);
     setExamWindow(defaultExamWindow());
+    setSubjectiveFields(DEFAULT_SUBJECTIVE_FIELDS);
+    setQuestionPaper(null);
+    setSubjectiveErrors({});
     setError(null);
     setFormErrors({});
   };
@@ -129,9 +146,9 @@ export function CreateTestModal({
       batchId: batchId || undefined,
       subjectId: subjectId || undefined,
       kind,
-      startAt: kind === TEST_KIND.EXAM ? examWindow.startAt : undefined,
-      deadlineAt: kind === TEST_KIND.EXAM ? examWindow.deadlineAt : undefined,
-      durationMinutes: kind === TEST_KIND.EXAM ? durationMinutes : undefined,
+      startAt: isTimed ? examWindow.startAt : undefined,
+      deadlineAt: isTimed ? examWindow.deadlineAt : undefined,
+      durationMinutes: isTimed ? durationMinutes : undefined,
       defaultMarksPerQuestion,
       requireBatch: true,
       requireSubject: false,
@@ -140,17 +157,45 @@ export function CreateTestModal({
       disallowPastStart: true,
     });
 
-    if (Object.keys(errors).length > 0) {
+    const nextSubjectiveErrors = isSubjective
+      ? validateSubjectiveFields({ ...subjectiveFields, hasQuestionPaper: Boolean(questionPaper) })
+      : {};
+
+    if (Object.keys(errors).length > 0 || Object.keys(nextSubjectiveErrors).length > 0) {
       setFormErrors(errors);
+      setSubjectiveErrors(nextSubjectiveErrors);
       return;
     }
 
     setFormErrors({});
+    setSubjectiveErrors({});
     setLoading(true);
     setError(null);
 
     try {
-      if (kind === TEST_KIND.PRACTICE) {
+      if (isSubjective) {
+        const body: CreateSubjectiveTestRequest = {
+          batchId: batchId!,
+          ...(subjectId ? { subjectId } : {}),
+          name: name.trim(),
+          paperType: subjectiveFields.paperType.trim(),
+          totalMarks: subjectiveFields.totalMarks,
+          durationMinutes,
+          startAt: new Date(examWindow.startAt).toISOString(),
+          deadlineAt: new Date(examWindow.deadlineAt).toISOString(),
+          ...(description.trim() ? { description: description.trim() } : {}),
+          ...(subjectiveFields.instructions.trim() ? { instructions: subjectiveFields.instructions.trim() } : {}),
+        };
+        const res = await SubjectiveTestsService.postApiBusinessSubjectiveTests(businessId, {
+          data: JSON.stringify(body),
+          ...(questionPaper ? { questionPaper } : {}),
+        });
+        const id = res.data?.id;
+        if (!id) throw new Error('No test id returned');
+        toast.success('Subjective test created');
+        onCreated(TEST_KIND.SUBJECTIVE, id);
+        reset();
+      } else if (kind === TEST_KIND.PRACTICE) {
         const body = {
           batchId,
           subjectId,
@@ -247,6 +292,15 @@ export function CreateTestModal({
                 />
                 <span>{TEST_KIND_LABEL[TEST_KIND.EXAM]}</span>
               </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="kind"
+                  checked={isSubjective}
+                  onChange={() => setKind(TEST_KIND.SUBJECTIVE)}
+                />
+                <span>{TEST_KIND_LABEL[TEST_KIND.SUBJECTIVE]}</span>
+              </label>
             </div>
           </div>
 
@@ -287,19 +341,21 @@ export function CreateTestModal({
             )}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="test-language">Test language <span className="text-red-400">*</span></Label>
-            <Select
-              id="test-language"
-              value={language}
-              onChange={(v) => setLanguage(v as TestLanguage)}
-              options={TEST_LANGUAGE_OPTIONS.map((o) => ({
-                value: o.value,
-                label: o.label,
-              }))}
-              placeholder="Select language"
-            />
-          </div>
+          {!isSubjective && (
+            <div className="space-y-2">
+              <Label htmlFor="test-language">Test language <span className="text-red-400">*</span></Label>
+              <Select
+                id="test-language"
+                value={language}
+                onChange={(v) => setLanguage(v as TestLanguage)}
+                options={TEST_LANGUAGE_OPTIONS.map((o) => ({
+                  value: o.value,
+                  label: o.label,
+                }))}
+                placeholder="Select language"
+              />
+            </div>
+          )}
 
           <div className="space-y-1 flex flex-col gap-1">
             <Label htmlFor="name">Test Name <span className="text-red-400">*</span></Label>
@@ -335,7 +391,7 @@ export function CreateTestModal({
             )}
           </div>
 
-          {kind === TEST_KIND.EXAM && (
+          {isTimed && (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-2">
@@ -380,20 +436,33 @@ export function CreateTestModal({
                   <p className="text-sm text-red-600 mt-1">{formErrors.durationMinutes}</p>
                 )}
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="visibility">Result visibility <span className="text-red-400">*</span></Label>
-                <Select
-                  id="visibility"
-                  value={resultVisibility}
-                  onChange={(v) => setResultVisibility(Number(v))}
-                  options={[
-                    { value: ResultVisibilityExam._0, label: resultVisibilityExamLabel(0) },
-                    { value: ResultVisibilityExam._1, label: resultVisibilityExamLabel(1) },
-                  ]}
-                  placeholder="Select visibility"
-                />
-              </div>
+              {kind === TEST_KIND.EXAM && (
+                <div className="space-y-2">
+                  <Label htmlFor="visibility">Result visibility <span className="text-red-400">*</span></Label>
+                  <Select
+                    id="visibility"
+                    value={resultVisibility}
+                    onChange={(v) => setResultVisibility(Number(v))}
+                    options={[
+                      { value: ResultVisibilityExam._0, label: resultVisibilityExamLabel(0) },
+                      { value: ResultVisibilityExam._1, label: resultVisibilityExamLabel(1) },
+                    ]}
+                    placeholder="Select visibility"
+                  />
+                </div>
+              )}
             </>
+          )}
+
+          {isSubjective && (
+            <SubjectiveTestFormFields
+              values={subjectiveFields}
+              onChange={setSubjectiveFields}
+              questionPaper={questionPaper}
+              onQuestionPaperChange={setQuestionPaper}
+              errors={subjectiveErrors}
+              disabled={loading}
+            />
           )}
 
           {error && (

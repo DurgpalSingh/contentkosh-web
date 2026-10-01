@@ -63,6 +63,8 @@ export interface FileUploadAreaProps {
   previewAlt?: string;
   /** Shows a loading overlay while the selected file is being uploaded */
   isUploading?: boolean;
+  /** Overrides the content upload size rules with a single max size (MB) */
+  maxSizeMb?: number;
 }
 
 /**
@@ -121,6 +123,7 @@ export function FileUploadArea({
   previewUrl,
   previewAlt = 'Selected file preview',
   isUploading = false,
+  maxSizeMb,
 }: FileUploadAreaProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -209,7 +212,12 @@ export function FileUploadArea({
       return;
     }
 
-    const sizeError = getContentUploadSizeError(file);
+    const sizeError =
+      maxSizeMb !== undefined
+        ? file.size > maxSizeMb * 1024 * 1024
+          ? `File must be ${maxSizeMb} MB or less`
+          : null
+        : getContentUploadSizeError(file);
     if (sizeError) {
       onError?.(sizeError);
       onChange(null);

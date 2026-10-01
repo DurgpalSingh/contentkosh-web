@@ -16,7 +16,7 @@ import { toast } from 'sonner';
 import { getApiErrorDetailMessage } from '@/lib/tests/getApiErrorDetailMessage';
 import { studentTestBasePath } from '@/lib/tests/studentTestCatalog';
 import { StudentTestResultView } from '@/components/dashboard/tests/student/StudentTestResultView';
-import { isTestKind, TEST_KIND, type TestKind } from '@/lib/tests/testConstants';
+import { isQuestionTestKind, TEST_KIND, type QuestionTestKind } from '@/lib/tests/testConstants';
 
 type AttemptDetails = PracticeTestAttemptDetails | ExamTestAttemptDetails;
 
@@ -24,7 +24,7 @@ export default function StudentMyTestResultPage() {
   const params = useParams();
   const slug = params.slug as string;
   const rawKind = String(params.kind ?? '');
-  const kind: TestKind | null = isTestKind(rawKind) ? rawKind : null;
+  const kind: QuestionTestKind | null = isQuestionTestKind(rawKind) ? rawKind : null;
   const attemptId = params.attemptId as string;
   const { business, isAuthenticated, isInitialized } = useAuthStore();
   const businessId = business?.id;

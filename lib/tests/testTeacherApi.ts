@@ -2,12 +2,12 @@ import {
   ExamTestsService,
   PracticeTestsService,
 } from '@/lib/api';
-import { TEST_KIND, type TestKind } from '@/lib/tests/testConstants';
+import { TEST_KIND, type QuestionTestKind } from '@/lib/tests/testConstants';
 
-export type { TestKind };
+export type { QuestionTestKind };
 
 export async function downloadTestAnalyticsCsv(
-  kind: TestKind,
+  kind: QuestionTestKind,
   businessId: number,
   testId: string,
   downloadBaseName: string,

@@ -32,9 +32,9 @@ import { AttemptHeader } from '@/components/dashboard/tests/student/AttemptHeade
 import { AttemptQuestionNavigator } from '@/components/dashboard/tests/student/AttemptQuestionNavigator';
 import { AttemptActionBar } from '@/components/dashboard/tests/student/AttemptActionBar';
 import { StudentQuestionBlock } from '@/components/dashboard/tests/student/StudentQuestionBlock';
-import { TEST_KIND, type TestKind } from '@/lib/tests/testConstants';
+import { TEST_KIND, type QuestionTestKind } from '@/lib/tests/testConstants';
 
-export type StudentAttemptKind = TestKind;
+export type StudentAttemptKind = QuestionTestKind;
 
 function readJsonFromLocalStorage(key: string): unknown | null {
   try {
@@ -78,7 +78,7 @@ export function StudentAttemptWorkspace({
   attemptId,
   details: detailsProp,
 }: {
-  kind: TestKind;
+  kind: QuestionTestKind;
   attemptId: string;
   details: AttemptDetails;
 }) {
