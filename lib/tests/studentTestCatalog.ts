@@ -93,13 +93,12 @@ export function studentExamResultPath(slug: string, examTestId: string, attemptI
   return STUDENT_TEST_ROUTES.RESULT(slug, TEST_KIND.EXAM, attemptId);
 }
 
-/** Subjective attempts are file uploads, so they use their own routes (no fullscreen attempt workspace). */
+/**
+ * Subjective attempts are file uploads, so they have their own page (no fullscreen attempt workspace).
+ * The same page shows the upload while in progress and the result once submitted/checked.
+ */
 export function studentSubjectiveAttemptPath(slug: string, submissionId: string): string {
   return `${STUDENT_TEST_ROUTES.BASE(slug)}/${TEST_KIND.SUBJECTIVE}/${submissionId}`;
-}
-
-export function studentSubjectiveResultPath(slug: string, submissionId: string): string {
-  return `${studentSubjectiveAttemptPath(slug, submissionId)}/${SEG.RESULT}`;
 }
 
 export type { StudentTestDisplayStatus };

@@ -25,7 +25,6 @@ import {
   studentPracticeAttemptPath,
   studentPracticeResultPath,
   studentSubjectiveAttemptPath,
-  studentSubjectiveResultPath,
   TEST_CARD_ACTION,
 } from '@/lib/tests/studentTestCatalog';
 import { SubjectiveStudentTestCard } from '@/components/dashboard/tests/subjective/SubjectiveStudentTestCard';
@@ -313,13 +312,7 @@ export function StudentTestsListView({
                   key={`${item.kind}-${item.row.id}`}
                   test={item.row}
                   onStart={() => setSubjectiveStartTarget(item.row)}
-                  onOpen={(submissionId, inProgress) =>
-                    router.push(
-                      inProgress
-                        ? studentSubjectiveAttemptPath(slug, submissionId)
-                        : studentSubjectiveResultPath(slug, submissionId),
-                    )
-                  }
+                  onOpen={(submissionId) => router.push(studentSubjectiveAttemptPath(slug, submissionId))}
                 />
               );
             }

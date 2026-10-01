@@ -21,6 +21,10 @@ export type SubjectiveTest = {
     startAt: string;
     deadlineAt: string;
     hasQuestionPaper: boolean;
+    /**
+     * Download name, from the paper type
+     */
+    questionPaperName?: string | null;
     createdBy?: number;
     updatedBy?: number | null;
     createdAt?: string;

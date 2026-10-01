@@ -5,6 +5,7 @@ import { Download, FileText, Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PdfCanvasPreview } from '@/components/common/PdfCanvasPreview';
 import { getApiErrorDetailMessage } from '@/lib/tests/getApiErrorDetailMessage';
+import { saveBlob } from '@/lib/utils/saveBlob';
 
 type ViewerStatus = 'fetching' | 'rendering' | 'ready' | 'error';
 
@@ -60,15 +61,7 @@ export function PdfFileViewerModal({ isOpen, onClose, title, downloadName, fetch
   }, [isOpen]);
 
   const handleDownload = useCallback(() => {
-    if (!blob) return;
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = downloadName;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
+    if (blob) saveBlob(blob, downloadName);
   }, [blob, downloadName]);
 
   const handleReady = useCallback(() => setStatus('ready'), []);

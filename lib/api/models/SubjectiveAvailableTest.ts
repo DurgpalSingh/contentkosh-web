@@ -19,6 +19,10 @@ export type SubjectiveAvailableTest = {
     startAt: string;
     deadlineAt: string;
     hasQuestionPaper: boolean;
+    /**
+     * Download name, from the paper type
+     */
+    questionPaperName?: string | null;
     availability: SubjectiveAvailability;
     displayStatus: SubjectiveDisplayStatus;
     submissionId?: string | null;

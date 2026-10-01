@@ -11,7 +11,13 @@ export type SubjectiveRosterRow = {
     displayStatus: SubjectiveDisplayStatus;
     startedAt?: string | null;
     submittedAt?: string | null;
+    /**
+     * The student's original PDF name
+     */
+    answerSheetName?: string | null;
     marksAwarded?: number | null;
+    remarks?: string | null;
+    hasCheckedAnswerSheet: boolean;
     checkedAt?: string | null;
 };
 

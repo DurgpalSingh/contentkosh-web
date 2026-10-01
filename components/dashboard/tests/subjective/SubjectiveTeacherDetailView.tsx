@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, FileText, Loader2 } from 'lucide-react'
+import { ArrowLeft, ListChecks, Loader2, Send, Settings } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import {
@@ -13,31 +13,37 @@ import {
   type SubjectiveTestDetail,
 } from '@/lib/api'
 import { PublishConfirmModal } from '@/components/modals/PublishConfirmModal'
-import { PdfFileViewerModal } from '@/components/common/PdfFileViewerModal'
+import { DownloadFileButton } from '@/components/common/DownloadFileButton'
 import { SubjectiveSubmissionsTab } from '@/components/dashboard/tests/subjective/SubjectiveSubmissionsTab'
 import { SubjectiveSettingsTab } from '@/components/dashboard/tests/subjective/SubjectiveSettingsTab'
+import { SubjectivePill } from '@/components/dashboard/tests/subjective/SubjectiveStatusBadge'
 import { teacherTestsListPath } from '@/lib/tests/testPaths'
-import { TEST_KIND, TEST_KIND_LABEL } from '@/lib/tests/testConstants'
-import { formatDateTime, formatDurationMinutes, testStatus, testStatusLabel } from '@/lib/tests/testUiMappers'
+import { formatDateTime, testStatus } from '@/lib/tests/testUiMappers'
 import {
-  SUBJECTIVE_DISPLAY_STATUS_BADGE,
-  SUBJECTIVE_DISPLAY_STATUS_LABEL,
-  SUBJECTIVE_KIND_BADGE,
+  SUBJECTIVE_AVAILABILITY_BADGE,
+  SUBJECTIVE_AVAILABILITY_LABEL,
+  SUBJECTIVE_NEUTRAL_BADGE,
+  getSubjectiveAvailability,
 } from '@/lib/tests/subjectiveTestConstants'
 import { getApiErrorDetailMessage } from '@/lib/tests/getApiErrorDetailMessage'
 
-const SUBJECTIVE_TAB = {
+const VIEW = {
   SUBMISSIONS: 'submissions',
   SETTINGS: 'settings',
 } as const
 
-type SubjectiveTabId = (typeof SUBJECTIVE_TAB)[keyof typeof SUBJECTIVE_TAB]
+type ViewId = (typeof VIEW)[keyof typeof VIEW]
 
-const SUBJECTIVE_TAB_LABEL: Record<SubjectiveTabId, string> = {
-  submissions: 'Submissions',
-  settings: 'Settings',
+function StatTile({ label, value, valueClass }: { label: string; value: number; valueClass: string }) {
+  return (
+    <div className="rounded-xl bg-gray-50 px-5 py-4">
+      <p className="text-sm text-gray-500">{label}</p>
+      <p className={`mt-1 text-2xl font-bold ${valueClass}`}>{value}</p>
+    </div>
+  )
 }
 
+/** Staff page for one subjective test: summary, submission stats, and per-student review. */
 export function SubjectiveTeacherDetailView({
   testId,
   businessId,
@@ -51,9 +57,8 @@ export function SubjectiveTeacherDetailView({
   const listHref = teacherTestsListPath(slug)
   const [test, setTest] = useState<SubjectiveTestDetail | null>(null)
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<SubjectiveTabId>(SUBJECTIVE_TAB.SUBMISSIONS)
+  const [view, setView] = useState<ViewId | null>(null)
   const [publishOpen, setPublishOpen] = useState(false)
-  const [paperOpen, setPaperOpen] = useState(false)
 
   const loadTest = useCallback(async () => {
     setLoading(true)
@@ -75,6 +80,7 @@ export function SubjectiveTeacherDetailView({
   const runPublish = async () => {
     await SubjectiveTestsService.postApiBusinessSubjectiveTestsPublish(businessId, { subjectiveTestId: testId })
     toast.success('Test published')
+    setView(VIEW.SUBMISSIONS)
     await loadTest()
   }
 
@@ -103,91 +109,87 @@ export function SubjectiveTeacherDetailView({
   }
 
   const isDraft = test.status === testStatus.draft
+  // Drafts have no submissions yet, so they open on settings.
+  const activeView = view ?? (isDraft ? VIEW.SETTINGS : VIEW.SUBMISSIONS)
+  const availability = getSubjectiveAvailability(test.startAt, test.deadlineAt)
+  const counts = test.submissionCounts
+  const pending = counts[SubjectiveDisplayStatus.SUBMITTED]
+  const checked = counts[SubjectiveDisplayStatus.CHECKED]
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <Link href={listHref} className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-2">
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            All tests
-          </Link>
-          <div className="flex flex-wrap items-center gap-2">
+      <Link href={listHref} className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900">
+        <ArrowLeft className="h-4 w-4 mr-1" />
+        All tests
+      </Link>
+
+      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm space-y-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="space-y-2 min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <SubjectivePill className={SUBJECTIVE_NEUTRAL_BADGE}>{test.paperType}</SubjectivePill>
+              {isDraft ? (
+                <SubjectivePill className={SUBJECTIVE_NEUTRAL_BADGE}>Draft</SubjectivePill>
+              ) : (
+                <SubjectivePill className={SUBJECTIVE_AVAILABILITY_BADGE[availability]}>
+                  {SUBJECTIVE_AVAILABILITY_LABEL[availability]}
+                </SubjectivePill>
+              )}
+            </div>
             <h1 className="text-2xl font-bold text-gray-900">{test.name}</h1>
-            <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${SUBJECTIVE_KIND_BADGE}`}>
-              {TEST_KIND_LABEL[TEST_KIND.SUBJECTIVE]}
-            </span>
-            <span
-              className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                isDraft ? 'bg-gray-100 text-gray-700' : 'bg-blue-50 text-blue-800'
-              }`}
-            >
-              {testStatusLabel(test.status)}
-            </span>
+            <p className="text-sm text-gray-500">
+              {[test.batchName, `${test.totalMarks} marks`, `Deadline ${formatDateTime(test.deadlineAt)}`]
+                .filter(Boolean)
+                .join(' · ')}
+            </p>
           </div>
-          <p className="text-sm text-gray-600 mt-1">
-            {[
-              test.paperType,
-              test.batchName,
-              test.subjectName,
-              `${test.totalMarks} marks`,
-              `Duration ${formatDurationMinutes(test.durationMinutes)}`,
-            ]
-              .filter(Boolean)
-              .join(' · ')}
-          </p>
-          <p className="text-xs text-gray-500 mt-1">
-            {formatDateTime(test.startAt)} → {formatDateTime(test.deadlineAt)}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button type="button" variant="outline" onClick={() => setPaperOpen(true)} disabled={!test.hasQuestionPaper}>
-            <FileText className="h-4 w-4 mr-2" />
-            {test.hasQuestionPaper ? 'View question paper' : 'No question paper'}
-          </Button>
-          {isDraft && (
-            <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setPublishOpen(true)} type="button">
-              Publish test
-            </Button>
-          )}
-        </div>
-      </div>
-
-      {!isDraft && (
-        <div className="flex flex-wrap gap-2">
-          {(Object.values(SubjectiveDisplayStatus) as SubjectiveDisplayStatus[]).map((status) => (
-            <span
-              key={status}
-              className={`text-xs font-medium px-2.5 py-1 rounded-full ${SUBJECTIVE_DISPLAY_STATUS_BADGE[status]}`}
+          <div className="flex flex-wrap gap-2 shrink-0">
+            {test.hasQuestionPaper && (
+              <DownloadFileButton
+                fetchBlob={fetchQuestionPaper}
+                fileName={test.questionPaperName ?? `${test.name} - question paper.pdf`}
+              >
+                Question Paper
+              </DownloadFileButton>
+            )}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setView(activeView === VIEW.SETTINGS ? VIEW.SUBMISSIONS : VIEW.SETTINGS)}
             >
-              {SUBJECTIVE_DISPLAY_STATUS_LABEL[status]}: {test.submissionCounts[status]}
-            </span>
-          ))}
+              {activeView === VIEW.SETTINGS ? (
+                <>
+                  <ListChecks className="h-4 w-4 mr-2" />
+                  Submissions
+                </>
+              ) : (
+                <>
+                  <Settings className="h-4 w-4 mr-2" />
+                  Settings
+                </>
+              )}
+            </Button>
+            {isDraft && (
+              <Button type="button" className="bg-blue-600 hover:bg-blue-700" onClick={() => setPublishOpen(true)}>
+                <Send className="h-4 w-4 mr-2" />
+                Publish
+              </Button>
+            )}
+          </div>
         </div>
-      )}
 
-      <div className="border-b border-gray-200 flex gap-1">
-        {(Object.values(SUBJECTIVE_TAB) as SubjectiveTabId[]).map((id) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => setActiveTab(id)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${
-              activeTab === id
-                ? 'border-blue-600 text-blue-700'
-                : 'border-transparent text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            {SUBJECTIVE_TAB_LABEL[id]}
-          </button>
-        ))}
+        {!isDraft && (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <StatTile label="Submissions" value={pending + checked} valueClass="text-gray-900" />
+            <StatTile label="Pending check" value={pending} valueClass="text-amber-500" />
+            <StatTile label="Checked" value={checked} valueClass="text-green-500" />
+          </div>
+        )}
       </div>
 
-      {activeTab === SUBJECTIVE_TAB.SUBMISSIONS && (
+      {activeView === VIEW.SUBMISSIONS ? (
         <SubjectiveSubmissionsTab businessId={businessId} test={test} onGraded={() => void loadTest()} />
-      )}
-
-      {activeTab === SUBJECTIVE_TAB.SETTINGS && (
+      ) : (
         <SubjectiveSettingsTab
           businessId={businessId}
           test={test}
@@ -195,14 +197,6 @@ export function SubjectiveTeacherDetailView({
           onDeleted={() => router.push(listHref)}
         />
       )}
-
-      <PdfFileViewerModal
-        isOpen={paperOpen}
-        onClose={() => setPaperOpen(false)}
-        title={`${test.name} — question paper`}
-        downloadName={`${test.name} - question paper.pdf`}
-        fetchBlob={fetchQuestionPaper}
-      />
 
       <PublishConfirmModal
         isOpen={publishOpen}

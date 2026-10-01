@@ -38,8 +38,8 @@ export function SubjectiveStudentTestCard({
 }: {
   test: SubjectiveAvailableTest
   onStart: () => void
-  /** Opens the attempt (in progress) or the result page (submitted/checked). */
-  onOpen: (submissionId: string, inProgress: boolean) => void
+  /** Opens the student's test page (upload while in progress, result once submitted). */
+  onOpen: (submissionId: string) => void
 }) {
   const action = resolveAction(test)
   const notStarted = test.displayStatus === SubjectiveDisplayStatus.NOT_STARTED
@@ -104,7 +104,7 @@ export function SubjectiveStudentTestCard({
           <Button
             variant={action.label === 'Resume' ? 'default' : 'outline'}
             className={`flex-1 w-fit cursor-pointer ${action.label === 'Resume' ? 'bg-blue-600 hover:bg-blue-700' : ''}`}
-            onClick={() => onOpen(action.submissionId, test.displayStatus === SubjectiveDisplayStatus.IN_PROGRESS)}
+            onClick={() => onOpen(action.submissionId)}
           >
             {action.label}
           </Button>

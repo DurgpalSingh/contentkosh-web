@@ -3,9 +3,9 @@
 import { useParams } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { SubjectiveAttemptView } from '@/components/dashboard/tests/subjective/SubjectiveAttemptView';
+import { SubjectiveStudentTestView } from '@/components/dashboard/tests/subjective/SubjectiveStudentTestView';
 
-export default function StudentSubjectiveAttemptPage() {
+export default function StudentSubjectiveTestPage() {
   const params = useParams();
   const slug = params.slug as string;
   const submissionId = params.submissionId as string;
@@ -22,5 +22,5 @@ export default function StudentSubjectiveAttemptPage() {
 
   if (!isAuthenticated || typeof businessId !== 'number') return null;
 
-  return <SubjectiveAttemptView businessId={businessId} submissionId={submissionId} slug={slug} />;
+  return <SubjectiveStudentTestView businessId={businessId} submissionId={submissionId} slug={slug} />;
 }
