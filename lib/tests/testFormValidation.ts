@@ -83,7 +83,8 @@ export function validateTestForm(values: {
     errors.subjectId = 'Please select a subject';
   }
 
-  if (values.kind === TEST_KIND.EXAM) {
+  // Exam and subjective tests share the same schedule rules.
+  if (values.kind === TEST_KIND.EXAM || values.kind === TEST_KIND.SUBJECTIVE) {
     if (!values.startAt) {
       errors.startAt = 'Start date is required';
     }
@@ -124,6 +125,9 @@ export function validateTestForm(values: {
       errors.durationMinutes = `Duration must be between ${EXAM_DURATION_MIN} and ${EXAM_DURATION_MAX} minutes`;
     }
 
+  }
+
+  if (values.kind === TEST_KIND.EXAM) {
     const marks = values.defaultMarksPerQuestion ?? 0;
     if (marks <= 0) {
       errors.defaultMarksPerQuestion = 'Marks per question must be greater than 0';

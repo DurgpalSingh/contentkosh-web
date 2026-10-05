@@ -6,7 +6,14 @@ import { FlaskConical } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Button } from '@/components/ui/button';
-import { ExamTestsService, PracticeTestsService, type Subject, TestLanguage } from '@/lib/api';
+import {
+  ExamTestsService,
+  PracticeTestsService,
+  SubjectiveTestsService,
+  type Subject,
+  type SubjectiveAvailableTest,
+  TestLanguage,
+} from '@/lib/api';
 import { createIndexedTextFilter } from '@/lib/indexedFiltering';
 import { EmptyState } from '@/components/common/EmptyState';
 import type { PracticeCatalogRow, ExamCatalogRow, UnifiedStudentRow } from '@/lib/tests/studentTestCatalog';
@@ -17,8 +24,11 @@ import {
   studentExamResultPath,
   studentPracticeAttemptPath,
   studentPracticeResultPath,
+  studentSubjectiveAttemptPath,
   TEST_CARD_ACTION,
 } from '@/lib/tests/studentTestCatalog';
+import { SubjectiveStudentTestCard } from '@/components/dashboard/tests/subjective/SubjectiveStudentTestCard';
+import { SubjectiveStartConfirmModal } from '@/components/dashboard/tests/subjective/SubjectiveStartConfirmModal';
 import { StartAttemptConfirmModal, type StartAttemptTestInfo } from '@/components/modals/StartAttemptConfirmModal';
 import { formatDateTime, formatDurationMinutes, type TestListIndexedFacets } from '@/lib/tests/testUiMappers';
 import {
@@ -26,12 +36,22 @@ import {
   type TestsKindFilter,
 } from '@/components/dashboard/tests/TestsFiltersBar';
 import { buildTestListSelectedFacets, useTestListSubjectIndex } from '@/lib/subjectsByCourseIndex';
-import { STUDENT_TEST_STATUS, TEACHER_TESTS_FILTER, TEACHER_TEST_PUBLISH_FILTER } from '@/lib/tests/testConstants';
+import {
+  STUDENT_TEST_STATUS,
+  TEACHER_TESTS_FILTER,
+  TEACHER_TEST_PUBLISH_FILTER,
+  TEST_KIND,
+  TEST_STATUS,
+} from '@/lib/tests/testConstants';
+
+/** Practice/exam rows plus subjective rows, which render with their own card. */
+type StudentListItem = UnifiedStudentRow | { kind: typeof TEST_KIND.SUBJECTIVE; row: SubjectiveAvailableTest };
 
 export function StudentTestsListView({
   slug,
   practiceRows,
   examRows,
+  subjectiveRows,
   batches,
   subjects,
   loading,
@@ -41,6 +61,7 @@ export function StudentTestsListView({
   slug: string;
   practiceRows: PracticeCatalogRow[];
   examRows: ExamCatalogRow[];
+  subjectiveRows: SubjectiveAvailableTest[];
   batches: { id: number; displayName?: string; codeName?: string; courseId?: number }[];
   subjects: Subject[];
   loading: boolean;
@@ -63,12 +84,14 @@ export function StudentTestsListView({
 
   const [startConfirmOpen, setStartConfirmOpen] = useState(false);
   const [startConfirmPayload, setStartConfirmPayload] = useState<StartAttemptTestInfo | null>(null);
+  const [subjectiveStartTarget, setSubjectiveStartTarget] = useState<SubjectiveAvailableTest | null>(null);
 
-  const merged: UnifiedStudentRow[] = useMemo(() => {
+  const merged: StudentListItem[] = useMemo(() => {
     const p = practiceRows.map((row) => ({ kind: 'practice' as const, row }));
     const e = examRows.map((row) => ({ kind: 'exam' as const, row }));
-    return [...p, ...e].sort((a, b) => (a.row.name ?? '').localeCompare(b.row.name ?? ''));
-  }, [practiceRows, examRows]);
+    const s = subjectiveRows.map((row) => ({ kind: TEST_KIND.SUBJECTIVE, row }));
+    return [...p, ...e, ...s].sort((a, b) => (a.row.name ?? '').localeCompare(b.row.name ?? ''));
+  }, [practiceRows, examRows, subjectiveRows]);
 
   const subjectIndex = useTestListSubjectIndex(
     subjects,
@@ -79,11 +102,12 @@ export function StudentTestsListView({
   );
 
   const indexedTestFilter = useMemo(() => {
-    return createIndexedTextFilter<UnifiedStudentRow, string, TestListIndexedFacets>(merged, {
+    return createIndexedTextFilter<StudentListItem, string, TestListIndexedFacets>(merged, {
       getId: (item) => `${item.kind}-${item.row.id}`,
       getSearchText: (item) => {
         const r = item.row;
-        const parts = [r.name, r.description, r.batchName, r.subjectName].filter(
+        const paperType = item.kind === TEST_KIND.SUBJECTIVE ? item.row.paperType : null;
+        const parts = [r.name, r.description, r.batchName, r.subjectName, paperType].filter(
           (x): x is string => typeof x === 'string' && x.length > 0,
         );
         return parts.join(' ');
@@ -96,7 +120,13 @@ export function StudentTestsListView({
       getFacetValues: (item, id) => {
         const r = item.row;
         const batchId = Number(r.batchId);
-        const status = typeof r.status === 'number' ? r.status : 0;
+        // The student catalog only contains published tests; subjective rows don't carry `status`.
+        const status =
+          item.kind === TEST_KIND.SUBJECTIVE
+            ? TEST_STATUS.PUBLISHED
+            : typeof item.row.status === 'number'
+              ? item.row.status
+              : 0;
         const entries: Array<readonly [string, keyof TestListIndexedFacets, string | number]> = [
           [id, 'batchId', batchId],
           [id, 'status', status],
@@ -166,6 +196,14 @@ export function StudentTestsListView({
     }
   };
 
+  const startSubjective = async (testId: string): Promise<void> => {
+    if (typeof businessId !== 'number') throw new Error('Not authorized');
+    const res = await SubjectiveTestsService.postApiBusinessSubjectiveTestsStart(businessId, testId);
+    const submissionId = res.data?.submissionId;
+    if (!submissionId) throw new Error('Could not start test');
+    router.push(studentSubjectiveAttemptPath(slug, submissionId));
+  };
+
   const closeStartConfirm = () => {
     setStartConfirmOpen(false);
     setStartConfirmPayload(null);
@@ -207,7 +245,7 @@ export function StudentTestsListView({
     setStartConfirmOpen(true);
   };
 
-  if (!isInitialized || (loading && !practiceRows.length && !examRows.length)) {
+  if (!isInitialized || (loading && !practiceRows.length && !examRows.length && !subjectiveRows.length)) {
     return (
       <div className="min-h-[40vh] flex items-center justify-center">
         <LoadingSpinner size="lg" />
@@ -232,7 +270,7 @@ export function StudentTestsListView({
           <div>
             <h1 className="text-2xl font-bold text-gray-900">My Tests</h1>
             <p className="text-gray-600 mt-1">
-              Practice and exam tests from your batches. Start a new attempt or resume where you left off.
+              Practice, exam and subjective tests from your batches. Start a new attempt or resume where you left off.
             </p>
           </div>
         </div>
@@ -268,6 +306,16 @@ export function StudentTestsListView({
       ) : (
         <div className="flex flex-col gap-4">
           {filtered.map((item) => {
+            if (item.kind === TEST_KIND.SUBJECTIVE) {
+              return (
+                <SubjectiveStudentTestCard
+                  key={`${item.kind}-${item.row.id}`}
+                  test={item.row}
+                  onStart={() => setSubjectiveStartTarget(item.row)}
+                  onOpen={(submissionId) => router.push(studentSubjectiveAttemptPath(slug, submissionId))}
+                />
+              );
+            }
             const vm = buildCardViewModel(item);
             const { row } = item;
             const er = item.kind === 'exam' ? (row as ExamCatalogRow) : null;
@@ -436,6 +484,15 @@ export function StudentTestsListView({
             }
           }}
           testInfo={startConfirmPayload}
+        />
+      )}
+
+      {subjectiveStartTarget && (
+        <SubjectiveStartConfirmModal
+          isOpen
+          test={subjectiveStartTarget}
+          onClose={() => setSubjectiveStartTarget(null)}
+          onConfirm={() => startSubjective(subjectiveStartTarget.id)}
         />
       )}
     </div>

@@ -13,6 +13,10 @@ export function teacherExamTestPath(slug: string, examTestId: string): string {
   return `${teacherTestsListPath(slug)}/${TEST_KIND.EXAM}/${examTestId}`;
 }
 
+export function teacherSubjectiveTestPath(slug: string, subjectiveTestId: string): string {
+  return `${teacherTestsListPath(slug)}/${TEST_KIND.SUBJECTIVE}/${subjectiveTestId}`;
+}
+
 /**
  * Matches `/[slug]/dashboard/student/mytest/(practice|exam)/attempt/[attemptId]`.
  * Used by dashboard layout to hide chrome on fullscreen student attempts.

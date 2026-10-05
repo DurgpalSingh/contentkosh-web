@@ -6,7 +6,7 @@ import { QuestionFormFields } from '@/components/dashboard/tests/questions/Quest
 import { useTeacherQuestionForm } from '@/components/dashboard/tests/questions/useTeacherQuestionForm'
 import { ExamTestsService, PracticeTestsService, type CreateQuestionDTO } from '@/lib/api'
 import { getApiErrorDetailMessage } from '@/lib/tests/getApiErrorDetailMessage'
-import { TEST_KIND, type TestKind } from '@/lib/tests/testConstants'
+import { TEST_KIND, type QuestionTestKind } from '@/lib/tests/testConstants'
 import {
   validateQuestionForm,
   type QuestionFormErrors,
@@ -18,7 +18,7 @@ interface AddQuestionModalProps {
   isOpen: boolean
   onClose: () => void
   businessId: number
-  kind: TestKind
+  kind: QuestionTestKind
   testId: string
   onSaved: () => void
 }
