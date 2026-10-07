@@ -3,6 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { ApiResponse } from '../models/ApiResponse';
+import type { CreateSubjectiveTestRequest } from '../models/CreateSubjectiveTestRequest';
 import type { PublishSubjectiveTestRequest } from '../models/PublishSubjectiveTestRequest';
 import type { SubjectiveAvailableTest } from '../models/SubjectiveAvailableTest';
 import type { SubjectiveDisplayStatus } from '../models/SubjectiveDisplayStatus';
@@ -13,6 +14,7 @@ import type { SubjectiveSubmissionList } from '../models/SubjectiveSubmissionLis
 import type { SubjectiveSubmitResult } from '../models/SubjectiveSubmitResult';
 import type { SubjectiveTest } from '../models/SubjectiveTest';
 import type { SubjectiveTestDetail } from '../models/SubjectiveTestDetail';
+import type { UpdateSubjectiveTestRequest } from '../models/UpdateSubjectiveTestRequest';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
@@ -144,21 +146,15 @@ export class SubjectiveTestsService {
     }
     /**
      * Create a draft subjective test
-     * The question paper is optional at creation but required to publish.
+     * Upload the question paper afterwards with PUT /{subjectiveTestId}/question-paper; it is required to publish.
      * @param businessId
-     * @param formData
+     * @param requestBody
      * @returns any Subjective test created successfully
      * @throws ApiError
      */
     public static postApiBusinessSubjectiveTests(
         businessId: number,
-        formData: {
-            /**
-             * JSON string matching CreateSubjectiveTestRequest
-             */
-            data: string;
-            questionPaper?: Blob;
-        },
+        requestBody: CreateSubjectiveTestRequest,
     ): CancelablePromise<(ApiResponse & {
         data?: SubjectiveTest;
     })> {
@@ -168,10 +164,10 @@ export class SubjectiveTestsService {
             path: {
                 'businessId': businessId,
             },
-            formData: formData,
-            mediaType: 'multipart/form-data',
+            body: requestBody,
+            mediaType: 'application/json',
             errors: {
-                400: `Invalid input data or file`,
+                400: `Invalid input data`,
             },
         });
     }
@@ -233,23 +229,17 @@ export class SubjectiveTestsService {
     }
     /**
      * Update a draft subjective test
-     * Send only changed fields in `data`. Sending `questionPaper` replaces the current paper.
+     * Send only the changed fields. Replace the question paper with PUT /{subjectiveTestId}/question-paper.
      * @param businessId
      * @param subjectiveTestId
-     * @param formData
+     * @param requestBody
      * @returns any Subjective test updated successfully
      * @throws ApiError
      */
     public static putApiBusinessSubjectiveTests(
         businessId: number,
         subjectiveTestId: string,
-        formData: {
-            /**
-             * JSON string matching UpdateSubjectiveTestRequest
-             */
-            data?: string;
-            questionPaper?: Blob;
-        },
+        requestBody: UpdateSubjectiveTestRequest,
     ): CancelablePromise<(ApiResponse & {
         data?: SubjectiveTest;
     })> {
@@ -260,8 +250,8 @@ export class SubjectiveTestsService {
                 'businessId': businessId,
                 'subjectiveTestId': subjectiveTestId,
             },
-            formData: formData,
-            mediaType: 'multipart/form-data',
+            body: requestBody,
+            mediaType: 'application/json',
             errors: {
                 400: `Invalid input, or the test is already published`,
                 404: `Subjective test not found`,
@@ -288,6 +278,39 @@ export class SubjectiveTestsService {
             },
             errors: {
                 400: `Test is published or has submissions`,
+                404: `Subjective test not found`,
+            },
+        });
+    }
+    /**
+     * Upload or replace the question paper of a draft test
+     * Access is checked before the file is stored. The previous paper is deleted after the new one is saved.
+     * @param businessId
+     * @param subjectiveTestId
+     * @param formData
+     * @returns any Question paper uploaded successfully
+     * @throws ApiError
+     */
+    public static putApiBusinessSubjectiveTestsQuestionPaper(
+        businessId: number,
+        subjectiveTestId: string,
+        formData: {
+            questionPaper: Blob;
+        },
+    ): CancelablePromise<(ApiResponse & {
+        data?: SubjectiveTest;
+    })> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/business/{businessId}/subjective-tests/{subjectiveTestId}/question-paper',
+            path: {
+                'businessId': businessId,
+                'subjectiveTestId': subjectiveTestId,
+            },
+            formData: formData,
+            mediaType: 'multipart/form-data',
+            errors: {
+                400: `Missing/invalid PDF, or the test is already published`,
                 404: `Subjective test not found`,
             },
         });

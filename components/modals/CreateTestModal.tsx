@@ -29,6 +29,7 @@ import {
   type SubjectiveFieldValues,
 } from '@/components/dashboard/tests/subjective/SubjectiveTestFormFields';
 import { validateSubjectiveFields, type SubjectiveFieldErrors } from '@/lib/tests/subjectiveTestFormValidation';
+import { getApiErrorDetailMessage } from '@/lib/tests/getApiErrorDetailMessage';
 
 interface CreateTestModalProps {
   isOpen: boolean;
@@ -186,13 +187,19 @@ export function CreateTestModal({
           ...(description.trim() ? { description: description.trim() } : {}),
           ...(subjectiveFields.instructions.trim() ? { instructions: subjectiveFields.instructions.trim() } : {}),
         };
-        const res = await SubjectiveTestsService.postApiBusinessSubjectiveTests(businessId, {
-          data: JSON.stringify(body),
-          ...(questionPaper ? { questionPaper } : {}),
-        });
+        const res = await SubjectiveTestsService.postApiBusinessSubjectiveTests(businessId, body);
         const id = res.data?.id;
         if (!id) throw new Error('No test id returned');
-        toast.success('Subjective test created');
+        if (questionPaper) {
+          // The draft exists even if the paper upload fails; it can be uploaded again from Settings.
+          await SubjectiveTestsService.putApiBusinessSubjectiveTestsQuestionPaper(businessId, id, { questionPaper })
+            .then(() => toast.success('Subjective test created'))
+            .catch((uploadError: unknown) =>
+              toast.error(getApiErrorDetailMessage(uploadError, 'Test created, but the question paper upload failed')),
+            );
+        } else {
+          toast.success('Subjective test created');
+        }
         onCreated(TEST_KIND.SUBJECTIVE, id);
         reset();
       } else if (kind === TEST_KIND.PRACTICE) {

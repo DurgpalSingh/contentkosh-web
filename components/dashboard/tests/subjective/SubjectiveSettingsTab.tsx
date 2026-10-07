@@ -105,10 +105,10 @@ export function SubjectiveSettingsTab({
     setSaving(true)
     setSaveError(null)
     try {
-      await SubjectiveTestsService.putApiBusinessSubjectiveTests(businessId, test.id, {
-        data: JSON.stringify(data),
-        ...(questionPaper ? { questionPaper } : {}),
-      })
+      await SubjectiveTestsService.putApiBusinessSubjectiveTests(businessId, test.id, data)
+      if (questionPaper) {
+        await SubjectiveTestsService.putApiBusinessSubjectiveTestsQuestionPaper(businessId, test.id, { questionPaper })
+      }
       toast.success('Test updated')
       setIsEditing(false)
       onSaved()
