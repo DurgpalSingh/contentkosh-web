@@ -101,3 +101,20 @@ export const CONTENT_UPLOAD_INFO_ITEMS = CONTENT_UPLOAD_FORMATS.map((format) => 
   extensions: format.extensions.join(', '),
   maxSizeLabel: `${format.maxSizeMb} MB`,
 }));
+
+// Must match CONTENT_BULK_UPLOAD_MAX_FILES on the backend
+export const CONTENT_UPLOAD_MAX_FILES = 10;
+
+/**
+ * Builds a default content title from a file name: drops the extension and
+ * replaces characters the title validator rejects (e.g. dots, commas) with spaces.
+ */
+export function getContentTitleFromFileName(fileName: string): string {
+  const baseName = fileName.replace(/\.[^.]+$/, '');
+  return baseName
+    .replace(/[^a-zA-Z0-9\s_\-()[\]&|]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 100)
+    .trim();
+}

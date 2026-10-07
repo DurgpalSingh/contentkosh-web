@@ -1,9 +1,10 @@
 'use client';
 
-import { Edit, Trash2, Eye, FileText, FileImage, Calendar, HardDrive, User, BookOpen } from 'lucide-react';
+import { Edit, Trash2, Eye, Calendar, HardDrive, User, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { OverviewCard, OverviewCardMenuItem } from '@/components/common/OverviewCard';
 import { Content } from '@/lib/api';
+import { formatContentBytes, getContentTypeMeta } from './contentDisplay';
 
 interface ContentGridCardProps {
   content: Content;
@@ -21,24 +22,9 @@ export function ContentGridCard({ content, onView, onEdit, onDelete }: ContentGr
     menuItems.push({ label: 'Delete', icon: Trash2, onClick: () => onDelete(content), variant: 'danger' });
   }
 
-  const formatBytes = (bytes?: number) => {
-    if (bytes === undefined || bytes === null) return 'Unknown size';
-    if (bytes === 0) return '0 B';
-    const units = ['B', 'KB', 'MB', 'GB'];
-    const exp = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
-    const value = bytes / Math.pow(1024, exp);
-    return `${value.toFixed(exp === 0 ? 0 : 1)} ${units[exp]}`;
-  };
-
   const uploadedAt = content.createdAt ? new Date(content.createdAt).toLocaleString() : 'Unknown date';
 
-  const typeMeta = (() => {
-    const raw = content.type?.toLowerCase() ?? 'file';
-    if (raw.includes('pdf')) return { label: 'PDF', Icon: FileText, badge: 'bg-rose-50 text-rose-700 border-rose-200', icon: 'bg-rose-50 text-rose-600' };
-    if (raw.includes('image') || raw.includes('jpg') || raw.includes('png')) return { label: 'Image', Icon: FileImage, badge: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: 'bg-emerald-50 text-emerald-600' };
-    if (raw.includes('doc')) return { label: 'DOC', Icon: FileText, badge: 'bg-amber-50 text-amber-700 border-amber-200', icon: 'bg-amber-50 text-amber-600' };
-    return { label: content.type || 'File', Icon: FileText, badge: 'bg-blue-50 text-blue-700 border-blue-200', icon: 'bg-blue-50 text-blue-600' };
-  })();
+  const typeMeta = getContentTypeMeta(content);
 
 
   const statusBadge = content.status ? (
@@ -79,7 +65,7 @@ export function ContentGridCard({ content, onView, onEdit, onDelete }: ContentGr
       <div className="space-y-3 text-sm text-slate-600">
         <div className="flex min-w-0 items-center">
           <HardDrive className="h-4 w-4 mr-2 shrink-0 text-slate-400" />
-          <span className="truncate">{formatBytes(content.fileSize)}</span>
+          <span className="truncate">{formatContentBytes(content.fileSize)}</span>
         </div>
         <div className="flex min-w-0 items-center">
           <User className="h-4 w-4 mr-2 shrink-0 text-slate-400" />

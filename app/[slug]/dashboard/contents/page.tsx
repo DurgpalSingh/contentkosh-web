@@ -5,12 +5,13 @@ import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Button } from '@/components/ui/button';
-import { Plus, Search, Layers3 } from 'lucide-react';
+import { Plus, Search, Layers3, LayoutGrid, List } from 'lucide-react';
 import { AddContentModal } from '@/components/modals/AddContentModal';
 import { EditContentModal } from '@/components/modals/EditContentModal';
 import { DeleteConfirmModal } from '@/components/modals/DeleteConfirmModal';
 import { ContentsService, BatchesService, SubjectsService, Content, Batch, Subject } from '@/lib/api';
 import { ContentGridCard } from '@/components/dashboard/contents/ContentGridCard';
+import { ContentListView } from '@/components/dashboard/contents/ContentListView';
 import { ContentFileViewerModal } from '@/components/dashboard/contents/ContentFileViewerModal';
 import { ContentsFilterModal } from '@/components/dashboard/contents/ContentsFilterModal';
 import { USER_ROLES } from '@/lib/constants';
@@ -19,6 +20,9 @@ import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { createIndexedTextFilter } from '@/lib/indexedFiltering';
 import { buildSubjectsByCourseIndex } from '@/lib/subjectsByCourseIndex';
+
+type ContentViewMode = 'grid' | 'list';
+const CONTENT_VIEW_MODE_STORAGE_KEY = 'contents:viewMode';
 
 export default function ContentsPage() {
   const { user, business, isAuthenticated, isLoading, isInitialized } = useAuthStore();
@@ -36,6 +40,26 @@ export default function ContentsPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [viewMode, setViewMode] = useState<ContentViewMode>('grid');
+
+  // Restore the last used view after mount (localStorage isn't available during SSR)
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(CONTENT_VIEW_MODE_STORAGE_KEY);
+      if (stored === 'grid' || stored === 'list') setViewMode(stored);
+    } catch {
+      // Storage may be blocked; keep the default view
+    }
+  }, []);
+
+  const handleViewModeChange = useCallback((mode: ContentViewMode) => {
+    setViewMode(mode);
+    try {
+      window.localStorage.setItem(CONTENT_VIEW_MODE_STORAGE_KEY, mode);
+    } catch {
+      // Storage may be blocked; the choice just won't persist
+    }
+  }, []);
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -275,6 +299,32 @@ export default function ContentsPage() {
           </div>
 
           <div className="flex w-full items-center gap-3 xl:w-auto xl:justify-end">
+            <div
+              role="group"
+              aria-label="View mode"
+              className="inline-flex h-11 shrink-0 items-center rounded-lg border border-gray-300 bg-white p-1"
+            >
+              {([
+                { mode: 'grid', label: 'Grid view', Icon: LayoutGrid },
+                { mode: 'list', label: 'List view', Icon: List },
+              ] as const).map(({ mode, label, Icon }) => (
+                <button
+                  key={mode}
+                  type="button"
+                  onClick={() => handleViewModeChange(mode)}
+                  aria-pressed={viewMode === mode}
+                  aria-label={label}
+                  title={label}
+                  className={`flex h-full items-center justify-center rounded-md px-2.5 transition-colors ${
+                    viewMode === mode
+                      ? 'bg-blue-600 text-white shadow-sm'
+                      : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                </button>
+              ))}
+            </div>
             <ContentsFilterModal
               batches={batches}
               selectedBatchId={selectedBatchId}
@@ -314,6 +364,13 @@ export default function ContentsPage() {
               }
             />
           )
+        ) : viewMode === 'list' ? (
+          <ContentListView
+            contents={filteredContents}
+            onView={handleView}
+            onEdit={!isStudent ? handleEdit : undefined}
+            onDelete={!isStudent ? handleDelete : undefined}
+          />
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {filteredContents.map(c => (
