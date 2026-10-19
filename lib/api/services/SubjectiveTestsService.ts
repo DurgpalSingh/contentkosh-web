@@ -72,8 +72,10 @@ export class SubjectiveTestsService {
         });
     }
     /**
-     * Get the authenticated student's own submission
-     * Marks, remarks and the checked copy are included only once the submission is CHECKED.
+     * Get one submission (staff grading view, or the student's own view)
+     * Staff (admin, the teacher who created the test, super admin) get the grading view with the student's profile.
+     * A student gets only their own submission; marks, remarks and the checked copy are included once it is CHECKED.
+     *
      * @param businessId
      * @param submissionId
      * @returns any Submission fetched successfully
@@ -83,7 +85,7 @@ export class SubjectiveTestsService {
         businessId: number,
         submissionId: string,
     ): CancelablePromise<(ApiResponse & {
-        data?: SubjectiveStudentSubmission;
+        data?: (SubjectiveStaffSubmission | SubjectiveStudentSubmission);
     })> {
         return __request(OpenAPI, {
             method: 'GET',
@@ -98,7 +100,7 @@ export class SubjectiveTestsService {
         });
     }
     /**
-     * Download the authenticated student's submitted answer sheet
+     * Download a submitted answer sheet (staff, or the student's own)
      * @param businessId
      * @param submissionId
      * @returns binary PDF file
@@ -121,7 +123,7 @@ export class SubjectiveTestsService {
         });
     }
     /**
-     * Download the latest checked copy of the authenticated student's answer sheet
+     * Download the latest checked copy of an answer sheet (staff, or the student's own)
      * Available only once the submission is CHECKED.
      * @param businessId
      * @param submissionId
@@ -141,6 +143,44 @@ export class SubjectiveTestsService {
             },
             errors: {
                 404: `Checked answer sheet not found`,
+            },
+        });
+    }
+    /**
+     * Add or update marks, remarks and the checked answer sheet
+     * The checked PDF is required the first time; later updates may change marks/remarks only. Sending a new PDF replaces the previous checked copy.
+     * @param businessId
+     * @param submissionId
+     * @param formData
+     * @returns any Submission graded successfully
+     * @throws ApiError
+     */
+    public static putApiBusinessSubjectiveTestsSubmissionsGrade(
+        businessId: number,
+        submissionId: string,
+        formData: {
+            /**
+             * JSON string matching GradeSubjectiveSubmissionRequest
+             */
+            data: string;
+            checkedAnswerSheet?: Blob;
+        },
+    ): CancelablePromise<(ApiResponse & {
+        data?: SubjectiveStaffSubmission;
+    })> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/business/{businessId}/subjective-tests/submissions/{submissionId}/grade',
+            path: {
+                'businessId': businessId,
+                'submissionId': submissionId,
+            },
+            formData: formData,
+            mediaType: 'multipart/form-data',
+            errors: {
+                400: `Invalid marks/file, or the submission is not submitted yet`,
+                404: `Submission not found`,
+                409: `Updated by someone else at the same time`,
             },
         });
     }
@@ -436,127 +476,6 @@ export class SubjectiveTestsService {
             },
             errors: {
                 404: `Subjective test not found`,
-            },
-        });
-    }
-    /**
-     * Get one submission with grading details
-     * @param businessId
-     * @param subjectiveTestId
-     * @param submissionId
-     * @returns any Submission fetched successfully
-     * @throws ApiError
-     */
-    public static getApiBusinessSubjectiveTestsSubmissions2(
-        businessId: number,
-        subjectiveTestId: string,
-        submissionId: string,
-    ): CancelablePromise<(ApiResponse & {
-        data?: SubjectiveStaffSubmission;
-    })> {
-        return __request(OpenAPI, {
-            method: 'GET',
-            url: '/api/business/{businessId}/subjective-tests/{subjectiveTestId}/submissions/{submissionId}',
-            path: {
-                'businessId': businessId,
-                'subjectiveTestId': subjectiveTestId,
-                'submissionId': submissionId,
-            },
-            errors: {
-                404: `Submission not found`,
-            },
-        });
-    }
-    /**
-     * Download a student's original answer sheet
-     * @param businessId
-     * @param subjectiveTestId
-     * @param submissionId
-     * @returns binary PDF file
-     * @throws ApiError
-     */
-    public static getApiBusinessSubjectiveTestsSubmissionsAnswerSheet1(
-        businessId: number,
-        subjectiveTestId: string,
-        submissionId: string,
-    ): CancelablePromise<Blob> {
-        return __request(OpenAPI, {
-            method: 'GET',
-            url: '/api/business/{businessId}/subjective-tests/{subjectiveTestId}/submissions/{submissionId}/answer-sheet',
-            path: {
-                'businessId': businessId,
-                'subjectiveTestId': subjectiveTestId,
-                'submissionId': submissionId,
-            },
-            errors: {
-                404: `Answer sheet not found`,
-            },
-        });
-    }
-    /**
-     * Download the latest checked copy of a student's answer sheet
-     * @param businessId
-     * @param subjectiveTestId
-     * @param submissionId
-     * @returns binary PDF file
-     * @throws ApiError
-     */
-    public static getApiBusinessSubjectiveTestsSubmissionsCheckedAnswerSheet1(
-        businessId: number,
-        subjectiveTestId: string,
-        submissionId: string,
-    ): CancelablePromise<Blob> {
-        return __request(OpenAPI, {
-            method: 'GET',
-            url: '/api/business/{businessId}/subjective-tests/{subjectiveTestId}/submissions/{submissionId}/checked-answer-sheet',
-            path: {
-                'businessId': businessId,
-                'subjectiveTestId': subjectiveTestId,
-                'submissionId': submissionId,
-            },
-            errors: {
-                404: `Checked answer sheet not found`,
-            },
-        });
-    }
-    /**
-     * Add or update marks, remarks and the checked answer sheet
-     * The checked PDF is required the first time; later updates may change marks/remarks only. Sending a new PDF replaces the previous checked copy.
-     * @param businessId
-     * @param subjectiveTestId
-     * @param submissionId
-     * @param formData
-     * @returns any Submission graded successfully
-     * @throws ApiError
-     */
-    public static putApiBusinessSubjectiveTestsSubmissionsGrade(
-        businessId: number,
-        subjectiveTestId: string,
-        submissionId: string,
-        formData: {
-            /**
-             * JSON string matching GradeSubjectiveSubmissionRequest
-             */
-            data: string;
-            checkedAnswerSheet?: Blob;
-        },
-    ): CancelablePromise<(ApiResponse & {
-        data?: SubjectiveStaffSubmission;
-    })> {
-        return __request(OpenAPI, {
-            method: 'PUT',
-            url: '/api/business/{businessId}/subjective-tests/{subjectiveTestId}/submissions/{submissionId}/grade',
-            path: {
-                'businessId': businessId,
-                'subjectiveTestId': subjectiveTestId,
-                'submissionId': submissionId,
-            },
-            formData: formData,
-            mediaType: 'multipart/form-data',
-            errors: {
-                400: `Invalid marks/file, or the submission is not submitted yet`,
-                404: `Submission not found`,
-                409: `Updated by someone else at the same time`,
             },
         });
     }

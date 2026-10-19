@@ -35,6 +35,19 @@ export const SUBJECTIVE_AVAILABILITY_BADGE: Record<SubjectiveAvailability, strin
   [SubjectiveAvailability.CLOSED]: 'bg-gray-50 text-gray-600 border-gray-200',
 };
 
+export const SUBJECTIVE_PDF_LABEL = {
+  questionPaper: 'question paper',
+  answerSheet: 'answer sheet',
+  checkedCopy: 'checked copy',
+} as const;
+
+export type SubjectivePdfKind = keyof typeof SUBJECTIVE_PDF_LABEL;
+
+/** e.g. `Mock 4 - Asha - checked copy.pdf` */
+export function subjectivePdfFileName(kind: SubjectivePdfKind, ...nameParts: string[]): string {
+  return `${[...nameParts, SUBJECTIVE_PDF_LABEL[kind]].join(' - ')}.pdf`;
+}
+
 /** Neutral pill (paper type, draft). */
 export const SUBJECTIVE_NEUTRAL_BADGE = 'bg-gray-100 text-gray-800 border-gray-200';
 

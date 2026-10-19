@@ -17,7 +17,7 @@ import { DownloadFileButton } from '@/components/common/DownloadFileButton'
 import { SubjectiveGradeModal } from '@/components/dashboard/tests/subjective/SubjectiveGradeModal'
 import { SubjectiveStatusBadge } from '@/components/dashboard/tests/subjective/SubjectiveStatusBadge'
 import { formatDateTime } from '@/lib/tests/testUiMappers'
-import { SUBJECTIVE_STAFF_STATUS_LABEL } from '@/lib/tests/subjectiveTestConstants'
+import { SUBJECTIVE_STAFF_STATUS_LABEL, subjectivePdfFileName } from '@/lib/tests/subjectiveTestConstants'
 import { SUBJECTIVE_SUBMISSIONS_PAGE_SIZE } from '@/lib/tests/subjectiveTest.config'
 import { getApiErrorDetailMessage } from '@/lib/tests/getApiErrorDetailMessage'
 
@@ -46,7 +46,7 @@ function SubmissionCard({
   const submissionId = row.submissionId
   const isChecked = row.displayStatus === SubjectiveDisplayStatus.CHECKED
   const canGrade = Boolean(submissionId) && (isChecked || row.displayStatus === SubjectiveDisplayStatus.SUBMITTED)
-  const answerName = row.answerSheetName ?? `${row.studentName} - answer sheet.pdf`
+  const answerName = row.answerSheetName ?? subjectivePdfFileName('answerSheet', row.studentName)
 
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
@@ -79,15 +79,15 @@ function SubmissionCard({
         {submissionId && canGrade && (
           <div className="flex flex-wrap gap-2 shrink-0">
             <DownloadFileButton
-              fetchBlob={() => SubjectiveTestFilesService.getStaffAnswerSheet(businessId, test.id, submissionId)}
+              fetchBlob={() => SubjectiveTestFilesService.getAnswerSheet(businessId, submissionId)}
               fileName={answerName}
             >
               Answer Sheet
             </DownloadFileButton>
             {row.hasCheckedAnswerSheet && (
               <DownloadFileButton
-                fetchBlob={() => SubjectiveTestFilesService.getStaffCheckedAnswerSheet(businessId, test.id, submissionId)}
-                fileName={`${row.studentName} - checked copy.pdf`}
+                fetchBlob={() => SubjectiveTestFilesService.getCheckedAnswerSheet(businessId, submissionId)}
+                fileName={subjectivePdfFileName('checkedCopy', row.studentName)}
               >
                 Checked Copy
               </DownloadFileButton>

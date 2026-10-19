@@ -21,6 +21,7 @@ import {
   SUBJECTIVE_AVAILABILITY_BADGE,
   SUBJECTIVE_AVAILABILITY_LABEL,
   SUBJECTIVE_NEUTRAL_BADGE,
+  subjectivePdfFileName,
 } from '@/lib/tests/subjectiveTestConstants'
 import { formatCountdown, useCountdown } from '@/lib/tests/useCountdown'
 import { formatDateTime, formatDurationMinutes } from '@/lib/tests/testUiMappers'
@@ -47,7 +48,8 @@ export function SubjectiveStudentTestView({
   const load = useCallback(async () => {
     try {
       const res = await SubjectiveTestsService.getApiBusinessSubjectiveTestsSubmissions(businessId, submissionId)
-      setSubmission(res.data ?? null)
+      // Same endpoint as staff; a student always receives their own view.
+      setSubmission((res.data as SubjectiveStudentSubmission | undefined) ?? null)
     } catch (e: unknown) {
       setLoadError(getApiErrorDetailMessage(e, 'Failed to load this test'))
     }
@@ -96,8 +98,8 @@ export function SubjectiveStudentTestView({
   }
 
   const { test, result, displayStatus } = submission
-  const questionPaperName = test.questionPaperName ?? `${test.name} - question paper.pdf`
-  const answerSheetName = submission.answerSheetName ?? `${test.name} - answer sheet.pdf`
+  const questionPaperName = test.questionPaperName ?? subjectivePdfFileName('questionPaper', test.name)
+  const answerSheetName = submission.answerSheetName ?? subjectivePdfFileName('answerSheet', test.name)
   const hasSubmitted =
     displayStatus === SubjectiveDisplayStatus.SUBMITTED || displayStatus === SubjectiveDisplayStatus.CHECKED
   const lowTime = secondsLeft !== null && secondsLeft <= SUBJECTIVE_TIME_WARNING_SECONDS
@@ -174,7 +176,7 @@ export function SubjectiveStudentTestView({
                 )}
               </div>
               <DownloadFileButton
-                fetchBlob={() => SubjectiveTestFilesService.getOwnAnswerSheet(businessId, submissionId)}
+                fetchBlob={() => SubjectiveTestFilesService.getAnswerSheet(businessId, submissionId)}
                 fileName={answerSheetName}
                 className="shrink-0"
               >
@@ -198,8 +200,8 @@ export function SubjectiveStudentTestView({
                   <DownloadFileButton
                     variant="default"
                     className="shrink-0 bg-blue-600 hover:bg-blue-700"
-                    fetchBlob={() => SubjectiveTestFilesService.getOwnCheckedAnswerSheet(businessId, submissionId)}
-                    fileName={`${test.name} - checked copy.pdf`}
+                    fetchBlob={() => SubjectiveTestFilesService.getCheckedAnswerSheet(businessId, submissionId)}
+                    fileName={subjectivePdfFileName('checkedCopy', test.name)}
                   >
                     Checked Copy
                   </DownloadFileButton>

@@ -18,10 +18,11 @@ import { FileUploadArea } from '@/components/dashboard/contents/FileUploadArea'
 import { PdfFileViewerModal } from '@/components/common/PdfFileViewerModal'
 import { SUBJECTIVE_TEST_UPLOAD } from '@/lib/tests/subjectiveTest.config'
 import { validateGradeMarks } from '@/lib/tests/subjectiveTestFormValidation'
+import { SUBJECTIVE_PDF_LABEL, subjectivePdfFileName, type SubjectivePdfKind } from '@/lib/tests/subjectiveTestConstants'
 import { formatDateTime } from '@/lib/tests/testUiMappers'
 import { getApiErrorDetailMessage } from '@/lib/tests/getApiErrorDetailMessage'
 
-type OpenFile = 'answer' | 'checked' | null
+type OpenFile = Exclude<SubjectivePdfKind, 'questionPaper'> | null
 
 /** Review a student's answer sheet and save marks, remarks and the checked copy. */
 export function SubjectiveGradeModal({
@@ -53,15 +54,16 @@ export function SubjectiveGradeModal({
 
   useEffect(() => {
     if (!isOpen) return
-    SubjectiveTestsService.getApiBusinessSubjectiveTestsSubmissions2(businessId, test.id, submissionId)
+    SubjectiveTestsService.getApiBusinessSubjectiveTestsSubmissions(businessId, submissionId)
       .then((res) => {
-        const data = res.data ?? null
+        // Same endpoint as students; staff always receive the grading view.
+        const data = (res.data as SubjectiveStaffSubmission | undefined) ?? null
         setSubmission(data)
         if (data?.marksAwarded != null) setMarks(data.marksAwarded)
         if (data?.remarks) setRemarks(data.remarks)
       })
       .catch((e: unknown) => setLoadError(getApiErrorDetailMessage(e, 'Failed to load submission')))
-  }, [isOpen, businessId, test.id, submissionId])
+  }, [isOpen, businessId, submissionId])
 
   useEffect(() => {
     if (!isOpen) return
@@ -73,12 +75,12 @@ export function SubjectiveGradeModal({
   }, [isOpen, onClose, saving, openFile])
 
   const fetchAnswerSheet = useCallback(
-    () => SubjectiveTestFilesService.getStaffAnswerSheet(businessId, test.id, submissionId),
-    [businessId, test.id, submissionId],
+    () => SubjectiveTestFilesService.getAnswerSheet(businessId, submissionId),
+    [businessId, submissionId],
   )
   const fetchCheckedSheet = useCallback(
-    () => SubjectiveTestFilesService.getStaffCheckedAnswerSheet(businessId, test.id, submissionId),
-    [businessId, test.id, submissionId],
+    () => SubjectiveTestFilesService.getCheckedAnswerSheet(businessId, submissionId),
+    [businessId, submissionId],
   )
 
   const hasCheckedCopy = Boolean(submission?.hasCheckedAnswerSheet)
@@ -93,7 +95,7 @@ export function SubjectiveGradeModal({
     setSaving(true)
     try {
       const data: GradeSubjectiveSubmissionRequest = { marksAwarded: marks, remarks: remarks.trim() || null }
-      await SubjectiveTestsService.putApiBusinessSubjectiveTestsSubmissionsGrade(businessId, test.id, submissionId, {
+      await SubjectiveTestsService.putApiBusinessSubjectiveTestsSubmissionsGrade(businessId, submissionId, {
         data: JSON.stringify(data),
         ...(checkedFile ? { checkedAnswerSheet: checkedFile } : {}),
       })
@@ -145,12 +147,12 @@ export function SubjectiveGradeModal({
         ) : (
           <form onSubmit={handleSave} className="p-5 space-y-4">
             <div className="flex flex-wrap gap-2">
-              <Button type="button" variant="outline" onClick={() => setOpenFile('answer')}>
+              <Button type="button" variant="outline" onClick={() => setOpenFile('answerSheet')}>
                 <Eye className="h-4 w-4 mr-2" />
                 Student answer sheet
               </Button>
               {hasCheckedCopy && (
-                <Button type="button" variant="outline" onClick={() => setOpenFile('checked')}>
+                <Button type="button" variant="outline" onClick={() => setOpenFile('checkedCopy')}>
                   <Eye className="h-4 w-4 mr-2" />
                   Current checked copy
                 </Button>
@@ -229,9 +231,9 @@ export function SubjectiveGradeModal({
         key={openFile ?? 'closed'}
         isOpen={openFile !== null}
         onClose={() => setOpenFile(null)}
-        title={`${studentName} — ${openFile === 'checked' ? 'checked copy' : 'answer sheet'}`}
-        downloadName={`${test.name} - ${studentName} - ${openFile === 'checked' ? 'checked copy' : 'answer sheet'}.pdf`}
-        fetchBlob={openFile === 'checked' ? fetchCheckedSheet : fetchAnswerSheet}
+        title={`${studentName} — ${SUBJECTIVE_PDF_LABEL[openFile ?? 'answerSheet']}`}
+        downloadName={subjectivePdfFileName(openFile ?? 'answerSheet', test.name, studentName)}
+        fetchBlob={openFile === 'checkedCopy' ? fetchCheckedSheet : fetchAnswerSheet}
       />
     </div>
   )

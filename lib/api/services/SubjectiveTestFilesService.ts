@@ -36,19 +36,13 @@ export class SubjectiveTestFilesService {
     return fetchPdf(`${base(businessId)}/${seg(subjectiveTestId)}/question-paper`);
   }
 
-  public static getStaffAnswerSheet(businessId: number, subjectiveTestId: string, submissionId: string): CancelablePromise<Blob> {
-    return fetchPdf(`${base(businessId)}/${seg(subjectiveTestId)}/submissions/${seg(submissionId)}/answer-sheet`);
-  }
-
-  public static getStaffCheckedAnswerSheet(businessId: number, subjectiveTestId: string, submissionId: string): CancelablePromise<Blob> {
-    return fetchPdf(`${base(businessId)}/${seg(subjectiveTestId)}/submissions/${seg(submissionId)}/checked-answer-sheet`);
-  }
-
-  public static getOwnAnswerSheet(businessId: number, submissionId: string): CancelablePromise<Blob> {
+  /** Staff, or the student who owns the submission (the backend applies the right access rule). */
+  public static getAnswerSheet(businessId: number, submissionId: string): CancelablePromise<Blob> {
     return fetchPdf(`${base(businessId)}/submissions/${seg(submissionId)}/answer-sheet`);
   }
 
-  public static getOwnCheckedAnswerSheet(businessId: number, submissionId: string): CancelablePromise<Blob> {
+  /** Staff, or the owning student once the submission is checked. */
+  public static getCheckedAnswerSheet(businessId: number, submissionId: string): CancelablePromise<Blob> {
     return fetchPdf(`${base(businessId)}/submissions/${seg(submissionId)}/checked-answer-sheet`);
   }
 }
