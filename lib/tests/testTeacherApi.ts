@@ -2,12 +2,13 @@ import {
   ExamTestsService,
   PracticeTestsService,
 } from '@/lib/api';
-import { TEST_KIND, type TestKind } from '@/lib/tests/testConstants';
+import { TEST_KIND, type QuestionTestKind } from '@/lib/tests/testConstants';
+import { saveBlob } from '@/lib/utils/saveBlob';
 
-export type { TestKind };
+export type { QuestionTestKind };
 
 export async function downloadTestAnalyticsCsv(
-  kind: TestKind,
+  kind: QuestionTestKind,
   businessId: number,
   testId: string,
   downloadBaseName: string,
@@ -23,10 +24,5 @@ export async function downloadTestAnalyticsCsv(
   const blob = new Blob([typeof csv === 'string' ? csv : String(csv)], {
     type: 'text/csv;charset=utf-8',
   });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${downloadBaseName}-analytics.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
+  saveBlob(blob, `${downloadBaseName}-analytics.csv`);
 }

@@ -23,7 +23,7 @@ import {
   SubjectsService,
 } from '@/lib/api'
 import { downloadTestAnalyticsCsv } from '@/lib/tests/testTeacherApi'
-import { TEST_KIND, type TestKind } from '@/lib/tests/testConstants'
+import { TEST_KIND, type QuestionTestKind } from '@/lib/tests/testConstants'
 import {
   isTestAnalyticsApiResponse,
   type TestAnalyticsApiResponse,
@@ -39,7 +39,7 @@ import { Loader2 } from 'lucide-react'
 
 
 interface TeacherTestDetailViewProps {
-  kind: TestKind
+  kind: QuestionTestKind
   testId: string
   businessId: number
   slug: string

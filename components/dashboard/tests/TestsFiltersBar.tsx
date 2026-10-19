@@ -50,6 +50,7 @@ const KIND_OPTIONS = [
   { value: TEACHER_TESTS_FILTER.ALL, label: 'All types' },
   { value: TEST_KIND.PRACTICE, label: TEST_KIND_LABEL[TEST_KIND.PRACTICE] },
   { value: TEST_KIND.EXAM, label: TEST_KIND_LABEL[TEST_KIND.EXAM] },
+  { value: TEST_KIND.SUBJECTIVE, label: TEST_KIND_LABEL[TEST_KIND.SUBJECTIVE] },
 ] as const;
 
 const STATUS_OPTIONS = [

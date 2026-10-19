@@ -8,8 +8,10 @@ import {
   BatchesService,
   ExamTestsService,
   PracticeTestsService,
+  SubjectiveTestsService,
   SubjectsService,
   type Subject,
+  type SubjectiveAvailableTest,
 } from '@/lib/api';
 import { getApiErrorDetailMessage } from '@/lib/tests/getApiErrorDetailMessage';
 import type { PracticeCatalogRow, ExamCatalogRow } from '@/lib/tests/studentTestCatalog';
@@ -23,6 +25,7 @@ export default function StudentMyTestListPage() {
 
   const [practiceRows, setPracticeRows] = useState<PracticeCatalogRow[]>([]);
   const [examRows, setExamRows] = useState<ExamCatalogRow[]>([]);
+  const [subjectiveRows, setSubjectiveRows] = useState<SubjectiveAvailableTest[]>([]);
   const [batches, setBatches] = useState<
     { id: number; displayName?: string; codeName?: string; courseId?: number }[]
   >([]);
@@ -35,9 +38,10 @@ export default function StudentMyTestListPage() {
     setLoading(true);
     setError(null);
     try {
-      const [practiceRes, examRes, batchesRes, subjectsRes] = await Promise.all([
+      const [practiceRes, examRes, subjectiveRes, batchesRes, subjectsRes] = await Promise.all([
         PracticeTestsService.getApiBusinessPracticeTestsAvailable(businessId),
         ExamTestsService.getApiBusinessExamTestsAvailable(businessId),
+        SubjectiveTestsService.getApiBusinessSubjectiveTestsAvailable(businessId),
         BatchesService.getApiBatchesAll('course'),
         SubjectsService.getApiSubjectsUser(),
       ]);
@@ -46,6 +50,7 @@ export default function StudentMyTestListPage() {
       const nextSubjects = (subjectsRes.data ?? []) as Subject[];
       setPracticeRows(nextPracticeRows);
       setExamRows(nextExamRows);
+      setSubjectiveRows(subjectiveRes.data ?? []);
       setSubjects(nextSubjects);
       const list = (batchesRes?.data ?? []) as Array<{
         id?: number;
@@ -77,6 +82,7 @@ export default function StudentMyTestListPage() {
       slug={slug}
       practiceRows={practiceRows}
       examRows={examRows}
+      subjectiveRows={subjectiveRows}
       batches={batches}
       subjects={subjects}
       loading={loading}

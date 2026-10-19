@@ -15,9 +15,10 @@ export type TeacherTestsKindFacet =
 export type TeacherTestsPublishFacet =
   (typeof TEACHER_TEST_PUBLISH_FILTER)[keyof typeof TEACHER_TEST_PUBLISH_FILTER];
 
-  export const TEST_KIND = {
+export const TEST_KIND = {
   PRACTICE: 'practice',
   EXAM: 'exam',
+  SUBJECTIVE: 'subjective',
 } as const;
 
 /** Structural URL segments for dashboard test routes (excluding business slug and dynamic ids). */
@@ -32,12 +33,16 @@ export const TEST_ROUTE_SEGMENT = {
 
 export type TestKind = (typeof TEST_KIND)[keyof typeof TEST_KIND];
 
+/** Kinds built from questions + scored attempts. Subjective tests use files instead and have their own views. */
+export type QuestionTestKind = typeof TEST_KIND.PRACTICE | typeof TEST_KIND.EXAM;
+
 export const TEST_KIND_LABEL: Record<TestKind, string> = {
   [TEST_KIND.PRACTICE]: 'Practice',
   [TEST_KIND.EXAM]: 'Exam',
+  [TEST_KIND.SUBJECTIVE]: 'Subjective',
 };
 
-export function isTestKind(value: string): value is TestKind {
+export function isQuestionTestKind(value: string): value is QuestionTestKind {
   return value === TEST_KIND.PRACTICE || value === TEST_KIND.EXAM;
 }
 

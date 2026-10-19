@@ -31,7 +31,7 @@ import {
   UpdatePracticeTestDTO,
 } from '@/lib/api'
 import type { Subject } from '@/lib/api'
-import { TEST_KIND, type TestKind } from '@/lib/tests/testConstants'
+import { TEST_KIND, type QuestionTestKind } from '@/lib/tests/testConstants'
 import { TEST_LANGUAGE_LABEL, TEST_LANGUAGE_OPTIONS } from '@/lib/tests/testLanguage'
 import { resultVisibilityExamLabel } from '@/lib/tests/testUiMappers'
 import { validateTestForm, type TestFormErrors } from '@/lib/tests/testFormValidation'
@@ -39,7 +39,7 @@ import { toast } from 'sonner'
 import { toISODateTime } from '@/lib/utils'
 
 interface TeacherTestSettingsTabProps {
-  kind: TestKind
+  kind: QuestionTestKind
   businessId: number
   testId: string
   test: PracticeTest | ExamTest
@@ -405,7 +405,7 @@ const ReadOnlySettings = ({
   kind,
   test,
 }: {
-  kind: TestKind
+  kind: QuestionTestKind
   test: PracticeTest | ExamTest
 }) => {
   const batchName = (test as { batchName?: string }).batchName
