@@ -1,6 +1,13 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.2.43] - Subjective test paper + test attempt screen
+**P.R Raised by** : shubh404-SE on **Date** : 2026-10-05
+
+### Added
+  - added subjective test paper for teacher to create subjective test.
+  - added test attempt screen for student to attempt test.
+---
 ## Version [1.2.42] - user set password logic
 **P.R Raised by** : shubh404-SE on **Date** : 2026-09-25
 ### Updated

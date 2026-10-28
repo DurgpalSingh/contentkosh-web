@@ -1,4 +1,4 @@
-import type { PracticeTest, ExamTest } from '@/lib/api';
+import type { PracticeTest, ExamTest, SubjectiveTest } from '@/lib/api';
 import { TEST_KIND } from '@/lib/tests/testConstants';
 
 /** Present on list API responses; generated OpenAPI models may omit these. */
@@ -12,7 +12,8 @@ export type ExamTestWithListFields = ExamTest & TestListSubjectFields;
 
 export type UnifiedRow =
   | { kind: typeof TEST_KIND.PRACTICE; test: PracticeTestWithListFields }
-  | { kind: typeof TEST_KIND.EXAM; test: ExamTestWithListFields };
+  | { kind: typeof TEST_KIND.EXAM; test: ExamTestWithListFields }
+  | { kind: typeof TEST_KIND.SUBJECTIVE; test: SubjectiveTest };
 
 /** Facet keys for `createIndexedTextFilter` on teacher/student test lists. */
 export type TestListIndexedFacets = {

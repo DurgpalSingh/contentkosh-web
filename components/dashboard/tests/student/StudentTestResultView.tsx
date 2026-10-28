@@ -19,7 +19,7 @@ import {
 } from '@/lib/tests/studentTestCatalog';
 import { questionTypeLabel, questionType } from '@/lib/tests/testUiMappers';
 import { HtmlContent } from '@/components/common/HtmlContent';
-import { TEST_KIND, TEST_KIND_LABEL, type TestKind } from '@/lib/tests/testConstants';
+import { TEST_KIND, TEST_KIND_LABEL, type QuestionTestKind } from '@/lib/tests/testConstants';
 
 type AttemptDetails = PracticeTestAttemptDetails | ExamTestAttemptDetails;
 type AttemptWithAnsweredCount = AttemptDetails['attempt'] & { answeredCount?: number };
@@ -30,7 +30,7 @@ export function StudentTestResultView({
   slug,
   details,
 }: {
-  kind: TestKind;
+  kind: QuestionTestKind;
   attemptId: string;
   slug: string;
   details: AttemptDetails;

@@ -12,10 +12,12 @@ import {
   ExamTestsService,
   PracticeTest,
   PracticeTestsService,
+  SubjectiveTest,
+  SubjectiveTestsService,
   SubjectsService,
   type Subject,
 } from '@/lib/api';
-import { Plus, FlaskConical, BookOpen, GraduationCap, HelpCircle, Star } from 'lucide-react';
+import { Plus, FlaskConical, BookOpen, GraduationCap, HelpCircle, Star, FileText } from 'lucide-react';
 import { EmptyState } from '@/components/common/EmptyState';
 import { toast } from 'sonner';
 import { CreateTestModal } from '@/components/modals/CreateTestModal';
@@ -35,7 +37,8 @@ import {
 import { TEST_KIND, TEST_KIND_LABEL, type TestKind } from '@/lib/tests/testConstants';
 import { TEST_LANGUAGE_LABEL } from '@/lib/tests/testLanguage';
 import { buildTestListSelectedFacets, useTestListSubjectIndex } from '@/lib/subjectsByCourseIndex';
-import { teacherExamTestPath, teacherPracticeTestPath } from '@/lib/tests/testPaths';
+import { teacherExamTestPath, teacherPracticeTestPath, teacherSubjectiveTestPath } from '@/lib/tests/testPaths';
+import { SUBJECTIVE_KIND_BADGE } from '@/lib/tests/subjectiveTestConstants';
 import {
   TestsFiltersBar,
   type TestsKindFilter,
@@ -49,6 +52,7 @@ export default function TestsListPage() {
 
   const [practiceRows, setPracticeRows] = useState<PracticeTest[]>([]);
   const [examRows, setExamRows] = useState<ExamTest[]>([]);
+  const [subjectiveRows, setSubjectiveRows] = useState<SubjectiveTest[]>([]);
   const [batches, setBatches] = useState<
     { id: number; displayName?: string; codeName?: string; courseId?: number; examId?: number }[]
   >([]);
@@ -76,14 +80,16 @@ export default function TestsListPage() {
     setLoading(true);
     setError(null);
     try {
-      const [practiceRes, examRes, batchesRes, subjectsRes] = await Promise.all([
+      const [practiceRes, examRes, subjectiveRes, batchesRes, subjectsRes] = await Promise.all([
         PracticeTestsService.getApiBusinessPracticeTests(businessId),
         ExamTestsService.getApiBusinessExamTests(businessId),
+        SubjectiveTestsService.getApiBusinessSubjectiveTests(businessId),
         BatchesService.getApiBatchesAll('course'),
         SubjectsService.getApiSubjectsUser(),
       ]);
       setPracticeRows(practiceRes.data ?? []);
       setExamRows(examRes.data ?? []);
+      setSubjectiveRows(subjectiveRes.data ?? []);
       setSubjects(subjectsRes.data ?? []);
       const list = (batchesRes?.data ?? []) as Array<{
         id?: number
@@ -111,12 +117,13 @@ export default function TestsListPage() {
   const merged: UnifiedRow[] = useMemo(() => {
     const p = practiceRows.map((test) => ({ kind: TEST_KIND.PRACTICE, test }));
     const e = examRows.map((test) => ({ kind: TEST_KIND.EXAM, test }));
-    return [...p, ...e].sort((a, b) => {
-      const da = new Date(a.test.updatedAt).getTime();
-      const db = new Date(b.test.updatedAt).getTime();
+    const s = subjectiveRows.map((test) => ({ kind: TEST_KIND.SUBJECTIVE, test }));
+    return [...p, ...e, ...s].sort((a, b) => {
+      const da = new Date(a.test.updatedAt ?? 0).getTime();
+      const db = new Date(b.test.updatedAt ?? 0).getTime();
       return db - da;
     });
-  }, [practiceRows, examRows]);
+  }, [practiceRows, examRows, subjectiveRows]);
 
   const subjectIndex = useTestListSubjectIndex(
     subjects,
@@ -131,7 +138,8 @@ export default function TestsListPage() {
       getId: (row) => `${row.kind}-${row.test.id}`,
       getSearchText: (row) => {
         const t = row.test;
-        const parts = [t.name, t.description, t.batchName, t.subjectName].filter(
+        const paperType = row.kind === TEST_KIND.SUBJECTIVE ? row.test.paperType : null;
+        const parts = [t.name, t.description, t.batchName, t.subjectName, paperType].filter(
           (x): x is string => typeof x === 'string' && x.length > 0,
         );
         return parts.join(' ');
@@ -175,6 +183,7 @@ export default function TestsListPage() {
 
   const goToDetail = (kind: TestKind, id: string) => {
     if (kind === TEST_KIND.PRACTICE) router.push(teacherPracticeTestPath(slug, id));
+    else if (kind === TEST_KIND.SUBJECTIVE) router.push(teacherSubjectiveTestPath(slug, id));
     else router.push(teacherExamTestPath(slug, id));
   };
 
@@ -190,6 +199,8 @@ export default function TestsListPage() {
         businessId,
         deleteTarget.test.id,
       );
+    } else if (deleteTarget.kind === TEST_KIND.SUBJECTIVE) {
+      await SubjectiveTestsService.deleteApiBusinessSubjectiveTests(businessId, deleteTarget.test.id);
     } else {
       await ExamTestsService.deleteApiBusinessExamTests(businessId, deleteTarget.test.id);
     }
@@ -197,7 +208,7 @@ export default function TestsListPage() {
     void load();
   };
 
-  if (!isInitialized || (loading && !practiceRows.length && !examRows.length)) {
+  if (!isInitialized || (loading && !practiceRows.length && !examRows.length && !subjectiveRows.length)) {
     return (
       <div className="min-h-[40vh] flex items-center justify-center">
         <LoadingSpinner size="lg" />
@@ -223,7 +234,7 @@ export default function TestsListPage() {
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Tests</h1>
               <p className="text-gray-600 mt-1">
-                Create and manage practice and exam tests for your batches.
+                Create and manage practice, exam and subjective tests for your batches.
               </p>
             </div>
           </div>
@@ -267,7 +278,7 @@ export default function TestsListPage() {
       {filtered.length === 0 ? (
         <EmptyState
           title="No tests yet"
-          description="Create a practice or exam test to get started."
+          description="Create a practice, exam or subjective test to get started."
         />
       ) : (
         <div className="flex flex-col gap-4">
@@ -275,10 +286,18 @@ export default function TestsListPage() {
             const t = row.test;
             const st = typeof t.status === 'number' ? t.status : 0;
             const isPractice = row.kind === TEST_KIND.PRACTICE;
-            const TypeIcon = isPractice ? BookOpen : GraduationCap;
+            const isSubjective = row.kind === TEST_KIND.SUBJECTIVE;
+            const TypeIcon = isPractice ? BookOpen : isSubjective ? FileText : GraduationCap;
             const typeBadgeClass = isPractice
               ? 'bg-emerald-50 text-emerald-700'
-              : 'bg-amber-50 text-amber-700';
+              : isSubjective
+                ? SUBJECTIVE_KIND_BADGE
+                : 'bg-amber-50 text-amber-700';
+            const iconToneClass = isPractice
+              ? 'bg-emerald-50 text-emerald-600'
+              : isSubjective
+                ? 'bg-sky-50 text-sky-600'
+                : 'bg-amber-50 text-amber-600';
             const statusBadgeClass =
               st === TEST_STATUS.PUBLISHED
                 ? 'bg-blue-50 text-blue-700'
@@ -292,12 +311,9 @@ export default function TestsListPage() {
                 <div className="flex items-start justify-items-start gap-2">
                   <div className="flex items-start gap-3 min-w-0">
                     <div
-                      className={`mt-0.5 h-8 w-8 rounded-lg flex items-center justify-center shrink-0 ${isPractice ? 'bg-emerald-50' : 'bg-amber-50'}`}
+                      className={`mt-0.5 h-8 w-8 rounded-lg flex items-center justify-center shrink-0 ${iconToneClass}`}
                     >
-                      <TypeIcon
-                        className={`h-4 w-4 ${isPractice ? 'text-emerald-600' : 'text-amber-600'}`}
-                        aria-hidden
-                      />
+                      <TypeIcon className="h-4 w-4" aria-hidden />
                     </div>
                     <div className="min-w-0">
                       <h3 className="font-semibold text-gray-900 line-clamp-2">{t.name}</h3>
@@ -321,11 +337,18 @@ export default function TestsListPage() {
                   <p className="text-sm text-gray-600 line-clamp-2">{t.description}</p>
                 )}
                 <div className="flex flex-wrap gap-x-5 gap-y-1.5 text-sm border-t border-gray-100 pt-3">
-                  <div className="flex items-center gap-1.5 text-gray-500">
-                    <HelpCircle className="h-3.5 w-3.5" aria-hidden />
-                    <span className="font-medium text-gray-900">{t.totalQuestions ?? '—'}</span>
-                    <span>Questions</span>
-                  </div>
+                  {row.kind === TEST_KIND.SUBJECTIVE ? (
+                    <div className="flex items-center gap-1.5 text-gray-500">
+                      <FileText className="h-3.5 w-3.5" aria-hidden />
+                      <span className="font-medium text-gray-900">{row.test.paperType}</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5 text-gray-500">
+                      <HelpCircle className="h-3.5 w-3.5" aria-hidden />
+                      <span className="font-medium text-gray-900">{row.test.totalQuestions ?? '—'}</span>
+                      <span>Questions</span>
+                    </div>
+                  )}
                   <div className="flex items-center gap-1.5 text-gray-500">
                     <Star className="h-3.5 w-3.5" aria-hidden />
                     <span className="font-medium text-gray-900">{t.totalMarks ?? '—'}</span>
@@ -339,7 +362,7 @@ export default function TestsListPage() {
                       <span>Language</span>
                     </div>
                   )}
-                  {row.kind === TEST_KIND.EXAM && 'durationMinutes' in t && (
+                  {row.kind !== TEST_KIND.PRACTICE && 'durationMinutes' in t && (
                     <div className="flex items-center gap-1.5 text-gray-500">
                       <span className="font-medium text-gray-900">
                         {formatDurationMinutes(t.durationMinutes)}
