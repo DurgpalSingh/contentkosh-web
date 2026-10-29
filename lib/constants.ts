@@ -31,6 +31,20 @@ export const USER_ROLES = {
   SUPERADMIN: 'SUPERADMIN',
 } as const;
 
+export const USER_ROLE_FILTER_ALL = 'ALL';
+
+export const USER_ROLE_FILTER_ALL_LABEL = 'All Roles';
+
+/** Display-only role labels - the underlying role value/API contract is unchanged. */
+export const USER_ROLE_LABELS: Partial<Record<string, string>> = {
+  [USER_ROLES.USER]: 'USER (Guest)',
+};
+
+export const UNKNOWN_LABEL = 'Unknown';
+
+export const getUserRoleLabel = (role?: string): string =>
+  role ? (USER_ROLE_LABELS[role] ?? role) : UNKNOWN_LABEL;
+
 export const BUSINESS_STATUS = {
   ACTIVE: 'ACTIVE',
   PAUSED: 'PAUSED',

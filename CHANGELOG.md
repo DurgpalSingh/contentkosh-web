@@ -1,6 +1,13 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.2.44] - user module filter fix and other ui fixes
+**P.R Raised by** : shubh404-SE on **Date** : 2026-10-29
+
+### updated
+  - users module now have guest filter and removed superadmin filter.
+  - fixed test module scroll issue.
+---
 ## Version [1.2.43] - Subjective test paper + test attempt screen
 **P.R Raised by** : shubh404-SE on **Date** : 2026-10-05
 

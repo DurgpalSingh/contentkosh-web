@@ -19,7 +19,7 @@ import { EditUserModal } from '@/components/modals/EditUserModal';
 import { AddUserModal } from '@/components/modals/AddUserModal';
 import { CreateUserRequest } from '@/lib/api';
 import { toast } from 'sonner';
-import { USER_ROLES } from '@/lib/constants';
+import { USER_ROLES, USER_ROLE_FILTER_ALL, getUserRoleLabel } from '@/lib/constants';
 
 type UserIndex = {
   usersByKey: Map<string, BusinessUser>;
@@ -29,11 +29,11 @@ type UserIndex = {
 };
 
 const ROLE_FILTER_OPTIONS: RoleFilter[] = [
-  'ALL',
+  USER_ROLE_FILTER_ALL,
   BusinessUser.role.ADMIN,
-  BusinessUser.role.SUPERADMIN,
   BusinessUser.role.TEACHER,
   BusinessUser.role.STUDENT,
+  BusinessUser.role.USER,
 ];
 
 const normalize = (value: string | number | undefined | null): string =>
@@ -44,7 +44,7 @@ const getUserKey = (userItem: BusinessUser, index: number): string =>
 
 function buildUserIndex(users: BusinessUser[]): UserIndex {
   const usersByKey = new Map<string, BusinessUser>();
-  const keysByRole = new Map<RoleFilter, string[]>([['ALL', []]]);
+  const keysByRole = new Map<RoleFilter, string[]>([[USER_ROLE_FILTER_ALL, []]]);
   const searchableByKey = new Map<string, string>();
   const exactKeysByTerm = new Map<string, Set<string>>();
 
@@ -57,7 +57,7 @@ function buildUserIndex(users: BusinessUser[]): UserIndex {
 
     usersByKey.set(key, userItem);
     searchableByKey.set(key, `${name} ${email} ${mobile} ${normalize(role)}`.trim());
-    keysByRole.get('ALL')?.push(key);
+    keysByRole.get(USER_ROLE_FILTER_ALL)?.push(key);
 
     if (!keysByRole.has(role)) {
       keysByRole.set(role, []);
@@ -106,7 +106,7 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedRole, setSelectedRole] = useState<RoleFilter>('ALL');
+  const [selectedRole, setSelectedRole] = useState<RoleFilter>(USER_ROLE_FILTER_ALL);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const [isAddAdminModalOpen, setIsAddAdminModalOpen] = useState(false);
@@ -457,7 +457,7 @@ function UserRowComponent({
               <h4 className="text-sm font-medium text-gray-900 truncate">{user.user?.name || 'Unknown'}</h4>
               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRoleColor(user.role)}`}>
                 {getRoleIcon(user.role)}
-                <span className="ml-1">{user.role || 'Unknown'}</span>
+                <span className="ml-1">{getUserRoleLabel(user.role)}</span>
               </span>
             </div>
             <div className="flex items-center mt-1 text-xs sm:text-sm text-gray-500">
