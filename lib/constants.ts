@@ -3,6 +3,8 @@ export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost
 export const ROUTES = {
   LOGIN: '/login',
   REGISTER: '/register',
+  VERIFY_EMAIL: '/verify-email',
+  RESEND_VERIFICATION: '/resend-verification',
   DASHBOARD: '/dashboard',
   /** Singular path; slug is applied in `DashboardLayout` for `/dashboard/*` links. */
   ANNOUNCEMENT: '/dashboard/announcement',
@@ -71,6 +73,26 @@ export type BusinessStatusAction = (typeof BUSINESS_STATUS_ACTIONS)[keyof typeof
 
 export const API_CODES = {
   BUSINESS_SUSPENDED: 'ERR_BUSINESS_SUSPENDED',
+  EMAIL_NOT_VERIFIED: 'ERR_EMAIL_NOT_VERIFIED',
+  VERIFICATION_LINK_INVALID: 'ERR_VERIFICATION_LINK_INVALID',
+  VERIFICATION_LINK_EXPIRED: 'ERR_VERIFICATION_LINK_EXPIRED',
 } as const;
+
+/** Mirrors the backend: server enforces the cooldown, the UI only reflects it. */
+export const EMAIL_VERIFICATION = {
+  RESEND_COOLDOWN_SECONDS: 60,
+  LINK_EXPIRY_MINUTES: 2,
+  EMAIL_QUERY_PARAM: 'email',
+  TOKEN_QUERY_PARAM: 'token',
+  REASON_QUERY_PARAM: 'reason',
+} as const;
+
+/** Why the user was sent to the resend page. */
+export const RESEND_REASONS = {
+  EXPIRED: 'expired',
+  INVALID: 'invalid',
+} as const;
+
+export type ResendReason = (typeof RESEND_REASONS)[keyof typeof RESEND_REASONS];
 
 export const DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
