@@ -11,7 +11,7 @@ import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
 export class AuthService {
     /**
-     * Register a new user
+     * Register a new user (email verification required, no session is issued)
      * @param requestBody
      * @returns any User registered successfully
      * @throws ApiError
@@ -20,8 +20,10 @@ export class AuthService {
         requestBody: RegisterRequest,
     ): CancelablePromise<(ApiResponse & {
         data?: {
-            accessToken?: string;
-            refreshToken?: string;
+            /**
+             * False when the verification mail could not be sent
+             */
+            emailSent?: boolean;
             user?: User;
         };
     })> {
@@ -33,6 +35,57 @@ export class AuthService {
             errors: {
                 409: `Email or mobile already exists`,
             },
+        });
+    }
+    /**
+     * Verify an email address using the emailed magic link token
+     * @param requestBody
+     * @returns any Email verified (or already verified)
+     * @throws ApiError
+     */
+    public static postApiAuthVerifyEmail(
+        requestBody: {
+            token: string;
+        },
+    ): CancelablePromise<(ApiResponse & {
+        data?: {
+            verified?: boolean;
+            alreadyVerified?: boolean;
+            /**
+             * True when this call logged the user in (auth cookies were set)
+             */
+            autoLogin?: boolean;
+            slug?: string | null;
+        };
+    })> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/auth/verify-email',
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                400: `Invalid link`,
+                409: `The institute slug was taken before the link was opened`,
+                410: `Link expired`,
+            },
+        });
+    }
+    /**
+     * Request a new verification link
+     * @param requestBody
+     * @returns any Generic acknowledgement
+     * @throws ApiError
+     */
+    public static postApiAuthResendVerification(
+        requestBody: {
+            email: string;
+        },
+    ): CancelablePromise<ApiResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/auth/resend-verification',
+            body: requestBody,
+            mediaType: 'application/json',
         });
     }
     /**
@@ -57,7 +110,7 @@ export class AuthService {
             mediaType: 'application/json',
             errors: {
                 401: `Invalid credentials`,
-                403: `User account is inactive`,
+                403: `User account is inactive, or email not verified`,
             },
         });
     }
