@@ -220,6 +220,7 @@ export default function TestsListPage() {
 
   return (
     <div className="space-y-6">
+      <div className="sticky top-16 z-30 bg-slate-50 pb-2">
       <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div className="flex flex-col items-start justify-center gap-1">
@@ -247,6 +248,7 @@ export default function TestsListPage() {
             Create Test
           </Button>
         </div>
+      </div>
       </div>
 
       <TestsFiltersBar
