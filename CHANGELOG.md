@@ -1,6 +1,31 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.2.44] - user module filter fix and other ui fixes
+**P.R Raised by** : shubh404-SE on **Date** : 2026-10-29
+
+### updated
+  - users module now have guest filter and removed superadmin filter.
+  - fixed test module scroll issue.
+---
+## Version [1.2.43] - Subjective test paper + test attempt screen
+**P.R Raised by** : shubh404-SE on **Date** : 2026-10-05
+
+### Added
+  - added subjective test paper for teacher to create subjective test.
+  - added test attempt screen for student to attempt test.
+---
+## Version [1.2.42] - user set password logic
+**P.R Raised by** : shubh404-SE on **Date** : 2026-09-25
+### Updated
+  - added strict rules to user set password like register page password.
+---
+## Version [1.2.41] - bussiness workspace access
+**P.R Raised by** : shubh404-SE on **Date** : 2026-09-11
+
+### Changes
+  - Now superadmin can access a bussiness workspace without login as a bussiness admin, superadmin can access all the pages of bussiness workspace.
+---
 ## Version [1.2.40] - Terms & conditions and privacy policy pages
 **P.R Raised by** : shubh404-SE on **Date** : 2026-08-31
 

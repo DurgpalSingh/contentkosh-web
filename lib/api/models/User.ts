@@ -49,6 +49,10 @@ export type User = {
      * User last update timestamp
      */
     updatedAt?: string;
+    /**
+     * True when a Super Admin is currently viewing this business's dashboard (impersonation)
+     */
+    isImpersonating?: boolean;
 };
 export namespace User {
     /**

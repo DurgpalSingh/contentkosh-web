@@ -75,6 +75,7 @@ export namespace BusinessUser {
         STUDENT = 'STUDENT',
         TEACHER = 'TEACHER',
         ADMIN = 'ADMIN',
+        USER = 'USER',
         SUPERADMIN = 'SUPERADMIN',
     }
 }

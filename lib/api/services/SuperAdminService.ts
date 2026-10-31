@@ -88,4 +88,27 @@ export class SuperAdminService {
             },
         });
     }
+    /**
+     * Open a business and act as its admin (Super Admin only)
+     * Mints a short-lived session (60 minutes) scoped to this business with full ADMIN capabilities, without ending the Super Admin's own session. Only active, fully provisioned businesses can be opened this way. Call POST /api/auth/refresh to leave the workspace and return to the Super Admin's real session.
+     *
+     * @param id
+     * @returns any Now viewing business
+     * @throws ApiError
+     */
+    public static postApiSuperadminBusinessesImpersonate(
+        id: number,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/superadmin/businesses/{id}/impersonate',
+            path: {
+                'id': id,
+            },
+            errors: {
+                400: `Business is not active`,
+                404: `Business not found`,
+            },
+        });
+    }
 }

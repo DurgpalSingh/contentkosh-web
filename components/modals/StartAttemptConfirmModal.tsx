@@ -8,7 +8,7 @@ import { Select } from '@/components/ui/select'
 import { TestLanguage } from '@/lib/api/models/TestLanguage'
 import { TEST_LANGUAGE_OPTIONS } from '@/lib/tests/testLanguage'
 import { cn } from '@/lib/utils'
-import { TEST_KIND, TEST_KIND_LABEL, type TestKind } from '@/lib/tests/testConstants'
+import { TEST_KIND, TEST_KIND_LABEL, type QuestionTestKind } from '@/lib/tests/testConstants'
 
 export type StartAttemptConfirmModalTiming = {
   startAtLabel?: string
@@ -17,7 +17,7 @@ export type StartAttemptConfirmModalTiming = {
 }
 
 export type StartAttemptTestInfo = {
-  kind: TestKind
+  kind: QuestionTestKind
   testId: string
   testName: string
   batchName?: string

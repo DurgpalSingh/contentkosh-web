@@ -7,7 +7,7 @@ import { useTeacherQuestionForm } from '@/components/dashboard/tests/questions/u
 import { ExamTestsService, PracticeTestsService, type UpdateQuestionDTO } from '@/lib/api'
 import { getApiErrorDetailMessage } from '@/lib/tests/getApiErrorDetailMessage'
 import type { TeacherTestQuestion } from '@/lib/tests/teacherQuestionTypes'
-import { TEST_KIND, type TestKind } from '@/lib/tests/testConstants'
+import { TEST_KIND, type QuestionTestKind } from '@/lib/tests/testConstants'
 import {
   validateQuestionForm,
   type QuestionFormErrors,
@@ -19,7 +19,7 @@ interface EditQuestionModalProps {
   isOpen: boolean
   onClose: () => void
   businessId: number
-  kind: TestKind
+  kind: QuestionTestKind
   question: TeacherTestQuestion
   onSaved: () => void
 }
