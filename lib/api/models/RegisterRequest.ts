@@ -29,15 +29,6 @@ export type RegisterRequest = {
     business?: {
         instituteName: string;
         slug: string;
-        logo_url?: string;
-        phone?: string;
-        email?: string;
-        tagline?: string;
-        address?: string;
-        youtubeUrl?: string;
-        instagramUrl?: string;
-        linkedinUrl?: string;
-        facebookUrl?: string;
     };
 };
 

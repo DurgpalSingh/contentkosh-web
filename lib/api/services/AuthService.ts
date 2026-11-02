@@ -49,7 +49,6 @@ export class AuthService {
         },
     ): CancelablePromise<(ApiResponse & {
         data?: {
-            verified?: boolean;
             alreadyVerified?: boolean;
             /**
              * True when this call logged the user in (auth cookies were set)
@@ -64,9 +63,7 @@ export class AuthService {
             body: requestBody,
             mediaType: 'application/json',
             errors: {
-                400: `Invalid link`,
-                409: `The institute slug was taken before the link was opened`,
-                410: `Link expired`,
+                400: `Invalid or expired link`,
             },
         });
     }
