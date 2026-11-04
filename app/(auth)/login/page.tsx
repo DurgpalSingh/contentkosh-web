@@ -9,8 +9,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/store/useAuthStore';
-import { authApi } from '@/lib/auth';
-import { ROUTES, USER_ROLES } from '@/lib/constants';
+import { AuthApiError, authApi } from '@/lib/auth';
+import { API_CODES, EMAIL_VERIFICATION, ROUTES, USER_ROLES } from '@/lib/constants';
+import { EMAIL_VERIFICATION_MESSAGES } from '@/lib/messages';
 import { LoginRequest } from '@/lib/api';
 import { toast } from 'sonner';
 
@@ -31,6 +32,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   // useSearchParams can cause prerender/suspense issues during SSR; use a client-only fallback
@@ -62,11 +64,13 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
     setError(null);
+    setUnverifiedEmail(null);
+    const payloadEmail = data.email.trim();
 
     try {
       const payload: LoginRequest = {
         ...data,
-        email: data.email.trim(),
+        email: payloadEmail,
       };
 
       const response = await authApi.login(payload);
@@ -94,6 +98,12 @@ export default function LoginPage() {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
+      // The backend message says to verify first; keep the email so the user can request a new link.
+      setUnverifiedEmail(
+        err instanceof AuthApiError && err.apiCode === API_CODES.EMAIL_NOT_VERIFIED
+          ? (err.email ?? payloadEmail)
+          : null,
+      );
     } finally {
       setIsLoading(false);
     }
@@ -131,6 +141,14 @@ export default function LoginPage() {
             {error && (
               <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                 {error}
+                {unverifiedEmail && (
+                  <Link
+                    href={`${ROUTES.RESEND_VERIFICATION}?${EMAIL_VERIFICATION.EMAIL_QUERY_PARAM}=${encodeURIComponent(unverifiedEmail)}`}
+                    className="mt-2 block font-semibold text-cyan-700 hover:text-cyan-800"
+                  >
+                    {EMAIL_VERIFICATION_MESSAGES.LOGIN_RESEND_LINK}
+                  </Link>
+                )}
               </div>
             )}
 

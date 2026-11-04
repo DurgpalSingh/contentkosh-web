@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
 import { useForm, useWatch, type UseFormRegisterReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -9,11 +8,11 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { useAuthStore } from '@/store/useAuthStore';
 import { authApi } from '@/lib/auth';
-import { ROUTES } from '@/lib/constants';
-import { RegisterRequest, BusinessService, CreateBusinessRequest } from '@/lib/api';
-import { toast } from 'sonner';
+import { EMAIL_VERIFICATION, ROUTES } from '@/lib/constants';
+import { EMAIL_VERIFICATION_MESSAGES } from '@/lib/messages';
+import { RegisterRequest, BusinessService } from '@/lib/api';
+import { ResendVerificationButton } from '@/components/auth/ResendVerificationButton';
 
 const passwordSchema = z.string()
   .min(8, 'Password must be at least 8 characters')
@@ -103,8 +102,7 @@ export default function RegisterPage() {
   const [slugStatus, setSlugStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'error'>('idle');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const router = useRouter();
-  const { login } = useAuthStore();
+  const [registration, setRegistration] = useState<{ email: string; emailSent: boolean } | null>(null);
 
   const {
     register,
@@ -214,70 +212,26 @@ export default function RegisterPage() {
     setError(null);
 
     try {
-      // 1. Register User
+      // One call: the account is created now, the institute only once the emailed link is opened.
       const registerData: RegisterRequest = {
         name: data.name,
         email: data.email,
         password: data.password,
+        business: {
+          instituteName: data.instituteName,
+          slug: data.slug,
+        },
       };
 
       const response = await authApi.register(registerData);
 
       if (response.user) {
-        // 2. Create Business
-        try {
-          const businessData: CreateBusinessRequest = {
-            instituteName: data.instituteName,
-            slug: data.slug,
-            // Add other fields if necessary
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          } as any; // Cast to any because generated type might be missing slug
-
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const businessParams: any = { ...businessData };
-
-          await BusinessService.postApiBusiness(businessParams);
-
-          // 3. Update local state
-          const loginResponse = await authApi.login({
-            email: data.email,
-            password: data.password
-          });
-
-          if (loginResponse.user) {
-            const businessResponse = await authApi.getBusiness();
-            login(loginResponse.user, businessResponse);
-            toast.success('Account created successfully');
-
-            // 5. Redirect
-            // User requested "recieve their slugs in url". 
-            // We redirect to /[slug]/dashboard
-            if (data.slug) {
-              router.push(`/${data.slug}/dashboard`);
-            } else {
-              router.push(ROUTES.DASHBOARD);
-            }
-          } else {
-            // Fallback if login fails strictly speaking shouldn't happen
-            const businessResponse = await authApi.getBusiness();
-            login(response.user, businessResponse);
-            router.push(ROUTES.DASHBOARD);
-          }
-
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (bizError: any) {
-          console.error('Business creation failed', bizError);
-          // If business creation fails, user is still registered.
-          // Maybe we should redirect to a "Finish Setup" page?
-          // For now, logging it and showing error.
-          setError(bizError.body?.message || 'Business creation failed. Please contact support.');
-          // Keep user logged in but warn?
-        }
+        setRegistration({ email: data.email, emailSent: response.emailSent });
       } else {
         setError('Invalid response from server');
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Registration failed');
+      setError(err instanceof Error ? err.message : EMAIL_VERIFICATION_MESSAGES.SIGNUP_FAILED);
     } finally {
       setIsLoading(false);
     }
@@ -287,6 +241,39 @@ export default function RegisterPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  if (registration) {
+    return (
+      <div className="min-h-screen bg-slate-50 px-4 py-10 sm:px-6 lg:px-8 flex items-center">
+        <div className="mx-auto w-full max-w-md">
+          <Image src="/logo.png" alt="Logo" width={180} height={100} className="mb-6 h-16 w-auto" priority />
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8 space-y-5">
+            <h1 className="text-2xl font-semibold text-slate-900">{EMAIL_VERIFICATION_MESSAGES.CHECK_EMAIL_TITLE}</h1>
+            <p
+              className={`rounded-lg border px-4 py-3 text-sm ${
+                registration.emailSent
+                  ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                  : 'border-amber-200 bg-amber-50 text-amber-800'
+              }`}
+            >
+              {registration.emailSent
+                ? EMAIL_VERIFICATION_MESSAGES.CHECK_EMAIL_BODY(registration.email, EMAIL_VERIFICATION.LINK_EXPIRY_MINUTES)
+                : EMAIL_VERIFICATION_MESSAGES.MAIL_NOT_SENT_BODY(registration.email)}
+            </p>
+            <ResendVerificationButton
+              email={registration.email}
+              initialCooldownSeconds={registration.emailSent ? EMAIL_VERIFICATION.RESEND_COOLDOWN_SECONDS : 0}
+            />
+            <p className="text-center text-sm">
+              <Link href={ROUTES.LOGIN} className="font-semibold text-cyan-700 hover:text-cyan-800">
+                {EMAIL_VERIFICATION_MESSAGES.BACK_TO_LOGIN}
+              </Link>
+            </p>
+          </div>
+        </div>
       </div>
     );
   }
