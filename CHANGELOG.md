@@ -1,6 +1,13 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.2.45] - added email verify page and resend link feature for email verify
+**P.R Raised by** : shubh404-SE on **Date** : 2026-11-04
+
+### Added
+  - added email verify page for user to verify their email after registration.
+  - added resend link feature in email verify page for user to resend the verification link.
+---
 ## Version [1.2.44] - user module filter fix and other ui fixes
 **P.R Raised by** : shubh404-SE on **Date** : 2026-10-29
 
