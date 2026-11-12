@@ -1,6 +1,12 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.2.45] - Prod environment config
+**P.R Raised by** : shubh404-SE on **Date** : 2026-11-12
+
+### Added
+  - added prod environment config in `.env.prod` file.
+---
 ## Version [1.2.44] - user module filter fix and other ui fixes
 **P.R Raised by** : shubh404-SE on **Date** : 2026-10-29
 
