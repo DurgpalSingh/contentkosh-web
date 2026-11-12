@@ -1,6 +1,12 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.2.45] - prod env
+**P.R Raised by** : shubh404-SE on **Date** : 2026-11-05
+
+### Changed
+  - updated prod env for frontend.
+---
 ## Version [1.2.44] - user module filter fix and other ui fixes
 **P.R Raised by** : shubh404-SE on **Date** : 2026-10-29
 
