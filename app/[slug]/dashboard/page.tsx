@@ -8,6 +8,7 @@ import { AdminDashboard } from '@/components/dashboard/AdminDashboard';
 import { TeacherDashboard } from '@/components/dashboard/TeacherDashboard';
 import { StudentDashboard } from '@/components/dashboard/StudentDashboard';
 import { hasRole } from '@/lib/rbac';
+import { resolveMediaUrl } from '@/lib/resolveMediaUrl';
 import { useRouter, useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { authApi } from '@/lib/auth';
@@ -99,7 +100,7 @@ function DefaultDashboard() {
 
             {business?.logo && (
                 <div className="mb-6 px-1">
-                    <img src={business.logo} alt="Institute Logo" className="h-16 w-auto object-contain" />
+                    <img src={resolveMediaUrl(business.logo) ?? undefined} alt="Institute Logo" className="h-16 w-auto object-contain" />
                 </div>
             )}
 

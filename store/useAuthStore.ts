@@ -146,6 +146,7 @@ export const useAuthStore = create<AuthState>()(
             .catch(() => false);
 
           if (!refreshed) {
+            await authApi.logout();
             setUnauthenticatedState();
             return;
           }

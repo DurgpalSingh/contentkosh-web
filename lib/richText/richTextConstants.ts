@@ -46,6 +46,7 @@ export const RICH_TEXT_TOOLTIP = {
   blockquote: 'Block quote',
   bulletList: 'Bulleted list',
   orderedList: 'Numbered list',
+  romanList: 'Roman numbered list',
   link: 'Add or edit a web link (select text first, then paste URL)',
   undo: 'Undo last change',
   redo: 'Redo',

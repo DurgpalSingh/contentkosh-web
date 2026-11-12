@@ -19,14 +19,14 @@ interface EditContentModalProps {
 export function EditContentModal({ isOpen, onClose, content, onUpdated, subjects }: EditContentModalProps) {
   const [title, setTitle] = useState(content.title || '');
   const [status, setStatus] = useState<'ACTIVE' | 'INACTIVE'>(content.status || 'ACTIVE');
-  const [selectedSubjectId, setSelectedSubjectId] = useState<number | undefined>(content.subjectId ?? subjects[0]?.id);
+  const [selectedSubjectId, setSelectedSubjectId] = useState<number | undefined>(content.subjectId);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setTitle(content.title || '');
     setStatus(content.status || 'ACTIVE');
-    setSelectedSubjectId(content.subjectId ?? subjects[0]?.id);
+    setSelectedSubjectId(content.subjectId);
   }, [content, subjects]);
 
   useEffect(() => {
@@ -48,17 +48,13 @@ export function EditContentModal({ isOpen, onClose, content, onUpdated, subjects
       setError(validationError);
       return;
     }
-    if (!selectedSubjectId) {
-      setError('Please select a subject');
-      return;
-    }
     setLoading(true);
     setError(null);
     try {
       const body: UpdateContentRequest = {
         title: title.trim(),
         status: status as unknown as UpdateContentRequest.status,
-        subjectId: selectedSubjectId,
+        ...(selectedSubjectId !== undefined ? { subjectId: selectedSubjectId } : {}),
       };
       await ContentsService.putApiContents({ contentId: content.id!, requestBody: body });
       onUpdated?.();
@@ -119,17 +115,13 @@ export function EditContentModal({ isOpen, onClose, content, onUpdated, subjects
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700">Subject <span className="text-red-500">*</span></label>
+            <label className="block text-sm font-medium text-slate-700">Subject (optional)</label>
             <select
               value={selectedSubjectId ?? ''}
               onChange={(e) => setSelectedSubjectId(e.target.value ? Number(e.target.value) : undefined)}
               className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              required
-              disabled={subjects.length === 0}
             >
-              <option value="" disabled>
-                {subjects.length === 0 ? 'No subjects available' : 'Select a subject'}
-              </option>
+              <option value="">No subject selected</option>
               {subjects.map((s) => (
                 <option key={s.id!} value={s.id!}>
                   {s.name || 'Unnamed Subject'}

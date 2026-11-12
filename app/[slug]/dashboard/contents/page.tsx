@@ -11,6 +11,7 @@ import { EditContentModal } from '@/components/modals/EditContentModal';
 import { DeleteConfirmModal } from '@/components/modals/DeleteConfirmModal';
 import { ContentsService, BatchesService, SubjectsService, Content, Batch, Subject } from '@/lib/api';
 import { ContentGridCard } from '@/components/dashboard/contents/ContentGridCard';
+import { ContentFileViewerModal } from '@/components/dashboard/contents/ContentFileViewerModal';
 import { ContentsFilterModal } from '@/components/dashboard/contents/ContentsFilterModal';
 import { USER_ROLES } from '@/lib/constants';
 import { EmptyState } from '@/components/common/EmptyState';
@@ -40,6 +41,7 @@ export default function ContentsPage() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [selectedContent, setSelectedContent] = useState<Content | null>(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [viewerContent, setViewerContent] = useState<Content | null>(null);
 
   const isAdmin = user?.role === USER_ROLES.ADMIN;
   const isStudent = user?.role === USER_ROLES.STUDENT;
@@ -194,21 +196,8 @@ export default function ContentsPage() {
     setIsAddOpen(true);
   }, []);
 
-  const handleView = useCallback(async (c: Content) => {
-    try {
-      const blob = await ContentsService.getApiContentsFile({ contentId: c.id! }).then(r => r as Blob);
-      const url = URL.createObjectURL(blob);
-      const newTab = window.open(url, '_blank');
-      // Revoke later so the new tab has time to load the blob URL.
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-
-      if (!newTab) {
-        // Optional fallback if popup blocked
-        window.location.href = url;
-      }
-    } catch (err) {
-      console.error('Failed to open file:', err);
-    }
+  const handleView = useCallback((c: Content) => {
+    setViewerContent(c);
   }, []);
 
   const handleEdit = useCallback((c: Content) => {
@@ -248,21 +237,21 @@ export default function ContentsPage() {
 
   return (
     <>
-      <div className="space-y-6">
-        <div className="rounded-2xl bg-gradient-to-br from-slate-50 via-white to-blue-50 border border-slate-200 p-6">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      <div className="space-y-5 sm:space-y-6">
+        <div className="rounded-2xl bg-gradient-to-br from-slate-50 via-white to-blue-50 border border-slate-200 p-4 sm:p-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <div className="inline-flex items-center gap-2 text-xs font-semibold tracking-wide text-blue-700 bg-blue-100/70 px-2 py-1 rounded-full">
                 <Layers3 className="h-3.5 w-3.5" />
                 Content Library
               </div>
-              <h1 className="text-3xl font-bold text-slate-900 mt-3">Contents</h1>
+              <h1 className="mt-3 text-2xl font-bold text-slate-900 sm:text-3xl">Contents</h1>
               <p className="text-slate-600 mt-1">Manage uploaded content for your batches</p>
             </div>
             {!isStudent && (
               <Button
                 onClick={handleAdd}
-                className={`bg-blue-600 hover:bg-blue-700 ${!selectedBatchId ? 'opacity-60 cursor-not-allowed' : ''}`}
+                className={`w-full bg-blue-600 hover:bg-blue-700 sm:w-auto ${!selectedBatchId ? 'opacity-60 cursor-not-allowed' : ''}`}
                 disabled={!selectedBatchId}
               >
                 <Plus className="h-5 w-5 mr-2" />
@@ -272,20 +261,20 @@ export default function ContentsPage() {
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center">
           <div className="relative flex-1 w-full sm:w-auto">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Search className="h-5 w-5 text-gray-400" />
             </div>
             <Input
-              className="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg"
+              className="block h-11 w-full rounded-lg border border-gray-300 pl-10 pr-10"
               placeholder="Search by title..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex w-full items-center gap-3 xl:w-auto xl:justify-end">
             <ContentsFilterModal
               batches={batches}
               selectedBatchId={selectedBatchId}
@@ -326,7 +315,7 @@ export default function ContentsPage() {
             />
           )
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {filteredContents.map(c => (
               <ContentGridCard
                 key={c.id}
@@ -373,6 +362,12 @@ export default function ContentsPage() {
           itemName={selectedContent?.title ?? 'this content'}
         />
       )}
+
+      <ContentFileViewerModal
+        isOpen={Boolean(viewerContent)}
+        content={viewerContent}
+        onClose={() => setViewerContent(null)}
+      />
     </>
   );
 }

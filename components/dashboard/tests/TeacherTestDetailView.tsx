@@ -8,6 +8,7 @@ import { TeacherTestDetailHeader } from '@/components/dashboard/tests/TeacherTes
 import { TeacherTestQuestionsTab } from '@/components/dashboard/tests/TeacherTestQuestionsTab'
 import { TeacherTestSettingsTab } from '@/components/dashboard/tests/TeacherTestSettingsTab'
 import { AddQuestionModal } from '@/components/modals/AddQuestionModal'
+import { BulkUploadModal } from '@/components/modals/BulkUploadModal'
 import { DeleteConfirmModal } from '@/components/modals/DeleteConfirmModal'
 import { PublishConfirmModal } from '@/components/modals/PublishConfirmModal'
 import { EditQuestionModal } from '@/components/modals/EditQuestionModal'
@@ -22,7 +23,7 @@ import {
   SubjectsService,
 } from '@/lib/api'
 import { downloadTestAnalyticsCsv } from '@/lib/tests/testTeacherApi'
-import { TEST_KIND, type TestKind } from '@/lib/tests/testConstants'
+import { TEST_KIND, type QuestionTestKind } from '@/lib/tests/testConstants'
 import {
   isTestAnalyticsApiResponse,
   type TestAnalyticsApiResponse,
@@ -38,7 +39,7 @@ import { Loader2 } from 'lucide-react'
 
 
 interface TeacherTestDetailViewProps {
-  kind: TestKind
+  kind: QuestionTestKind
   testId: string
   businessId: number
   slug: string
@@ -62,6 +63,7 @@ export function TeacherTestDetailView({
   const [subjects, setSubjects] = useState<Subject[]>([])
 
   const [addQuestionOpen, setAddQuestionOpen] = useState(false)
+  const [bulkUploadOpen, setBulkUploadOpen] = useState(false)
   const [editQuestion, setEditQuestion] = useState<TeacherTestQuestion | null>(null)
   const [deleteQuestionTarget, setDeleteQuestionTarget] = useState<TeacherTestQuestion | null>(null)
   const [publishConfirmOpen, setPublishConfirmOpen] = useState(false)
@@ -226,6 +228,7 @@ export function TeacherTestDetailView({
 
   const status = typeof test.status === 'number' ? test.status : 0
   const isDraft = status === testStatus.draft
+  const questionsLocked = Boolean((test as { hasAttempts?: boolean }).hasAttempts)
 
   return (
     <div className="space-y-6">
@@ -259,9 +262,11 @@ export function TeacherTestDetailView({
       {activeTab === TEACHER_TEST_TAB.QUESTIONS && (
         <TeacherTestQuestionsTab
           questions={questions}
+          questionsLocked={questionsLocked}
           onAddQuestion={() => setAddQuestionOpen(true)}
           onEditQuestion={(q) => setEditQuestion(q)}
           onDeleteQuestion={(q) => setDeleteQuestionTarget(q)}
+          onBulkUpload={() => setBulkUploadOpen(true)}
         />
       )}
 
@@ -292,6 +297,18 @@ export function TeacherTestDetailView({
         businessId={businessId}
         kind={kind}
         testId={testId}
+        onSaved={() => {
+          void loadQuestions()
+          void loadTest()
+        }}
+      />
+
+      <BulkUploadModal
+        isOpen={bulkUploadOpen}
+        onClose={() => setBulkUploadOpen(false)}
+        businessId={businessId}
+        testId={testId}
+        testType={kind === TEST_KIND.PRACTICE ? 'practice' : 'exam'}
         onSaved={() => {
           void loadQuestions()
           void loadTest()

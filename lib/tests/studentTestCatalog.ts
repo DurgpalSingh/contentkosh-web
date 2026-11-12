@@ -6,7 +6,7 @@ import { TEST_KIND } from './testConstants';
 import { TEST_ROUTE_SEGMENT as SEG } from '@/lib/tests/testConstants';
 import type { TestListSubjectFields } from '@/lib/tests/testUiMappers';
 import { STUDENT_TEST_STATUS } from './testConstants';
-import type { StudentTestDisplayStatus, TestKind } from './testConstants';
+import type { QuestionTestKind, StudentTestDisplayStatus } from './testConstants';
 
 /** Extra fields returned by the backend student catalog (may be missing in older OpenAPI snapshots). */
 export type PracticeCatalogRow = PracticeAvailableTest &
@@ -40,6 +40,13 @@ export function isAttemptFinished(status: number | null | undefined): boolean {
   );
 }
 
+function hasActiveExamAttempt(row: ExamCatalogRow, attemptStatus: number | null | undefined): boolean {
+  if (!row.attemptId || isAttemptFinished(attemptStatus)) return false;
+  if (isAttemptInProgress(attemptStatus)) return true;
+  if (typeof row.timeRemainingSeconds === 'number' && row.timeRemainingSeconds > 0) return true;
+  return attemptStatus == null && row.hasAttempt === true && row.canAttempt !== false;
+}
+
 export function lockedReasonLabel(reason: number | undefined): string {
   switch (reason) {
     case 0:
@@ -55,8 +62,8 @@ export function lockedReasonLabel(reason: number | undefined): string {
 
 export const STUDENT_TEST_ROUTES = {
   BASE: (slug: string) => `/${slug}/${SEG.DASHBOARD}/${SEG.STUDENT}/${SEG.MYTEST}`,
-  ATTEMPT: (slug: string, kind: TestKind, attemptId: string) => `${STUDENT_TEST_ROUTES.BASE(slug)}/${kind}/${SEG.ATTEMPT}/${attemptId}`,
-  RESULT: (slug: string, kind: TestKind, attemptId: string) => `${STUDENT_TEST_ROUTES.BASE(slug)}/${kind}/${SEG.RESULT}/${attemptId}`,
+  ATTEMPT: (slug: string, kind: QuestionTestKind, attemptId: string) => `${STUDENT_TEST_ROUTES.BASE(slug)}/${kind}/${SEG.ATTEMPT}/${attemptId}`,
+  RESULT: (slug: string, kind: QuestionTestKind, attemptId: string) => `${STUDENT_TEST_ROUTES.BASE(slug)}/${kind}/${SEG.RESULT}/${attemptId}`,
 } as const;
 
 export function studentTestBasePath(slug: string): string {
@@ -84,6 +91,14 @@ export function studentPracticeResultPath(
 export function studentExamResultPath(slug: string, examTestId: string, attemptId: string): string {
   void examTestId;
   return STUDENT_TEST_ROUTES.RESULT(slug, TEST_KIND.EXAM, attemptId);
+}
+
+/**
+ * Subjective attempts are file uploads, so they have their own page (no fullscreen attempt workspace).
+ * The same page shows the upload while in progress and the result once submitted/checked.
+ */
+export function studentSubjectiveAttemptPath(slug: string, submissionId: string): string {
+  return `${STUDENT_TEST_ROUTES.BASE(slug)}/${TEST_KIND.SUBJECTIVE}/${submissionId}`;
 }
 
 export type { StudentTestDisplayStatus };
@@ -165,7 +180,7 @@ export function computeTestCardActions(item: UnifiedStudentRow, displayStatus: S
   if (er.canAttempt === false) {
     return [{ type: TEST_CARD_ACTION.LOCKED, reason: er.lockedReason }];
   }
-  if (isAttemptInProgress(attemptStatus) && attemptId) {
+  if (hasActiveExamAttempt(er, attemptStatus) && attemptId) {
     return [{ type: TEST_CARD_ACTION.RESUME, attemptId }];
   }
 

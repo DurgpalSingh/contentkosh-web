@@ -1,12 +1,41 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { Upload, FileText, Image as ImageIcon, X } from 'lucide-react';
+import NextImage from 'next/image';
+import { Loader2, Upload, FileText, Image as ImageIcon, X } from 'lucide-react';
 import {
   CONTENT_UPLOAD_ALLOWED_EXTENSIONS,
   CONTENT_UPLOAD_ERROR_MESSAGE,
   CONTENT_UPLOAD_LABEL,
+  getContentUploadSizeError,
 } from '@/lib/content-upload.config';
+
+/**
+ * Derives a human-readable label from an accept string.
+ * e.g. ".doc,.docx" → "DOC, DOCX"
+ * e.g. "application/pdf,image/*" → "PDF, Image"
+ */
+function acceptToLabel(accept: string): string {
+  const parts = accept.split(',').map(t => t.trim());
+  const labels: string[] = [];
+  for (const part of parts) {
+    if (part.startsWith('.')) {
+      labels.push(part.slice(1).toUpperCase());
+    } else if (part === 'application/pdf') {
+      labels.push('PDF');
+    } else if (part.startsWith('image/')) {
+      labels.push('Image');
+    } else if (part === 'application/msword') {
+      // skip — .doc extension entry will cover it
+    } else if (part.includes('wordprocessingml')) {
+      // skip — .docx extension entry will cover it
+    } else {
+      labels.push(part.split('/').pop()?.toUpperCase() ?? part);
+    }
+  }
+  // Deduplicate
+  return [...new Set(labels)].join(', ');
+}
 
 /**
  * Props for the FileUploadArea component
@@ -26,6 +55,16 @@ export interface FileUploadAreaProps {
   disabled?: boolean;
   /** Additional CSS classes */
   className?: string;
+  /** Human-readable accepted file label shown in the UI */
+  acceptedLabel?: string;
+  /** Preview URL for selected/current image files */
+  previewUrl?: string | null;
+  /** Alt text for preview image */
+  previewAlt?: string;
+  /** Shows a loading overlay while the selected file is being uploaded */
+  isUploading?: boolean;
+  /** Overrides the content upload size rules with a single max size (MB) */
+  maxSizeMb?: number;
 }
 
 /**
@@ -47,14 +86,12 @@ export function validateFileType(file: File, accept: string): boolean {
     if (type.startsWith('.')) {
       return fileExtension === type.toLowerCase();
     }
-
     if (type.endsWith('/*')) {
-      // Handle wildcard types like "image/*"
       const prefix = type.slice(0, -2);
       return file.type.startsWith(prefix);
     }
     return file.type === type;
-  }) || CONTENT_UPLOAD_ALLOWED_EXTENSIONS.includes(fileExtension);
+  });
 }
 
 /**
@@ -82,10 +119,18 @@ export function FileUploadArea({
   onError,
   disabled = false,
   className = '',
+  acceptedLabel = CONTENT_UPLOAD_LABEL,
+  previewUrl,
+  previewAlt = 'Selected file preview',
+  isUploading = false,
+  maxSizeMb,
 }: FileUploadAreaProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const dragCounter = useRef(0);
+
+  const label = acceptToLabel(accept);
+  const errorMessage = `Please upload a ${label} file`;
 
   /**
    * Handles dragenter event
@@ -162,8 +207,19 @@ export function FileUploadArea({
   const handleFileSelection = (file: File) => {
     // Validate file type using validateFileType helper
     if (!validateFileType(file, accept)) {
-      // For invalid files: call onError with error message and onChange with null
-      onError?.(CONTENT_UPLOAD_ERROR_MESSAGE);
+      onError?.(errorMessage);
+      onChange(null);
+      return;
+    }
+
+    const sizeError =
+      maxSizeMb !== undefined
+        ? file.size > maxSizeMb * 1024 * 1024
+          ? `File must be ${maxSizeMb} MB or less`
+          : null
+        : getContentUploadSizeError(file);
+    if (sizeError) {
+      onError?.(sizeError);
       onChange(null);
       return;
     }
@@ -245,7 +301,7 @@ export function FileUploadArea({
   let stateClasses = "";
   if (disabled) {
     stateClasses = "opacity-50 cursor-not-allowed";
-  } else if (value) {
+  } else if (value || previewUrl) {
     // Selected state: green border, green background, default cursor
     stateClasses = "border-green-500 bg-green-50 cursor-default";
   } else if (isDragging) {
@@ -299,10 +355,11 @@ export function FileUploadArea({
       >
         {/* Hidden span with instructions for screen readers */}
         <span id="file-upload-instructions" className="sr-only">
-          Accepted file types: {CONTENT_UPLOAD_LABEL}
+          {/* Accepted file types: {acceptedLabel} */}
+          Accepted file types: {label}
         </span>
         {/* Empty state - shown when no file is selected */}
-        {!value && (
+        {!value && !previewUrl && (
           <div className="flex flex-col items-center justify-center text-center">
             {/* Upload icon */}
             <Upload className="w-12 h-12 text-slate-400 mb-4" />
@@ -314,20 +371,32 @@ export function FileUploadArea({
             
             {/* Secondary text indicating accepted file types */}
             <p className="text-sm text-slate-500">
-              {CONTENT_UPLOAD_LABEL} files
+              {/* {acceptedLabel} files */}
+              {label} files
             </p>
           </div>
         )}
         
         {/* Selected state - shown when a file is selected */}
-        {value && (
+        {(value || previewUrl) && (
           <div className="flex items-start gap-4">
             {/* File icon - display appropriate icon based on file type */}
             <div className="flex-shrink-0">
-              {value.type.startsWith('image/') ? (
-                <ImageIcon className="w-10 h-10 text-green-600" />
+              {previewUrl ? (
+                <div className="h-14 w-14 overflow-hidden rounded-lg border border-green-200 bg-white">
+                  <NextImage
+                    src={previewUrl}
+                    alt={previewAlt}
+                    width={56}
+                    height={56}
+                    unoptimized
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+              ) : value?.type.startsWith('image/') ? (
+                <ImageIcon className="h-10 w-10 text-green-600" />
               ) : (
-                <FileText className="w-10 h-10 text-green-600" />
+                <FileText className="h-10 w-10 text-green-600" />
               )}
             </div>
             
@@ -335,27 +404,37 @@ export function FileUploadArea({
             <div className="flex-1 min-w-0">
               {/* File name - prominently displayed */}
               <p className="text-base font-medium text-slate-900 truncate">
-                {value.name}
+                {value?.name ?? 'Current image'}
               </p>
               
               {/* File size - displayed below name */}
               <p className="text-sm text-slate-600 mt-1">
-                {formatFileSize(value.size)}
+                {value ? formatFileSize(value.size) : `Click to replace or drag and drop a ${acceptedLabel} file`}
               </p>
             </div>
             
             {/* Remove button - X icon in top-right corner */}
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation(); // Prevent triggering parent click handler
-                handleRemoveFile();
-              }}
-              className="flex-shrink-0 p-1 rounded-full hover:bg-red-100 transition-colors"
-              aria-label="Remove file"
-            >
-              <X className="w-5 h-5 text-red-600" />
-            </button>
+            {value && !isUploading && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation(); // Prevent triggering parent click handler
+                  handleRemoveFile();
+                }}
+                className="flex-shrink-0 p-1 rounded-full hover:bg-red-100 transition-colors"
+                aria-label="Remove file"
+              >
+                <X className="w-5 h-5 text-red-600" />
+              </button>
+            )}
+          </div>
+        )}
+        {isUploading && (
+          <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-white/75 backdrop-blur-sm">
+            <div className="flex items-center gap-2 rounded-full bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm">
+              <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+              Uploading...
+            </div>
           </div>
         )}
       </div>

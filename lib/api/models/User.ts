@@ -34,6 +34,10 @@ export type User = {
      */
     businessId?: number;
     /**
+     * User profile picture URL or path
+     */
+    profilePicture?: string | null;
+    /**
      * Business details
      */
     business?: Business;
@@ -45,12 +49,17 @@ export type User = {
      * User last update timestamp
      */
     updatedAt?: string;
+    /**
+     * True when a Super Admin is currently viewing this business's dashboard (impersonation)
+     */
+    isImpersonating?: boolean;
 };
 export namespace User {
     /**
      * User role
      */
     export enum role {
+        SUPERADMIN = 'SUPERADMIN',
         ADMIN = 'ADMIN',
         TEACHER = 'TEACHER',
         STUDENT = 'STUDENT',

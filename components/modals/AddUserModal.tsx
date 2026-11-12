@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { X, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { UsersService, CreateUserRequest } from '@/lib/api';
-import { validateEntityName, validateEmail, validateMobile, validatePassword } from '@/lib/validation';
+import { normalizePhoneDigits, validateEntityName, validateEmail, validateMobile, validatePassword } from '@/lib/validation';
 import { USER_ROLES } from '@/lib/constants';
 import { toast } from 'sonner';
 
@@ -201,9 +201,11 @@ export function AddUserModal({
                         <input
                             id="user-mobile"
                             type="tel"
+                            inputMode="numeric"
                             value={mobile}
-                            onChange={(e) => setMobile(e.target.value)}
+                            onChange={(e) => setMobile(normalizePhoneDigits(e.target.value))}
                             placeholder="e.g., 9876543210"
+                            maxLength={10}
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                             disabled={loading}
                         />
@@ -238,13 +240,18 @@ export function AddUserModal({
                         >
                             Password <span className="text-red-500">*</span>
                         </label>
+                        <p className="text-xs text-gray-500">
+                            8-20 characters, with an uppercase and lowercase letter, a number, and a special character (!@#$%^&*)
+                        </p>
                         <div className="relative">
                             <input
                                 id="user-password"
                                 type={showPassword ? "text" : "password"}
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                placeholder="Min. 6 characters"
+                                placeholder="8-20 characters"
+                                maxLength={20}
+                                autoComplete="new-password"
                                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors pr-10"
                                 disabled={loading}
                             />

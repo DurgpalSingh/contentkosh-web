@@ -35,7 +35,7 @@ type DatePickerProps = (DatePickerObjectValueProps | DatePickerStringValueProps)
 
 const DATE_FORMAT = "yyyy-MM-dd"
 
-const parseDateValue = (value: string): Date | undefined => {
+const parseDateValue = (value?: string): Date | undefined => {
     if (!value) return undefined
     const parsedDate = parse(value, DATE_FORMAT, new Date())
     return isValid(parsedDate) ? parsedDate : undefined
@@ -46,13 +46,16 @@ export function DatePicker(props: DatePickerProps) {
     const currentYear = new Date().getFullYear()
     const selectedDate = "value" in props ? parseDateValue(props.value) : props.date
 
-    const onSelectDate = (nextDate: Date | undefined) => {
-        if ("onChange" in props) {
-            props.onChange(nextDate ? format(nextDate, DATE_FORMAT) : "")
+    const onSelectDate = (nextDate: Date | Date[] | null | undefined) => {
+        // react-day-picker can pass Date | Date[] | null depending on mode; we use single mode
+        const picked = Array.isArray(nextDate) ? nextDate[0] : nextDate ?? undefined
+
+        if ("onChange" in props && typeof props.onChange === 'function') {
+            props.onChange(picked ? format(picked, DATE_FORMAT) : "")
             return
         }
 
-        props.setDate(nextDate)
+        props.setDate?.(picked)
     }
 
     return (

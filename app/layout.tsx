@@ -7,8 +7,7 @@ import { EDITOR_GOOGLE_FONT_URLS } from "@/lib/richText/richTextFonts";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
-  // devanagari subset ensures Geist covers Hindi glyphs as a fallback
-  subsets: ["latin", "devanagari"],
+  subsets: ["latin"],
 });
 
 const geistMono = Geist_Mono({

@@ -17,9 +17,13 @@ export type CourseWithSubjects = {
      */
     description?: string;
     /**
-     * Duration of the course
+     * Course thumbnail URL or file path
      */
-    duration?: string;
+    thumbnail?: string | null;
+    /**
+     * Course price as a whole number. Use 0 for free courses.
+     */
+    price?: number;
     /**
      * Status of the course
      */

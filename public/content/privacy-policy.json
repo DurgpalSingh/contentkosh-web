@@ -1,0 +1,63 @@
+{
+  "title": "Privacy Policy",
+  "lastUpdated": "2026-08-31",
+  "sections": [
+    {
+      "heading": "1. Introduction",
+      "content": "ContentKosh (\"we\", \"us\", \"our\", or \"Company\") operates the ContentKosh platform (the \"Service\"). This page informs you of our policies regarding the collection, use, and disclosure of personal data when you use our Service and the choices you have associated with that data."
+    },
+    {
+      "heading": "2. Information Collection and Use",
+      "subsections": [
+        {
+          "subheading": "2.1 We collect several different types of information for various purposes to provide and improve our Service to you.",
+          "content": ""
+        },
+        {
+          "subheading": "2.1.1 Personal Data",
+          "content": "While using our Service, we may ask you to provide us with certain personally identifiable information that can be used to contact or identify you (\"Personal Data\"). This may include, but is not limited to:",
+          "listItems": [
+            "Email address",
+            "First name and last name",
+            "Phone number",
+            "Address, State, Province, ZIP/Postal code, City",
+            "Cookies and Usage Data"
+          ]
+        },
+        {
+          "subheading": "2.1.2 Usage Data",
+          "content": "We may also collect information on how the Service is accessed and used (\"Usage Data\"). This may include information such as your computer's Internet Protocol address (e.g. IP address), browser type, browser version, the pages of our Service that you visit, the time and date of your visit, the time spent on those pages, and other diagnostic data."
+        }
+      ]
+    },
+    {
+      "heading": "3. Use of Data",
+      "content": "ContentKosh uses the collected data for various purposes:",
+      "listItems": [
+        "To provide and maintain our Service",
+        "To notify you about changes to our Service",
+        "To allow you to participate in interactive features of our Service when you choose to do so",
+        "To provide customer support",
+        "To gather analysis or valuable information so that we can improve our Service",
+        "To monitor the usage of our Service",
+        "To detect, prevent and address technical issues"
+      ]
+    },
+    {
+      "heading": "4. Security of Data",
+      "content": "The security of your data is important to us but remember that no method of transmission over the Internet or method of electronic storage is 100% secure. While we strive to use commercially acceptable means to protect your Personal Data, we cannot guarantee its absolute security."
+    },
+    {
+      "heading": "5. Changes to This Privacy Policy",
+      "content": "We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the \"Last updated\" date at the top of this Privacy Policy."
+    },
+    {
+      "heading": "6. Contact Us",
+      "content": "If you have any questions about this Privacy Policy, please contact us at:",
+      "contactItems": [
+        { "label": "Email", "value": "privacy@contentkosh.com" },
+        { "label": "Website", "value": "www.contentkosh.com" }
+      ]
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import {
   AnnouncementsService,
@@ -17,7 +17,7 @@ import { validateAnnouncementForm } from '@/lib/validation';
 import { getErrorMessage, defaultEndDate, toggleSetItem } from '@/components/announcements/announcementHelpers';
 import { toast } from 'sonner';
 
-type CourseRow = { id: number; name: string };
+type CourseRow = { id: number; name: string; hasBatches: boolean };
 type BatchRow = { id: number; label: string };
 
 export interface AdminAnnouncementModalProps {
@@ -54,6 +54,15 @@ export function AdminAnnouncementModal({
 
   const isEdit = Boolean(initial?.id);
   const title = isEdit ? 'Edit announcement' : 'Create announcement';
+  const courseById = useMemo(
+    () => new Map(courses.map((course) => [course.id, course])),
+    [courses],
+  );
+  const eligibleCourseIds = useMemo(
+    () => new Set(courses.filter((course) => course.hasBatches).map((course) => course.id)),
+    [courses],
+  );
+  const hasBatchBackedCourse = eligibleCourseIds.size > 0;
 
   const resetForCreate = useCallback(() => {
     const now = new Date().toISOString();
@@ -116,18 +125,17 @@ export function AdminAnnouncementModal({
           }
         }
 
-        const courseRows: CourseRow[] = Array.from(courseMap.values())
-          .sort((a, b) => {
-            const tA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-            const tB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-            return tB - tA;
-          })
-          .map((course) => ({ id: course.id!, name: course.name! }));
         const batchRes = await BatchesService.getApiBatchesAll('course');
-        const rawBatches = (batchRes as { data?: Array<{ id?: number; displayName?: string; codeName?: string }> })
-          .data;
+        const rawBatches = (batchRes as {
+          data?: Array<{ id?: number; displayName?: string; codeName?: string; courseId?: number }>
+        }).data;
         const batchRows: BatchRow[] = [];
+        const courseIdsWithBatches = new Set<number>();
         for (const b of rawBatches ?? []) {
+          if (b.courseId != null) {
+            courseIdsWithBatches.add(b.courseId);
+          }
+
           if (b.id != null) {
             const label =
               b.displayName && b.codeName
@@ -136,6 +144,19 @@ export function AdminAnnouncementModal({
             batchRows.push({ id: b.id, label });
           }
         }
+
+        const courseRows: CourseRow[] = Array.from(courseMap.values())
+          .sort((a, b) => {
+            const tA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+            const tB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+            return tB - tA;
+          })
+          .map((course) => ({
+            id: course.id!,
+            name: course.name!,
+            hasBatches: courseIdsWithBatches.has(course.id!),
+          }));
+
         if (!cancelled) {
           setCourses(courseRows);
           setBatches(batchRows);
@@ -153,11 +174,25 @@ export function AdminAnnouncementModal({
   }, [isOpen, businessId]);
 
   const toggleCourse = (id: number) => {
+    const selected = selectedCourseIds.has(id);
+    if (!selected && !courseById.get(id)?.hasBatches) return;
     setSelectedCourseIds((prev) => toggleSetItem(prev, id));
   };
 
   const toggleBatch = (id: number) => {
     setSelectedBatchIds((prev) => toggleSetItem(prev, id));
+  };
+
+  const getCourseTargetError = (): string | null => {
+    if (scope !== 'COURSE') return null;
+    if (targetAllCourses) {
+      return hasBatchBackedCourse ? null : 'Create at least one batch before announcing to courses';
+    }
+
+    const hasUnavailableSelection = Array.from(selectedCourseIds).some(
+      (courseId) => !eligibleCourseIds.has(courseId),
+    );
+    return hasUnavailableSelection ? 'Select only courses that have at least one batch' : null;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -179,6 +214,12 @@ export function AdminAnnouncementModal({
     });
     if (!result.valid) {
       toast.error(result.error ?? 'Validation failed');
+      return;
+    }
+
+    const courseTargetError = getCourseTargetError();
+    if (courseTargetError) {
+      toast.error(courseTargetError);
       return;
     }
 
@@ -239,7 +280,7 @@ export function AdminAnnouncementModal({
 
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
           <div>
-            <Label htmlFor="ann-heading">Heading</Label>
+            <Label htmlFor="ann-heading">Heading <span className="text-red-400">*</span></Label> 
             <Input
               id="ann-heading"
               value={heading}
@@ -251,7 +292,7 @@ export function AdminAnnouncementModal({
             <p className="mt-1 text-xs text-slate-500">{heading.trim().length}/120</p>
           </div>
           <div>
-            <Label htmlFor="ann-content">Content</Label>
+            <Label htmlFor="ann-content">Content <span className="text-red-400">*</span></Label>
             <Textarea
               id="ann-content"
               value={content}
@@ -263,7 +304,7 @@ export function AdminAnnouncementModal({
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <Label htmlFor="ann-start">Starts</Label>
+              <Label htmlFor="ann-start">Starts <span className="text-red-400">*</span></Label>
               <Input
                 id="ann-start"
                 type="datetime-local"
@@ -274,7 +315,7 @@ export function AdminAnnouncementModal({
               />
             </div>
             <div>
-              <Label htmlFor="ann-end">Ends</Label>
+              <Label htmlFor="ann-end">Ends <span className="text-red-400">*</span></Label>
               <Input
                 id="ann-end"
                 type="datetime-local"
@@ -287,7 +328,7 @@ export function AdminAnnouncementModal({
           </div>
 
           <div>
-            <Label>Scope</Label>
+            <Label>Scope <span className="text-red-400">*</span></Label>
             <div className="mt-2 flex gap-4">
               <label className="flex items-center gap-2 text-sm">
                 <input
@@ -311,7 +352,7 @@ export function AdminAnnouncementModal({
           </div>
 
           <div className="rounded-xl border border-slate-200 p-3">
-            <p className="text-sm font-medium text-slate-800">Audience</p>
+            <p className="text-sm font-medium text-slate-800">Audience <span className="text-red-400">*</span></p>
             <p className="mt-1 text-xs text-slate-500">Select at least one group.</p>
             <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
               <label className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm hover:bg-slate-50">
@@ -349,8 +390,8 @@ export function AdminAnnouncementModal({
                   checked={targetAllCourses}
                   onChange={(ev) => setTargetAllCourses(ev.target.checked)}
                 />
-                All courses in this institute
-              </label>
+                All courses in this institute <span className="text-red-400">*</span>              
+                </label>
               {!targetAllCourses && (
                 <div className="max-h-44 overflow-y-auto rounded-xl border border-slate-200 p-2 space-y-1">
                   {metaLoading ? (
@@ -359,13 +400,20 @@ export function AdminAnnouncementModal({
                     <p className="text-sm text-slate-500">No courses found.</p>
                   ) : (
                     courses.map((c) => (
-                      <label key={c.id} className="flex items-center gap-2 rounded-lg px-2 py-1 text-sm hover:bg-slate-50">
+                      <label
+                        key={c.id}
+                        className={`flex items-center gap-2 rounded-lg px-2 py-1 text-sm ${
+                          c.hasBatches ? 'hover:bg-slate-50' : 'cursor-not-allowed text-slate-400'
+                        }`}
+                      >
                         <input
                           type="checkbox"
                           checked={selectedCourseIds.has(c.id)}
+                          disabled={!c.hasBatches && !selectedCourseIds.has(c.id)}
                           onChange={() => toggleCourse(c.id)}
                         />
-                        {c.name}
+                        <span>{c.name}</span>
+                        {!c.hasBatches ? <span className="text-xs text-slate-400">(no batches)</span> : null}
                       </label>
                     ))
                   )}
@@ -382,7 +430,7 @@ export function AdminAnnouncementModal({
                   checked={targetAllBatches}
                   onChange={(ev) => setTargetAllBatches(ev.target.checked)}
                 />
-                All batches in this institute
+                All batches in this institute <span className="text-red-400">*</span>
               </label>
               {!targetAllBatches && (
                 <div className="max-h-44 overflow-y-auto rounded-xl border border-slate-200 p-2 space-y-1">

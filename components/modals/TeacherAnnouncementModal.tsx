@@ -192,7 +192,7 @@ export function TeacherAnnouncementModal({
 
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
           <div>
-            <Label htmlFor="t-heading">Heading</Label>
+            <Label htmlFor="t-heading">Heading <span className="text-red-400">*</span></Label>
             <Input
               id="t-heading"
               value={heading}
@@ -204,7 +204,7 @@ export function TeacherAnnouncementModal({
             <p className="mt-1 text-xs text-slate-500">{heading.trim().length}/120</p>
           </div>
           <div>
-            <Label htmlFor="t-content">Content</Label>
+            <Label htmlFor="t-content">Content <span className="text-red-400">*</span></Label>
             <Textarea
               id="t-content"
               value={content}
@@ -216,7 +216,7 @@ export function TeacherAnnouncementModal({
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <Label htmlFor="t-start">Starts</Label>
+              <Label htmlFor="t-start">Starts <span className="text-red-400">*</span></Label>
               <Input
                 id="t-start"
                 type="datetime-local"
@@ -227,7 +227,7 @@ export function TeacherAnnouncementModal({
               />
             </div>
             <div>
-              <Label htmlFor="t-end">Ends</Label>
+              <Label htmlFor="t-end">Ends <span className="text-red-400">*</span></Label>
               <Input
                 id="t-end"
                 type="datetime-local"
@@ -240,7 +240,7 @@ export function TeacherAnnouncementModal({
           </div>
 
           <div className="rounded-xl border border-slate-200 p-3">
-            <p className="text-sm font-medium text-slate-800">Audience</p>
+            <p className="text-sm font-medium text-slate-800">Audience<span className="text-red-400">*</span></p>
             <p className="mt-1 text-xs text-slate-500">Students must remain selected.</p>
             <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
               <label className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm hover:bg-slate-50">
@@ -277,7 +277,7 @@ export function TeacherAnnouncementModal({
                 checked={targetAllBatches}
                 onChange={(ev) => setTargetAllBatches(ev.target.checked)}
               />
-              All batches I belong to
+              All batches I belong to <span className="text-red-400">*</span>
             </label>
             {!targetAllBatches && (
               <div className="max-h-44 overflow-y-auto rounded-xl border border-slate-200 p-2 space-y-1">

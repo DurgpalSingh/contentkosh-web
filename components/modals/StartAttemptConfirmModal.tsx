@@ -8,7 +8,7 @@ import { Select } from '@/components/ui/select'
 import { TestLanguage } from '@/lib/api/models/TestLanguage'
 import { TEST_LANGUAGE_OPTIONS } from '@/lib/tests/testLanguage'
 import { cn } from '@/lib/utils'
-import { TEST_KIND, TEST_KIND_LABEL, type TestKind } from '@/lib/tests/testConstants'
+import { TEST_KIND, TEST_KIND_LABEL, type QuestionTestKind } from '@/lib/tests/testConstants'
 
 export type StartAttemptConfirmModalTiming = {
   startAtLabel?: string
@@ -17,7 +17,7 @@ export type StartAttemptConfirmModalTiming = {
 }
 
 export type StartAttemptTestInfo = {
-  kind: TestKind
+  kind: QuestionTestKind
   testId: string
   testName: string
   batchName?: string
@@ -133,7 +133,7 @@ export function StartAttemptConfirmModal({
 
           {rulesDescription && (
             <div className="space-y-1.5">
-              <p className="text-sm font-medium text-gray-700">Rules</p>
+              <p className="text-sm font-medium text-gray-700">Instructions</p>
               <p className="text-sm text-gray-600 whitespace-pre-wrap">{rulesDescription}</p>
             </div>
           )}

@@ -12,9 +12,13 @@ export type CreateCourseRequest = {
      */
     description?: string;
     /**
-     * Duration of the course (e.g., 6 months, 1 year)
+     * Course thumbnail URL or file path
      */
-    duration?: string;
+    thumbnail?: string | null;
+    /**
+     * Course price as a whole number. Use 0 for free courses.
+     */
+    price?: number;
     /**
      * Status of the course
      */

@@ -31,7 +31,7 @@ import {
   UpdatePracticeTestDTO,
 } from '@/lib/api'
 import type { Subject } from '@/lib/api'
-import { TEST_KIND, type TestKind } from '@/lib/tests/testConstants'
+import { TEST_KIND, type QuestionTestKind } from '@/lib/tests/testConstants'
 import { TEST_LANGUAGE_LABEL, TEST_LANGUAGE_OPTIONS } from '@/lib/tests/testLanguage'
 import { resultVisibilityExamLabel } from '@/lib/tests/testUiMappers'
 import { validateTestForm, type TestFormErrors } from '@/lib/tests/testFormValidation'
@@ -39,7 +39,7 @@ import { toast } from 'sonner'
 import { toISODateTime } from '@/lib/utils'
 
 interface TeacherTestSettingsTabProps {
-  kind: TestKind
+  kind: QuestionTestKind
   businessId: number
   testId: string
   test: PracticeTest | ExamTest
@@ -405,7 +405,7 @@ const ReadOnlySettings = ({
   kind,
   test,
 }: {
-  kind: TestKind
+  kind: QuestionTestKind
   test: PracticeTest | ExamTest
 }) => {
   const batchName = (test as { batchName?: string }).batchName
@@ -611,7 +611,7 @@ const PracticeSettingsFields = ({
     <section>
       <SectionHeader icon={FileText} title="General" />
       <div className="space-y-4">
-        <Field label="Subject" error={errors.subjectId}>
+        <Field label="Subject (optional)" error={errors.subjectId}>
           <Select
             id="practice-subject"
             value={draft.subjectId ?? ''}
@@ -622,13 +622,12 @@ const PracticeSettingsFields = ({
               }))
             }
             options={[
-              { value: '', label: 'Select subject' },
+              { value: '', label: 'No subject selected' },
               ...subjects.map((s) => ({
                 value: s.id,
                 label: s.name ?? `Subject ${s.id}`,
               })),
             ]}
-            disabled={subjectsLoading || subjects.length === 0}
             triggerClassName={selectClass}
           />
         </Field>
@@ -732,7 +731,7 @@ const ExamSettingsFields = ({
     <section>
       <SectionHeader icon={FileText} title="General" />
       <div className="space-y-4">
-        <Field label="Subject" error={errors.subjectId}>
+        <Field label="Subject (optional)" error={errors.subjectId}>
           <Select
             id="exam-subject"
             value={draft.subjectId ?? ''}
@@ -743,13 +742,12 @@ const ExamSettingsFields = ({
               }))
             }
             options={[
-              { value: '', label: 'Select subject' },
+              { value: '', label: 'No subject selected' },
               ...subjects.map((s) => ({
                 value: s.id,
                 label: s.name ?? `Subject ${s.id}`,
               })),
             ]}
-            disabled={subjectsLoading || subjects.length === 0}
             triggerClassName={selectClass}
           />
         </Field>

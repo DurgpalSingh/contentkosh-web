@@ -3,7 +3,7 @@
 import { ReactNode, useEffect, useState } from 'react';
 import { Bell, BookOpen, GraduationCap, Users } from 'lucide-react';
 import { DashboardService } from '@/lib/api';
-import { isTeacherDashboardData, TeacherDashboardData } from '@/types/dashboard';
+import { isTeacherDashboardData, TeacherDashboardData } from '@/lib/api/models/Dashboard';
 
 const formatDate = (value: string) => new Date(value).toLocaleDateString();
 
@@ -57,7 +57,7 @@ export function TeacherDashboard() {
   return (
     <div className="space-y-4 sm:space-y-6">
       <header className="rounded-2xl border border-slate-200 bg-gradient-to-r from-slate-50 via-white to-emerald-50 p-4 sm:p-6">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">Teacher Dashboard</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">My Dashboard</h1>
         <p className="mt-1 text-sm text-slate-600">Track your batches, students, and content activity in one place.</p>
       </header>
 
@@ -98,8 +98,13 @@ export function TeacherDashboard() {
         {data.recentAnnouncements.length === 0 && <EmptyState message="No announcements found." />}
         {data.recentAnnouncements.map((announcement) => (
           <div key={announcement.id} className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 sm:px-4 sm:py-3">
-            <p className="font-semibold text-slate-900 truncate" title={announcement.heading}>{announcement.heading}</p>
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="font-semibold text-slate-900 break-words" title={announcement.heading}>{announcement.heading}</p>
+            {announcement.content && (
+              <p className="mt-1 text-sm text-slate-600 line-clamp-3 break-words" title={announcement.content}>
+                {announcement.content}
+              </p>
+            )}
+            <p className="mt-2 text-xs text-slate-500">
               {formatDate(announcement.startDate)} - {formatDate(announcement.endDate)}
             </p>
           </div>

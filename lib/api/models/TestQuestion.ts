@@ -15,5 +15,9 @@ export type TestQuestion = {
     text?: string;
     mediaUrl?: string;
     options?: Array<TestOption>;
+    /**
+     * Explanation or rationale for the answer (optional)
+     */
+    explanation?: string;
 };
 

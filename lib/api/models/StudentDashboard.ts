@@ -96,5 +96,15 @@ export type StudentDashboard = {
          */
         createdAt?: string;
     }>;
+    /**
+     * Recent live or upcoming exam tests for the student dashboard
+     */
+    recentExams?: Array<{
+        id?: string;
+        name?: string;
+        batchName?: string;
+        startAt?: string;
+        deadlineAt?: string;
+    }>;
 };
 

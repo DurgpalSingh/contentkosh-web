@@ -23,7 +23,50 @@ export const CONTENT_UPLOAD_FORMATS = [
     extensions: ['.doc', '.docx'],
     maxSizeMb: 10,
   },
+  {
+    key: 'excel',
+    label: 'Excel',
+    mimeTypes: [
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    ],
+    extensions: ['.xls', '.xlsx', '.xlc'],
+    maxSizeMb: 10,
+  },
 ] as const;
+
+export type ContentUploadFormat = (typeof CONTENT_UPLOAD_FORMATS)[number];
+
+const getFileExtension = (fileName: string): string => {
+  const parts = fileName.toLowerCase().split('.');
+  return parts.length > 1 ? `.${parts.pop()}` : '';
+};
+
+export function getContentUploadFormatForFile(file: File): ContentUploadFormat | undefined {
+  const extension = getFileExtension(file.name);
+
+  return CONTENT_UPLOAD_FORMATS.find((format) => {
+    const extensionMatches = (format.extensions as readonly string[]).includes(extension);
+    const mimeMatches = format.mimeTypes.some((mimeType) => {
+      if (mimeType.endsWith('/*')) {
+        return file.type.startsWith(mimeType.slice(0, -2));
+      }
+      return file.type === mimeType;
+    });
+
+    return extensionMatches || mimeMatches;
+  });
+}
+
+export function getContentUploadSizeError(file: File): string | null {
+  const format = getContentUploadFormatForFile(file);
+  if (!format) return null;
+
+  const maxSizeBytes = format.maxSizeMb * 1024 * 1024;
+  if (file.size <= maxSizeBytes) return null;
+
+  return `${format.label} files must be ${format.maxSizeMb} MB or less`;
+}
 
 export const PROFILE_IMAGE_UPLOAD_CONFIG = {
   mimeTypes: ['image/jpeg', 'image/png', 'image/webp'] as const,
@@ -49,7 +92,7 @@ export const CONTENT_UPLOAD_ALLOWED_EXTENSIONS: string[] = CONTENT_UPLOAD_FORMAT
   (format) => format.extensions
 );
 
-export const CONTENT_UPLOAD_LABEL = 'PDF, Image, or DOC';
+export const CONTENT_UPLOAD_LABEL = 'PDF, Image, DOC, or Excel';
 
 export const CONTENT_UPLOAD_ERROR_MESSAGE = `Please upload a ${CONTENT_UPLOAD_LABEL} file`;
 

@@ -2,8 +2,9 @@
 
 import { BusinessUser } from '@/lib/api';
 import { Filter, Search } from 'lucide-react';
+import { USER_ROLE_FILTER_ALL, USER_ROLE_FILTER_ALL_LABEL, getUserRoleLabel } from '@/lib/constants';
 
-export type RoleFilter = 'ALL' | BusinessUser.role;
+export type RoleFilter = typeof USER_ROLE_FILTER_ALL | BusinessUser.role;
 
 interface UsersFilterBarProps {
   searchQuery: string;
@@ -42,7 +43,7 @@ export function UsersFilterBar({
         >
           {roleOptions.map((roleOption) => (
             <option key={roleOption} value={roleOption}>
-              {roleOption === 'ALL' ? 'All Roles' : roleOption}
+              {roleOption === USER_ROLE_FILTER_ALL ? USER_ROLE_FILTER_ALL_LABEL : getUserRoleLabel(roleOption)}
             </option>
           ))}
         </select>

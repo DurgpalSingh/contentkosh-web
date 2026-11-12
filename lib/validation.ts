@@ -9,6 +9,12 @@ import { toISODateTime } from '@/lib/utils'
  */
 export type Validator = (value: string) => string | null;
 
+export const PHONE_DIGIT_LIMIT = 10;
+
+export function normalizePhoneDigits(value: string, maxDigits: number = PHONE_DIGIT_LIMIT): string {
+    return value.replace(/\D/g, '').slice(0, maxDigits);
+}
+
 export const isRequired = (label: string): Validator => (value) => {
     if (!value || !value.trim()) {
         return `${label} is required`;
@@ -39,8 +45,8 @@ export const containsAlphabet = (label: string): Validator => (value) => {
 
 export const hasValidCharacters = (label: string): Validator => (value) => {
     // Allows letters, numbers, spaces, underscores, and hyphens
-    if (!/^[a-zA-Z0-9\s_-]+$/.test(value)) {
-        return `${label} can only contain letters, numbers, spaces, hyphens (-), and underscores (_)`;
+    if (!/^[a-zA-Z0-9\s_\-()[\]&|]+$/.test(value)) {
+        return `${label} can only contain letters, numbers, spaces, hyphens (-), underscores (_), parentheses (), brackets [], ampersands (&), and pipes (|)`;
     }
     return null;
 };
@@ -178,10 +184,18 @@ export function validateMobile(mobile: string | undefined): string | null {
 
     // Basic validation for 10-digit mobile number
     const mobileRegex = /^[0-9]{10}$/;
-    if (!mobileRegex.test(mobile.replace(/[- ]/g, ''))) {
+    if (!mobileRegex.test(normalizePhoneDigits(mobile))) {
         return 'Please enter a valid 10-digit mobile number';
     }
 
+    return null;
+}
+
+export function validateOptionalPhoneDigits(value: string | undefined, label: string): string | null {
+    if (!value || !value.trim()) return null;
+    if (!/^\d{10}$/.test(value.trim())) {
+        return `${label} must be a valid 10-digit number`;
+    }
     return null;
 }
 
@@ -196,8 +210,32 @@ export function validatePassword(password: string): string | null {
         return 'Password is required';
     }
 
-    if (password.length < 6) {
-        return 'Password must be at least 6 characters long';
+    if (password.length < 8) {
+        return 'Password must be at least 8 characters';
+    }
+
+    if (password.length > 20) {
+        return 'Password cannot exceed 20 characters';
+    }
+
+    if (/\s/.test(password)) {
+        return 'Password must not contain spaces';
+    }
+
+    if (!/[A-Z]/.test(password)) {
+        return 'Password must include an uppercase letter';
+    }
+
+    if (!/[a-z]/.test(password)) {
+        return 'Password must include a lowercase letter';
+    }
+
+    if (!/[0-9]/.test(password)) {
+        return 'Password must include a number';
+    }
+
+    if (!/[!@#$%^&*]/.test(password)) {
+        return 'Password must include a special character';
     }
 
     return null;

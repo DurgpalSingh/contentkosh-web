@@ -1,7 +1,9 @@
-'use client'
+"use client"
 
+import { useMemo, useState } from 'react'
 import { format, formatDuration, intervalToDuration, isValid, parseISO } from 'date-fns'
 import type { TestAnalyticsAttemptRow } from '@/lib/tests/testAnalyticsTypes'
+import { sortRows, toggleDir, type SortDir } from '@/lib/utils/sort'
 
 interface StudentAttemptResultsTableProps {
   rows: TestAnalyticsAttemptRow[]
@@ -29,6 +31,39 @@ const percentageToneClass = (pct: number): string => {
 }
 
 export const StudentAttemptResultsTable = ({ rows }: StudentAttemptResultsTableProps) => {
+  const [sortBy, setSortBy] = useState<string | null>(null)
+  const [sortDir, setSortDir] = useState<SortDir>('desc')
+
+  const sorted = useMemo(() => {
+    if (!sortBy) return rows
+    const accessor = (r: TestAnalyticsAttemptRow) => {
+      switch (sortBy) {
+        case 'student':
+          return (r.studentName || '').toLowerCase()
+        case 'score':
+          return Number(r.score ?? 0)
+        case 'percentage':
+          return Number(r.percentage ?? 0)
+        case 'time':
+          return Number(r.timeTakenMinutes ?? 0)
+        case 'submitted':
+          return r.submittedAt ? Date.parse(r.submittedAt) : 0
+        default:
+          return (r as any)[sortBy]
+      }
+    }
+    return sortRows(rows, accessor, sortDir)
+  }, [rows, sortBy, sortDir])
+
+  const toggleSort = (key: string) => {
+    if (sortBy === key) {
+      setSortDir(prev => toggleDir(prev))
+    } else {
+      setSortBy(key)
+      setSortDir('desc')
+    }
+  }
+
   if (rows.length === 0) {
     return (
       <p className="text-sm text-gray-600 py-6 text-center border border-dashed border-gray-200 rounded-lg">
@@ -42,15 +77,28 @@ export const StudentAttemptResultsTable = ({ rows }: StudentAttemptResultsTableP
       <table className="min-w-full text-sm">
         <thead>
           <tr className="border-b border-gray-200 bg-gray-50 text-left">
-            <th className="px-4 py-3 font-medium text-gray-700">Student</th>
-            <th className="px-4 py-3 font-medium text-gray-700">Score</th>
-            <th className="px-4 py-3 font-medium text-gray-700">Percentage</th>
-            <th className="px-4 py-3 font-medium text-gray-700">Time taken</th>
-            <th className="px-4 py-3 font-medium text-gray-700">Submitted</th>
+            <th className="px-4 py-3 font-medium text-gray-700">
+              <button type="button" onClick={() => toggleSort('student')} className="flex items-center gap-2">
+                Student
+                {sortBy === 'student' ? (sortDir === 'asc' ? '↑' : '↓') : null}
+              </button>
+            </th>
+            <th className="px-4 py-3 font-medium text-gray-700">
+              <button type="button" onClick={() => toggleSort('score')} className="flex items-center gap-2">Score{sortBy === 'score' ? (sortDir === 'asc' ? ' ↑' : ' ↓') : null}</button>
+            </th>
+            <th className="px-4 py-3 font-medium text-gray-700">
+              <button type="button" onClick={() => toggleSort('percentage')} className="flex items-center gap-2">Percentage{sortBy === 'percentage' ? (sortDir === 'asc' ? ' ↑' : ' ↓') : null}</button>
+            </th>
+            <th className="px-4 py-3 font-medium text-gray-700">
+              <button type="button" onClick={() => toggleSort('time')} className="flex items-center gap-2">Time taken{sortBy === 'time' ? (sortDir === 'asc' ? ' ↑' : ' ↓') : null}</button>
+            </th>
+            <th className="px-4 py-3 font-medium text-gray-700">
+              <button type="button" onClick={() => toggleSort('submitted')} className="flex items-center gap-2">Submitted{sortBy === 'submitted' ? (sortDir === 'asc' ? ' ↑' : ' ↓') : null}</button>
+            </th>
           </tr>
         </thead>
         <tbody>
-          {rows.map((row) => {
+          {sorted.map((row) => {
             const pct = Math.round(row.percentage ?? 0)
             return (
               <tr key={row.attemptId} className="border-b border-gray-100 last:border-0">

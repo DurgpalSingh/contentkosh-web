@@ -37,9 +37,9 @@ export function getQuestionUiClass(state: QuestionUiState): string {
     case 'answered':
       return 'border-emerald-500 bg-emerald-600 text-white hover:bg-emerald-600';
     case 'markedForReviewUnanswered':
-      return 'border-violet-400 bg-violet-50 text-violet-900 hover:bg-violet-100/80';
+      return 'border-red-400 bg-red-50 text-red-900 hover:bg-red-100/80';
     case 'markedForReviewAnswered':
-      return 'border-cyan-500 bg-cyan-50 text-cyan-950 hover:bg-cyan-100/80';
+      return 'border-yellow-500 bg-yellow-50 text-yellow-950 hover:bg-yellow-100/80';
     case 'visited':
       return 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50';
     case 'unvisited':

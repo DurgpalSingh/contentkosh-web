@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { BatchMemberRole } from '../dashboard/batches/BatchMemberCard';
 import { USER_ROLES } from '@/lib/constants';
-import { TAB_ROLES } from '@/app/[slug]/dashboard/batches/[batchId]/page';
+import { TAB_ROLES } from '@/lib/api/models/BatchUser';
 import { toast } from 'sonner';
 
 interface AddBatchMemberModalProps {

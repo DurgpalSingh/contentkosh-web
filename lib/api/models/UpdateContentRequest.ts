@@ -8,7 +8,7 @@ export type UpdateContentRequest = {
     /** Updated status */
     status?: UpdateContentRequest.status;
     /** Updated subject ID */
-    subjectId: number;
+    subjectId?: number;
 };
 export namespace UpdateContentRequest {
     /**

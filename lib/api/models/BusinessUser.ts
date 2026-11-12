@@ -51,6 +51,10 @@ export type BusinessUser = {
          * User mobile
          */
         mobile?: string;
+        /**
+         * User profile picture URL or path
+         */
+        profilePicture?: string | null;
     };
     business?: {
         /**
@@ -71,6 +75,7 @@ export namespace BusinessUser {
         STUDENT = 'STUDENT',
         TEACHER = 'TEACHER',
         ADMIN = 'ADMIN',
+        USER = 'USER',
         SUPERADMIN = 'SUPERADMIN',
     }
 }

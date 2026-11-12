@@ -8,8 +8,10 @@ import {
   BatchesService,
   ExamTestsService,
   PracticeTestsService,
+  SubjectiveTestsService,
   SubjectsService,
   type Subject,
+  type SubjectiveAvailableTest,
 } from '@/lib/api';
 import { getApiErrorDetailMessage } from '@/lib/tests/getApiErrorDetailMessage';
 import type { PracticeCatalogRow, ExamCatalogRow } from '@/lib/tests/studentTestCatalog';
@@ -23,6 +25,7 @@ export default function StudentMyTestListPage() {
 
   const [practiceRows, setPracticeRows] = useState<PracticeCatalogRow[]>([]);
   const [examRows, setExamRows] = useState<ExamCatalogRow[]>([]);
+  const [subjectiveRows, setSubjectiveRows] = useState<SubjectiveAvailableTest[]>([]);
   const [batches, setBatches] = useState<
     { id: number; displayName?: string; codeName?: string; courseId?: number }[]
   >([]);
@@ -31,19 +34,24 @@ export default function StudentMyTestListPage() {
   const [error, setError] = useState<string | null>(null);
 
   const loadTests = useCallback(async () => {
-    if (typeof businessId !== 'number') return;
+    if (typeof businessId !== 'number') return undefined;
     setLoading(true);
     setError(null);
     try {
-      const [practiceRes, examRes, batchesRes, subjectsRes] = await Promise.all([
+      const [practiceRes, examRes, subjectiveRes, batchesRes, subjectsRes] = await Promise.all([
         PracticeTestsService.getApiBusinessPracticeTestsAvailable(businessId),
         ExamTestsService.getApiBusinessExamTestsAvailable(businessId),
+        SubjectiveTestsService.getApiBusinessSubjectiveTestsAvailable(businessId),
         BatchesService.getApiBatchesAll('course'),
         SubjectsService.getApiSubjectsUser(),
       ]);
-      setPracticeRows((practiceRes.data ?? []) as PracticeCatalogRow[]);
-      setExamRows((examRes.data ?? []) as ExamCatalogRow[]);
-      setSubjects((subjectsRes.data ?? []) as Subject[]);
+      const nextPracticeRows = (practiceRes.data ?? []) as PracticeCatalogRow[];
+      const nextExamRows = (examRes.data ?? []) as ExamCatalogRow[];
+      const nextSubjects = (subjectsRes.data ?? []) as Subject[];
+      setPracticeRows(nextPracticeRows);
+      setExamRows(nextExamRows);
+      setSubjectiveRows(subjectiveRes.data ?? []);
+      setSubjects(nextSubjects);
       const list = (batchesRes?.data ?? []) as Array<{
         id?: number;
         displayName?: string;
@@ -52,10 +60,12 @@ export default function StudentMyTestListPage() {
         course?: { id?: number };
       }>;
       setBatches(list as Array<{ id: number; displayName?: string; codeName?: string; courseId?: number }>);
+      return { practiceRows: nextPracticeRows, examRows: nextExamRows };
     } catch (e: unknown) {
       const msg = getApiErrorDetailMessage(e, 'Failed to load tests');
       setError(msg);
       toast.error(msg);
+      return undefined;
     } finally {
       setLoading(false);
     }
@@ -72,10 +82,12 @@ export default function StudentMyTestListPage() {
       slug={slug}
       practiceRows={practiceRows}
       examRows={examRows}
+      subjectiveRows={subjectiveRows}
       batches={batches}
       subjects={subjects}
       loading={loading}
       error={error}
+      onRefreshCatalog={loadTests}
     />
   );
 }

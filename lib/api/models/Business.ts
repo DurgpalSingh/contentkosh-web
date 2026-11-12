@@ -59,5 +59,17 @@ export type Business = {
      * Business last update timestamp
      */
     updatedAt?: string;
+    /**
+     * Super Admin lifecycle status
+     */
+    status?: 'ACTIVE' | 'PAUSED' | 'DELETED';
+    /**
+     * Reason provided by Super Admin when pausing or deleting - null when ACTIVE
+     */
+    statusReason?: string | null;
+    /**
+     * Timestamp of the last Super Admin status change
+     */
+    statusChangedAt?: string | null;
 };
 

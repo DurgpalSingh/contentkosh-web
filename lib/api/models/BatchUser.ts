@@ -81,3 +81,8 @@ export type BatchUser = {
     };
 };
 
+
+export const TAB_ROLES = {
+  TEACHER: 'Teacher',
+  STUDENT: 'Student',
+} as const;

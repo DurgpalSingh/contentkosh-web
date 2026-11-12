@@ -1,6 +1,182 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.2.45] - prod env
+**P.R Raised by** : shubh404-SE on **Date** : 2026-11-05
+
+### Changed
+  - updated prod env for frontend.
+---
+## Version [1.2.44] - user module filter fix and other ui fixes
+**P.R Raised by** : shubh404-SE on **Date** : 2026-10-29
+
+### updated
+  - users module now have guest filter and removed superadmin filter.
+  - fixed test module scroll issue.
+---
+## Version [1.2.43] - Subjective test paper + test attempt screen
+**P.R Raised by** : shubh404-SE on **Date** : 2026-10-05
+
+### Added
+  - added subjective test paper for teacher to create subjective test.
+  - added test attempt screen for student to attempt test.
+---
+## Version [1.2.42] - user set password logic
+**P.R Raised by** : shubh404-SE on **Date** : 2026-09-25
+### Updated
+  - added strict rules to user set password like register page password.
+---
+## Version [1.2.41] - bussiness workspace access
+**P.R Raised by** : shubh404-SE on **Date** : 2026-09-11
+
+### Changes
+  - Now superadmin can access a bussiness workspace without login as a bussiness admin, superadmin can access all the pages of bussiness workspace.
+---
+## Version [1.2.40] - Terms & conditions and privacy policy pages
+**P.R Raised by** : shubh404-SE on **Date** : 2026-08-31
+
+### Added
+  - added terms & conditions and privacy policy pages.
+  - added linked in register page.
+
+## Version [1.2.39] - Bussiness suspend refersh token infinite loop issue fixed
+**P.R Raised by** : shubh404-SE on **Date** : 2026-08-25
+
+### Changed
+  - fixed infinite loop issue in refresh token api when business is suspended.
+  - changes "Pause" bussiness status to "Hold"
+---
+## Version [1.2.38] - Super admin flow
+**P.R Raised by** : shubh404-SE on **Date** : 2026-08-21
+
+### Added
+  - added super admin flow to manage all business, 
+  - super admin can pause/resume or delete any business from the page /superadmin/businesses.
+---
+## Version [1.2.37] - course card ui
+**P.R Raised by** : shubh404-SE on **Date** : 2026-08-14
+
+### Changed
+  - Simplify Course Card by Removing Unnecessary Information
+## Version [1.2.36] - course price tag
+**P.R Raised by** : shubh404-SE on **Date** : 2026-08-01
+### Added
+  - added a new field in course to add price tag for course.
+---
+## Version [1.2.35] - edit announcement restrict + resume exam test
+**P.R Raised by** : shubh404-SE on **Date** : 2026-06-30
+
+### Changes
+  - once announcement is saved by admin/teacher, it can not be edited by them.
+  - student can resume his exam if he exist by mistake.
+---
+## Version [1.2.34] - integrated add thumbnail in course 
+**P.R Raised by** : shubh404-SE on **Date** : 2026-06-27
+
+### Change
+  - in add course and edit course modal added a new field to add thumbnail picture for course.
+---
+## Version [1.2.33] - Test module fixes + announcement course scope
+**P.R Raised by** : shubh404-SE on **Date** : 2026-06-26
+
+### Changes
+  - Test module fixes for result page and test attempt confirm page for instructions.
+  - Announcement module fixes for course scope and audience selection when no batch in a course.
+## Version [1.2.32] - Bulk import questions with doc/excel
+**P.R Raised by** : shubh404-SE on **Date** : 2026-04-23
+
+### Added
+  - intigrated apis to import questions directly from doc and excel.
+  - added a component to drag drop file and to see preview of questions?
+  - providing a preview api to see parsed questions before adding.
+---
+## Version [1.2.31]- build issue about lightingcss
+**P.R Raised by** : shubh404-SE on **Date** : 2026-06-19
+
+### Change
+  - updated `package-lock` file after removing node module and .next.
+---
+## Version [1.2.30]- Profile setting page and Student Dashboard
+**P.R Raised by** : shubh404-SE on **Date** : 2026-06-19
+
+### Changes
+  - Profile setting page ui improved and added validations for mobile number
+  - Student dashboard ui improved and added a new component to show student profile details.  
+---
+## Version [1.2.29] - content page and settings page UI fixes
+**P.R Raised by** : shubh404-SE on **Date** : 2026-06-13
+
+### Changes
+  - Settings page ui improved and added validations for mobile number
+  - Contentpage ui fixed and implimented pdf and image viewer modal.
+---
+## Version [1.2.28] - question media feature and ui fixed
+**P.R Raised by** : shubh404-SE on **Date** : 2026-06-09
+
+### Changed
+  - added images atachment in tiptap editor with image upload and delete api.
+  - in production business  logo issue fixed
+  - default subject removed from create test form.
+  - few ui fixed
+--- 
+## Version [1.2.27] - Settings profile UI + analytics page UI + table filter
+**P.R Raised by** : shubh404-SE on **Date** : 2026-06-03
+
+### Changed
+  - settings profile, now student/teacher can create their profile without admin permision, and also can edit their profile.
+  - analytics page UI improved for better user experience.
+  - added a generic table filter component in result tables
+## Version [1.2.26] - Dashboard heading + test attempt/result page ui
+**P.R Raised by** : shubh404-SE on **Date** : 2026-06-02
+
+### Changed
+  - text "Student/Teacher/Admin Dashboard" changed to "My Dashboard" in all dashboard pages.
+  - result page cards issue solved. 
+  - test attempt question list box and question content ui fix (scroll issue and flag color issue).
+---
+## Version [1.2.25] - subject field in test and content + login page tag line
+**P.R Raised by** : shubh404-SE on **Date** : 2026-05-29
+
+### Changed
+  - now subject is optional in test and content.
+  - login page tag line changed
+---
+## Version [1.2.24] - common special character validation added in Name field
+**P.R Raised by** : shubh404-SE on **Date** : 2026-05-28
+
+### Changed
+  - `(, ), [, ], &,|` Allowed these extra fields in name field
+  - favicon added.
+---.
+## Version [1.2.23] - uat config fixed + readme file updated
+**P.R Raised by** : shubh404-SE on **Date** : 2026-05-27
+
+### Changed
+  - uat config fixed for frontend and readme file updated.
+---
+## Version [1.2.22] - Question Preview added in test for teacher
+**P.R Raised by** : shubh404-SE on **Date** : 2026-05-26
+
+### Changed
+  - created a new component to show question preview with all its fields.
+  - Question section locked when there is attempt in test.
+---
+## Version [1.2.21] - Build type error fix
+**P.R Raised by** : shubh404-SE on **Date** : 2026-05-19
+### Changed
+  - fixed build time type errors.
+---
+## Version [1.2.20] - Type error fix in users page
+**P.R Raised by** : shubh404-SE on **Date** : 2026-05-19
+### Changed
+  - fixed type error in users page which cause crash in users page. 
+
+## Version [1.2.19] - Profile picture visibility + announcement audience fixes
+**P.R Raised by** : shubh404-SE on **Date** : 2026-05-15
+### Changed
+  - added profile picture rendering in batch member details modal and in student and teacher profile pages.
+  - removed announcement socket fallback notification on announcement fetch failure to prevent false-positive alerts.
+---
 ## Version [1.2.18] - UAT config 
 **P.R Raised by** : shubh404-SE on **Date** : 2026-05-10
 ### Changed

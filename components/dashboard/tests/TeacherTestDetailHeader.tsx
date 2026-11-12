@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import type { ExamTest, PracticeTest } from '@/lib/api'
-import { TEST_KIND, TEST_KIND_LABEL, type TestKind } from '@/lib/tests/testConstants'
+import { TEST_KIND, TEST_KIND_LABEL, type QuestionTestKind } from '@/lib/tests/testConstants'
 import {
   formatDurationMinutes,
   testStatus,
@@ -12,7 +12,7 @@ import {
 import { ArrowLeft } from 'lucide-react'
 
 interface TeacherTestDetailHeaderProps {
-  kind: TestKind
+  kind: QuestionTestKind
   listHref: string
   title: string
   test: PracticeTest | ExamTest

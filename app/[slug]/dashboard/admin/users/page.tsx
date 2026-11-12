@@ -19,7 +19,7 @@ import { EditUserModal } from '@/components/modals/EditUserModal';
 import { AddUserModal } from '@/components/modals/AddUserModal';
 import { CreateUserRequest } from '@/lib/api';
 import { toast } from 'sonner';
-import { USER_ROLES } from '@/lib/constants';
+import { USER_ROLES, USER_ROLE_FILTER_ALL, getUserRoleLabel } from '@/lib/constants';
 
 type UserIndex = {
   usersByKey: Map<string, BusinessUser>;
@@ -29,11 +29,11 @@ type UserIndex = {
 };
 
 const ROLE_FILTER_OPTIONS: RoleFilter[] = [
-  'ALL',
+  USER_ROLE_FILTER_ALL,
   BusinessUser.role.ADMIN,
-  BusinessUser.role.SUPERADMIN,
   BusinessUser.role.TEACHER,
   BusinessUser.role.STUDENT,
+  BusinessUser.role.USER,
 ];
 
 const normalize = (value: string | number | undefined | null): string =>
@@ -44,7 +44,7 @@ const getUserKey = (userItem: BusinessUser, index: number): string =>
 
 function buildUserIndex(users: BusinessUser[]): UserIndex {
   const usersByKey = new Map<string, BusinessUser>();
-  const keysByRole = new Map<RoleFilter, string[]>([['ALL', []]]);
+  const keysByRole = new Map<RoleFilter, string[]>([[USER_ROLE_FILTER_ALL, []]]);
   const searchableByKey = new Map<string, string>();
   const exactKeysByTerm = new Map<string, Set<string>>();
 
@@ -57,7 +57,7 @@ function buildUserIndex(users: BusinessUser[]): UserIndex {
 
     usersByKey.set(key, userItem);
     searchableByKey.set(key, `${name} ${email} ${mobile} ${normalize(role)}`.trim());
-    keysByRole.get('ALL')?.push(key);
+    keysByRole.get(USER_ROLE_FILTER_ALL)?.push(key);
 
     if (!keysByRole.has(role)) {
       keysByRole.set(role, []);
@@ -100,13 +100,13 @@ export default function UsersPage() {
   const { setSelectedTeacherUser } = useTeacherStore();
   const { setSelectedStudentUser } = useStudentStore();
   const router = useRouter();
-  const teacherUserPath = (userId: string) => `${window.location.pathname}/teacher/${userId}`;
-  const studentUserPath = (userId: string) => `${window.location.pathname}/student/${userId}`;
+  const teacherUserPath = (userId: string | number) => `${window.location.pathname}/teacher/${userId}`;
+  const studentUserPath = (userId: string | number) => `${window.location.pathname}/student/${userId}`;
   const [users, setUsers] = useState<BusinessUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedRole, setSelectedRole] = useState<RoleFilter>('ALL');
+  const [selectedRole, setSelectedRole] = useState<RoleFilter>(USER_ROLE_FILTER_ALL);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const [isAddAdminModalOpen, setIsAddAdminModalOpen] = useState(false);
@@ -187,12 +187,22 @@ const restoreScrollPosition = () => {
   };
 
   const handleDeleteClick = (userToDelete: BusinessUser) => {
+    if (userToDelete.user?.id === user?.id) {
+      toast.error('You cannot remove your own account');
+      return;
+    }
     setSelectedUser(userToDelete);
     setIsDeleteModalOpen(true);
   };
 
   const handleConfirmDelete = async () => {
     if (!selectedUser?.user?.id) return;
+    if (selectedUser.user.id === user?.id) {
+      toast.error('You cannot remove your own account');
+      setIsDeleteModalOpen(false);
+      setSelectedUser(null);
+      return;
+    }
 
     try {
       await UsersService.deleteApiUsers(selectedUser.user.id);
@@ -206,6 +216,7 @@ const restoreScrollPosition = () => {
   };
 
   const handleRowClick = (userItem: BusinessUser) => {
+    const profilePicture = (userItem.user as { profilePicture?: string | null } | undefined)?.profilePicture;
     if (userItem.user?.id && userItem.role === USER_ROLES.TEACHER) {
       sessionStorage.setItem('usersPageScrollY', scrollRef.current?.scrollTop.toString() || '0');
       sessionStorage.setItem('usersPageFilter', selectedRole);
@@ -215,7 +226,8 @@ const restoreScrollPosition = () => {
         email: userItem.user.email || '',
         mobile: userItem.user.mobile,
         role: User.role.TEACHER,
-      });
+        ...(profilePicture ? { profilePicture } : {}),
+      } as User);
       router.push(teacherUserPath(userItem.user.id));
     } else if (userItem.user?.id && userItem.role === USER_ROLES.STUDENT) {
       sessionStorage.setItem('usersPageScrollY', scrollRef.current?.scrollTop.toString() || '0');
@@ -226,7 +238,8 @@ const restoreScrollPosition = () => {
         email: userItem.user.email || '',
         mobile: userItem.user.mobile,
         role: User.role.STUDENT,
-      });
+        ...(profilePicture ? { profilePicture } : {}),
+      } as User);
       router.push(studentUserPath(userItem.user.id));
     }
   };
@@ -330,6 +343,7 @@ const restoreScrollPosition = () => {
                     onRowClick={() => handleRowClick(row.user)}
                     onEdit={() => handleEditClick(row.user)}
                     onDelete={() => handleDeleteClick(row.user)}
+                    currentUserId={user.id}
                   />
                 ))}
               </div>
@@ -378,7 +392,19 @@ const restoreScrollPosition = () => {
   );
 }
 
-function UserRowComponent({ user, onRowClick, onEdit, onDelete }: { user: BusinessUser; onRowClick: () => void; onEdit: () => void; onDelete: () => void }) {
+function UserRowComponent({
+  user,
+  currentUserId,
+  onRowClick,
+  onEdit,
+  onDelete,
+}: {
+  user: BusinessUser;
+  currentUserId?: number;
+  onRowClick: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
   const getRoleColor = (role?: string) => {
     switch (role) {
       case 'ADMIN':
@@ -408,6 +434,7 @@ function UserRowComponent({ user, onRowClick, onEdit, onDelete }: { user: Busine
   };
 
   const isClickable = user.role === 'TEACHER' || user.role === 'STUDENT';
+  const canDelete = user.user?.id !== currentUserId;
   const profilePicturePath = (user.user as { profilePicture?: string | null } | undefined)?.profilePicture;
   const profilePictureUrl = useMemo(() => resolveAssetUrl(profilePicturePath ?? null), [profilePicturePath]);
 
@@ -430,7 +457,7 @@ function UserRowComponent({ user, onRowClick, onEdit, onDelete }: { user: Busine
               <h4 className="text-sm font-medium text-gray-900 truncate">{user.user?.name || 'Unknown'}</h4>
               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRoleColor(user.role)}`}>
                 {getRoleIcon(user.role)}
-                <span className="ml-1">{user.role || 'Unknown'}</span>
+                <span className="ml-1">{getUserRoleLabel(user.role)}</span>
               </span>
             </div>
             <div className="flex items-center mt-1 text-xs sm:text-sm text-gray-500">
@@ -461,17 +488,19 @@ function UserRowComponent({ user, onRowClick, onEdit, onDelete }: { user: Busine
               <Edit className="h-4 w-4 mr-1" />
               <span className="hidden sm:inline">Edit</span>
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-red-600 hover:text-red-800 hover:bg-red-50 text-xs sm:text-sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete();
-              }}
-            >
-              Remove
-            </Button>
+            {canDelete && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-red-600 hover:text-red-800 hover:bg-red-50 text-xs sm:text-sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
+              >
+                Remove
+              </Button>
+            )}
           </div>
         </div>
       </div>
