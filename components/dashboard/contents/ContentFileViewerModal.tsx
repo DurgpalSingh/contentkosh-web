@@ -6,6 +6,9 @@ import { Download, FileText, Image as ImageIcon, Loader2, X } from 'lucide-react
 import { Button } from '@/components/ui/button';
 import { ContentsService, type Content } from '@/lib/api';
 import { PdfCanvasPreview } from '@/components/common/PdfCanvasPreview';
+import { DocxPreview } from '@/components/common/DocxPreview';
+import { SettingsService } from '@/lib/api/services/SettingsService';
+import { useAuthStore } from '@/store/useAuthStore';
 import {
   CONTENT_FILE_VIEWER_BYTE_UNITS,
   CONTENT_FILE_VIEWER_FILE_MATCHERS,
@@ -63,9 +66,12 @@ export function ContentFileViewerModal({ content, isOpen, onClose }: ContentFile
   const [blob, setBlob] = useState<Blob | null>(null);
   const [status, setStatus] = useState<ViewerStatus>('idle');
   const [error, setError] = useState<string | null>(null);
+  const [studentDownloadsEnabled, setStudentDownloadsEnabled] = useState(true);
+  const isStudent = useAuthStore((state) => state.user?.role === 'STUDENT');
 
   const fileKind = useMemo(() => getFileKind(content, blob), [content, blob]);
   const fileViewerMode = useMemo(() => getFileViewerMode(fileKind), [fileKind]);
+  const canDownload = !isStudent || studentDownloadsEnabled || fileViewerMode === 'download';
   const showLoading = status === 'fetching' || status === 'loading-preview';
 
   useEffect(() => {
@@ -80,6 +86,7 @@ export function ContentFileViewerModal({ content, isOpen, onClose }: ContentFile
   useEffect(() => {
     if (!isOpen || !content?.id) return;
 
+    const contentId = content.id;
     let cancelled = false;
     let nextUrl: string | null = null;
 
@@ -87,9 +94,17 @@ export function ContentFileViewerModal({ content, isOpen, onClose }: ContentFile
     setError(null);
     setBlob(null);
     setFileUrl(null);
+    setStudentDownloadsEnabled(true);
 
-    ContentsService.getApiContentsFile({ contentId: content.id })
-      .then((response) => {
+    const loadContentFile = async () => {
+      try {
+        if (isStudent) {
+          const settings = await SettingsService.getSettingsProfile();
+          if (cancelled) return;
+          setStudentDownloadsEnabled(settings.business?.allowContentDownloads ?? true);
+        }
+
+        const response = await ContentsService.getApiContentsFile({ contentId });
         if (cancelled) return;
         const nextBlob = response as Blob;
         nextUrl = URL.createObjectURL(nextBlob);
@@ -98,19 +113,21 @@ export function ContentFileViewerModal({ content, isOpen, onClose }: ContentFile
 
         const kind = getFileKind(content, nextBlob);
         setStatus(getFileViewerMode(kind) === 'download' ? 'ready' : 'loading-preview');
-      })
-      .catch((err) => {
+      } catch (err) {
         if (cancelled) return;
-        console.error('Failed to load content file:', err);
-        setError('Failed to load this file. Please try again.');
+        console.error('Failed to load content file or download settings:', err);
+        setError('Failed to load this file or its download settings. Please try again.');
         setStatus('error');
-      });
+      }
+    };
+
+    void loadContentFile();
 
     return () => {
       cancelled = true;
       if (nextUrl) URL.revokeObjectURL(nextUrl);
     };
-  }, [content, isOpen]);
+  }, [content, isOpen, isStudent]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -125,21 +142,21 @@ export function ContentFileViewerModal({ content, isOpen, onClose }: ContentFile
   }, [isOpen]);
 
   const handleDownload = useCallback(() => {
-    if (!fileUrl || !content) return;
+    if (!fileUrl || !content || !canDownload) return;
     const link = document.createElement('a');
     link.href = fileUrl;
     link.download = content.title || 'content-file';
     document.body.appendChild(link);
     link.click();
     link.remove();
-  }, [content, fileUrl]);
+  }, [canDownload, content, fileUrl]);
 
-  const handlePdfReady = useCallback(() => {
+  const handlePreviewReady = useCallback(() => {
     setStatus('ready');
   }, []);
 
-  const handlePdfError = useCallback(() => {
-    setError('Failed to prepare the PDF preview. Please download the file and try again.');
+  const handlePreviewError = useCallback(() => {
+    setError('Failed to prepare the file preview. Please try again.');
     setStatus('error');
   }, []);
 
@@ -163,7 +180,7 @@ export function ContentFileViewerModal({ content, isOpen, onClose }: ContentFile
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            {fileUrl && (
+            {fileUrl && canDownload && (
               <>
                 <Button type="button" variant="outline" size="sm" onClick={handleDownload}>
                   <Download className="mr-2 h-4 w-4" />
@@ -201,8 +218,16 @@ export function ContentFileViewerModal({ content, isOpen, onClose }: ContentFile
             <PdfCanvasPreview
               blob={blob}
               title={content.title || 'Content file'}
-              onReady={handlePdfReady}
-              onError={handlePdfError}
+              onReady={handlePreviewReady}
+              onError={handlePreviewError}
+            />
+          )}
+
+          {blob && fileViewerMode === 'docx' && (
+            <DocxPreview
+              blob={blob}
+              onReady={handlePreviewReady}
+              onError={handlePreviewError}
             />
           )}
 
@@ -230,12 +255,14 @@ export function ContentFileViewerModal({ content, isOpen, onClose }: ContentFile
                 <p className="mt-2 text-sm text-slate-600">
                   Your browser cannot reliably render this document inside the page. Download it to open it with your system document viewer.
                 </p>
-                <div className="mt-5 flex justify-center">
-                  <Button type="button" onClick={handleDownload} className="bg-blue-600 text-white hover:bg-blue-700">
-                    <Download className="mr-2 h-4 w-4" />
-                    Download File
-                  </Button>
-                </div>
+                {canDownload && (
+                  <div className="mt-5 flex justify-center">
+                    <Button type="button" onClick={handleDownload} className="bg-blue-600 text-white hover:bg-blue-700">
+                      <Download className="mr-2 h-4 w-4" />
+                      Download File
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           )}

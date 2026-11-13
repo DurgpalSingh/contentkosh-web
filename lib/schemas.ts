@@ -148,4 +148,5 @@ export const settingsBusinessDetailsSchema = z.object({
         .transform((value) => (value ? value : undefined)),
     email: optionalEmail,
     address: optionalTrimmedString,
+    allowContentDownloads: z.boolean(),
 });

@@ -14,10 +14,16 @@ export const CONTENT_FILE_VIEWER_FILE_MATCHERS = [
     extensionPattern: /\.(jpg|jpeg|png|webp)$/i,
   },
   {
+    kind: 'docx',
+    viewer: 'docx',
+    mimeFragments: ['wordprocessingml'],
+    extensions: ['.docx'],
+  },
+  {
     kind: 'doc',
     viewer: 'download',
-    mimeFragments: ['word', 'doc'],
-    extensionPattern: /\.(doc|docx)$/i,
+    mimeFragments: ['application/msword'],
+    extensionPattern: /\.doc$/i,
   },
 ] as const;
 
