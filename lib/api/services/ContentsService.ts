@@ -45,6 +45,43 @@ export class ContentsService {
     }
 
     /**
+     * Create multiple contents in one request (multipart/form-data).
+     * Form data: `files` (repeated), `titles` (JSON array in the same order as files),
+     * optional `subjectId` and `status` applied to every created content.
+     * All-or-nothing: if any file fails validation, nothing is created.
+     * @param batchId Batch ID
+     * @param formData Form data containing files, titles, and optional subjectId/status
+     * @returns any Contents created successfully
+     * @throws ApiError
+     */
+    public static postApiBatchesContentsBulk({
+        batchId,
+        formData,
+    }: {
+        /** Batch ID */
+        batchId: number,
+        formData: FormData,
+    }): CancelablePromise<(ApiResponse & {
+        data?: Array<Content>;
+    })> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/batches/{batchId}/contents/bulk',
+            path: {
+                'batchId': batchId,
+            },
+            formData: formData as any,
+            mediaType: 'multipart/form-data',
+            errors: {
+                400: `Invalid input data or file validation failed`,
+                403: `Insufficient permissions`,
+                404: `Batch not found`,
+                500: `Internal server error`,
+            },
+        });
+    }
+
+    /**
      * Get contents for a batch
      * @param batchId Batch ID
      * @param type Filter by content type
