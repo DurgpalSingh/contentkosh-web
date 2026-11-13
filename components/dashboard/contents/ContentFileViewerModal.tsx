@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
-import { Download, FileText, Image as ImageIcon, Loader2, X } from 'lucide-react';
+import { Download, Expand, FileText, Image as ImageIcon, Loader2, Minimize2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ContentsService, type Content } from '@/lib/api';
 import { PdfCanvasPreview } from '@/components/common/PdfCanvasPreview';
@@ -63,6 +63,7 @@ export function ContentFileViewerModal({ content, isOpen, onClose }: ContentFile
   const [blob, setBlob] = useState<Blob | null>(null);
   const [status, setStatus] = useState<ViewerStatus>('idle');
   const [error, setError] = useState<string | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const fileKind = useMemo(() => getFileKind(content, blob), [content, blob]);
   const fileViewerMode = useMemo(() => getFileViewerMode(fileKind), [fileKind]);
@@ -114,6 +115,7 @@ export function ContentFileViewerModal({ content, isOpen, onClose }: ContentFile
 
   useEffect(() => {
     if (!isOpen) {
+      setIsFullscreen(false);
       setFileUrl((currentUrl) => {
         if (currentUrl) URL.revokeObjectURL(currentUrl);
         return null;
@@ -146,8 +148,19 @@ export function ContentFileViewerModal({ content, isOpen, onClose }: ContentFile
   if (!isOpen || !content) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-3 backdrop-blur-sm sm:p-6">
-      <div className="flex h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+    <div
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-sm ${
+        isFullscreen ? 'p-0' : 'p-3 sm:p-6'
+      }`}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={content.title || 'Content file'}
+        className={`flex w-full flex-col overflow-hidden bg-white shadow-2xl ${
+          isFullscreen ? 'h-screen max-w-none rounded-none' : 'h-[92vh] max-w-6xl rounded-2xl'
+        }`}
+      >
         <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
           <div className="flex min-w-0 items-center gap-3">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
@@ -163,6 +176,16 @@ export function ContentFileViewerModal({ content, isOpen, onClose }: ContentFile
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setIsFullscreen((current) => !current)}
+              aria-label={isFullscreen ? 'Exit full screen' : 'Open full screen'}
+              title={isFullscreen ? 'Exit full screen' : 'Open full screen'}
+            >
+              {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Expand className="h-4 w-4" />}
+            </Button>
             {fileUrl && (
               <>
                 <Button type="button" variant="outline" size="sm" onClick={handleDownload}>
