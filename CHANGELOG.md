@@ -1,6 +1,11 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.2.46] - content download button setting
+**P.R Raised by** : shubh404-SE on **Date** : 2026-11-14
+
+### Added
+  - added a new setting in business setting to show/hide content download button in settings.
 ## Version [1.2.45] - prod env
 **P.R Raised by** : shubh404-SE on **Date** : 2026-11-05
 

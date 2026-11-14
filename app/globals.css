@@ -3,6 +3,17 @@
 
 @custom-variant dark (&:is(.dark *));
 
+.docx-preview-container .docx-wrapper {
+  padding: 1.25rem 0;
+  background: #f1f5f9;
+}
+
+.docx-preview-container .docx-wrapper > section {
+  margin: 0 auto 1.25rem;
+  background: white;
+  box-shadow: 0 1px 3px rgb(15 23 42 / 15%);
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

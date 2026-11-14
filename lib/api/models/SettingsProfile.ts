@@ -31,6 +31,7 @@ export interface SettingsBusinessDetails {
   email?: string | null;
   address?: string | null;
   logo?: string | null;
+  allowContentDownloads?: boolean;
 }
 
 export interface SettingsProfileResponse {
@@ -70,6 +71,7 @@ export interface UpdateSettingsProfilePayload {
     email?: string;
     address?: string;
     logo?: string | null;
+    allowContentDownloads?: boolean;
   };
   profilePictureFile?: File | null;
   businessLogoFile?: File | null;
