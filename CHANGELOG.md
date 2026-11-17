@@ -1,6 +1,12 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.2.50] - test attempt ui fix for mobile view
+**P.R Raised by** : shubh404-SE on **Date** : 2026-11-17
+
+### Changed 
+  - test attempt screen ui fixed for mobile view, now student can attempt test without any issue in mobile view.
+---
 ## Version [1.2.49] - fix cpntent stream issue ad ui 
 **P.R Raised by** : shubh404-SE on **Date** : 2026-11-17
 
