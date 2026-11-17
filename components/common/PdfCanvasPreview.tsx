@@ -7,14 +7,15 @@ import {
 } from '@/lib/contentFileViewer.config';
 
 export type PdfCanvasPreviewProps = {
-  blob: Blob;
+  blob?: Blob;
+  url?: string;
   title: string;
   onReady: () => void;
   onError: () => void;
 };
 
 /** Renders every page of a PDF blob onto canvases (pdf.js). Shared by content and subjective test viewers. */
-export function PdfCanvasPreview({ blob, title, onReady, onError }: PdfCanvasPreviewProps) {
+export function PdfCanvasPreview({ blob, url, title, onReady, onError }: PdfCanvasPreviewProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -31,8 +32,11 @@ export function PdfCanvasPreview({ blob, title, onReady, onError }: PdfCanvasPre
         const pdfjs = await import('pdfjs-dist');
         pdfjs.GlobalWorkerOptions.workerSrc = CONTENT_FILE_VIEWER_PDF.workerSrc;
 
-        const data = await blob.arrayBuffer();
-        const task = pdfjs.getDocument({ data });
+        if (!blob && !url) throw new Error('A PDF file source is required.');
+        const source = blob
+          ? { data: await blob.arrayBuffer() }
+          : { url, withCredentials: true };
+        const task = pdfjs.getDocument(source);
         loadingTask = task;
         const pdf = await task.promise;
 
@@ -71,9 +75,10 @@ export function PdfCanvasPreview({ blob, title, onReady, onError }: PdfCanvasPre
 
           context.setTransform(outputScale, 0, 0, outputScale, 0, 0);
           await page.render({ canvas, canvasContext: context, viewport }).promise;
+          if (pageNumber === 1 && !cancelled) onReady();
         }
 
-        if (!cancelled) onReady();
+        if (!cancelled && pdf.numPages === 0) onReady();
       } catch (err) {
         if (cancelled) return;
         console.error('Failed to render PDF preview:', err);
@@ -88,7 +93,7 @@ export function PdfCanvasPreview({ blob, title, onReady, onError }: PdfCanvasPre
       loadingTask?.destroy().catch(() => undefined);
       container?.replaceChildren();
     };
-  }, [blob, onError, onReady]);
+  }, [blob, onError, onReady, url]);
 
   return (
     <div className="h-full overflow-auto bg-slate-100 px-3 py-5 sm:px-5" aria-label={CONTENT_FILE_VIEWER_PDF.previewLabel(title)}>

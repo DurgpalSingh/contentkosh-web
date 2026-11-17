@@ -22,7 +22,7 @@ import { createIndexedTextFilter } from '@/lib/indexedFiltering';
 import { buildSubjectsByCourseIndex } from '@/lib/subjectsByCourseIndex';
 
 type ContentViewMode = 'grid' | 'list';
-const CONTENT_VIEW_MODE_STORAGE_KEY = 'contents:viewMode';
+const CONTENT_VIEW_MODE_STORAGE_KEY = 'contents:viewMode:v2';
 
 export default function ContentsPage() {
   const { user, business, isAuthenticated, isLoading, isInitialized } = useAuthStore();
@@ -40,7 +40,7 @@ export default function ContentsPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [viewMode, setViewMode] = useState<ContentViewMode>('grid');
+  const [viewMode, setViewMode] = useState<ContentViewMode>('list');
 
   // Restore the last used view after mount (localStorage isn't available during SSR)
   useEffect(() => {
@@ -261,7 +261,13 @@ export default function ContentsPage() {
 
   return (
     <>
-      <div className="space-y-5 sm:space-y-6">
+      <div
+        className={`space-y-5 sm:space-y-6 ${
+          viewMode === 'list' && filteredContents.length > 0 && !error
+            ? 'flex h-[calc(100dvh-8rem)] min-h-0 flex-col overflow-hidden'
+            : ''
+        }`}
+      >
         <div className="rounded-2xl bg-gradient-to-br from-slate-50 via-white to-blue-50 border border-slate-200 p-4 sm:p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
@@ -366,6 +372,7 @@ export default function ContentsPage() {
           )
         ) : viewMode === 'list' ? (
           <ContentListView
+            className="min-h-0 flex-1"
             contents={filteredContents}
             onView={handleView}
             onEdit={!isStudent ? handleEdit : undefined}
