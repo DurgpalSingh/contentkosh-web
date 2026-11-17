@@ -1,14 +1,17 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { ArrowDown, ArrowUp, Edit, Eye, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, Edit, Eye, MoreVertical, Trash2 } from 'lucide-react';
 import { Content } from '@/lib/api';
 import { formatContentBytes, getContentTypeMeta } from './contentDisplay';
+import { Popover, PopoverClose, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 
 type SortKey = 'name' | 'date' | 'type' | 'size' | 'subject' | 'uploader';
 type SortDirection = 'asc' | 'desc';
 
 interface ContentListViewProps {
+  className?: string;
   contents: Content[];
   onView: (content: Content) => void;
   onEdit?: (content: Content) => void;
@@ -49,9 +52,9 @@ const DEFAULT_DIRECTION: Record<SortKey, SortDirection> = {
 
 /**
  * Windows Explorer "Details"-style list of contents.
- * Click a column header to sort; click a row to select, double-click (or Enter) to open.
+ * Click a column header to sort; select a row or click its name to open it.
  */
-export function ContentListView({ contents, onView, onEdit, onDelete }: ContentListViewProps) {
+export function ContentListView({ className, contents, onView, onEdit, onDelete }: ContentListViewProps) {
   const [sortKey, setSortKey] = useState<SortKey>('date');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [selectedId, setSelectedId] = useState<number | undefined>(undefined);
@@ -101,10 +104,10 @@ export function ContentListView({ contents, onView, onEdit, onDelete }: ContentL
   };
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-      <div className="overflow-x-auto">
+    <div className={cn('flex min-h-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm', className)}>
+      <div className="min-h-0 flex-1 overflow-auto">
         <table className="w-full table-fixed text-sm">
-          <thead className="border-b border-slate-200 bg-slate-50 text-xs">
+          <thead className="sticky top-0 z-10 border-b border-slate-200 bg-slate-50 text-xs">
             <tr>
               {renderHeader('name', 'Name', 'w-auto')}
               {renderHeader('date', 'Date modified', 'hidden w-40 md:table-cell')}
@@ -112,7 +115,7 @@ export function ContentListView({ contents, onView, onEdit, onDelete }: ContentL
               {renderHeader('size', 'Size', 'w-20 sm:w-24')}
               {renderHeader('subject', 'Subject', 'hidden w-40 lg:table-cell')}
               {renderHeader('uploader', 'Uploaded by', 'hidden w-40 xl:table-cell')}
-              <th scope="col" className={`${hasActions ? 'w-24 sm:w-28' : 'w-12'} px-3 py-2`}>
+              <th scope="col" className={`${hasActions ? 'w-24' : 'w-12'} px-3 py-2`}>
                 <span className="sr-only">Actions</span>
               </th>
             </tr>
@@ -128,7 +131,6 @@ export function ContentListView({ contents, onView, onEdit, onDelete }: ContentL
                   tabIndex={0}
                   aria-selected={isSelected}
                   onClick={() => setSelectedId(content.id)}
-                  onDoubleClick={() => onView(content)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && e.target === e.currentTarget) onView(content);
                   }}
@@ -142,9 +144,17 @@ export function ContentListView({ contents, onView, onEdit, onDelete }: ContentL
                         <typeMeta.Icon className="h-4 w-4" />
                       </span>
                       <div className="min-w-0">
-                        <p className="truncate font-medium text-slate-900" title={title}>
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onView(content);
+                          }}
+                          className="block max-w-full truncate text-left font-medium text-slate-900 hover:text-blue-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                          title={title}
+                        >
                           {title}
-                        </p>
+                        </button>
                         <p className="truncate text-xs text-slate-500 md:hidden">
                           {formatModifiedDate(content.createdAt)}
                         </p>
@@ -176,37 +186,56 @@ export function ContentListView({ contents, onView, onEdit, onDelete }: ContentL
                     {content.uploader?.name || 'Unknown User'}
                   </td>
                   <td className="px-2 py-1.5">
-                    <div className="flex items-center justify-end gap-0.5">
+                    <div className="flex items-center justify-end gap-1">
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); onView(content); }}
-                        className="rounded-md p-1.5 text-slate-500 hover:bg-blue-100 hover:text-blue-700 transition-colors"
+                        className="rounded-md p-1.5 text-slate-500 transition-colors hover:bg-blue-100 hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                         aria-label={`View ${title}`}
                         title="View file"
                       >
                         <Eye className="h-4 w-4" />
                       </button>
-                      {onEdit && (
-                        <button
-                          type="button"
-                          onClick={(e) => { e.stopPropagation(); onEdit(content); }}
-                          className="rounded-md p-1.5 text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition-colors"
-                          aria-label={`Edit ${title}`}
-                          title="Edit"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </button>
-                      )}
-                      {onDelete && (
-                        <button
-                          type="button"
-                          onClick={(e) => { e.stopPropagation(); onDelete(content); }}
-                          className="rounded-md p-1.5 text-slate-500 hover:bg-red-100 hover:text-red-600 transition-colors"
-                          aria-label={`Delete ${title}`}
-                          title="Delete"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                      {hasActions && (
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <button
+                              type="button"
+                              onClick={(event) => event.stopPropagation()}
+                              className="rounded-md p-1.5 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                              aria-label={`More actions for ${title}`}
+                              title="More actions"
+                            >
+                              <MoreVertical className="h-4 w-4" />
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent align="end" side="bottom" className="w-36 p-1">
+                            {onEdit && (
+                              <PopoverClose asChild>
+                                <button
+                                  type="button"
+                                  onClick={() => onEdit(content)}
+                                  className="flex w-full items-center rounded-md px-2.5 py-2 text-left text-sm text-slate-700 hover:bg-slate-100"
+                                >
+                                  <Edit className="mr-2 h-4 w-4" />
+                                  Edit
+                                </button>
+                              </PopoverClose>
+                            )}
+                            {onDelete && (
+                              <PopoverClose asChild>
+                                <button
+                                  type="button"
+                                  onClick={() => onDelete(content)}
+                                  className="flex w-full items-center rounded-md px-2.5 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Delete
+                                </button>
+                              </PopoverClose>
+                            )}
+                          </PopoverContent>
+                        </Popover>
                       )}
                     </div>
                   </td>
@@ -216,7 +245,7 @@ export function ContentListView({ contents, onView, onEdit, onDelete }: ContentL
           </tbody>
         </table>
       </div>
-      <div className="border-t border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-500">
+      <div className="shrink-0 border-t border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-500">
         {contents.length} {contents.length === 1 ? 'item' : 'items'}
         {selectedId !== undefined && contents.some((c) => c.id === selectedId) && ' · 1 item selected'}
       </div>
