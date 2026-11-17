@@ -399,8 +399,8 @@ export function StudentAttemptWorkspace({
     ) : null;
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 w-full min-w-0 gap-2">
-      <div className="sticky top-0 z-30 bg-white/95 backdrop-blur-sm">
+    <div className="flex flex-col flex-1 min-h-0 w-full min-w-0 gap-2 max-sm:pb-36">
+      <div className="sticky top-0 z-30 bg-slate-50 pb-1">
         <AttemptHeader
           backHref={studentTestBasePath(slug)}
           onBack={handleLeaveAttempt}
