@@ -155,41 +155,6 @@ export class ContentsService {
     }
 
     /**
-     * Download/view content file (returns binary stream)
-     * @param contentId Content ID
-     * @returns any File streamed successfully
-     * @throws ApiError
-     */
-    public static getApiContentsFile({
-        contentId,
-    }: {
-        /** Content ID */
-        contentId: number,
-    }): CancelablePromise<Blob> {
-        // Use direct fetch because generated request utility does not expose responseType easily
-        return new CancelablePromise(async (resolve, reject, onCancel) => {
-            try {
-                const controller = new AbortController();
-                onCancel(() => controller.abort());
-                const url = `${OpenAPI.BASE}/api/contents/${encodeURIComponent(String(contentId))}/file`;
-                const res = await fetch(url, {
-                    method: 'GET',
-                    credentials: OpenAPI.CREDENTIALS,
-                    signal: controller.signal,
-                });
-                if (!res.ok) {
-                    const text = await res.text();
-                    throw new Error(`Failed to fetch file: ${res.status} ${text}`);
-                }
-                const blob = await res.blob();
-                resolve(blob);
-            } catch (err) {
-                reject(err);
-            }
-        });
-    }
-
-    /**
      * Update content
      * @param contentId Content ID
      * @param requestBody
