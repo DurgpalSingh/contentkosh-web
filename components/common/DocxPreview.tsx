@@ -22,7 +22,7 @@ export function DocxPreview({ blob, onReady, onError }: DocxPreviewProps) {
 
       try {
         const { renderAsync } = await import('docx-preview');
-        await renderAsync(await blob.arrayBuffer(), container, undefined, { useBase64URL: true });
+        await renderAsync(await blob.arrayBuffer(), container);
         if (!cancelled) onReady();
       } catch (error) {
         if (cancelled) return;

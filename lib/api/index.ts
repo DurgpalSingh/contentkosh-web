@@ -130,6 +130,7 @@ export { HealthService } from './services/HealthService';
 export { PracticeTestsService } from './services/PracticeTestsService';
 export { SubjectiveTestsService } from './services/SubjectiveTestsService';
 export { SubjectiveTestFilesService } from './services/SubjectiveTestFilesService';
+export { ContentFilesService } from './services/ContentFilesService';
 export { SubjectsService } from './services/SubjectsService';
 export { ContentsService } from './services/ContentsService';
 export { UsersService } from './services/UsersService';

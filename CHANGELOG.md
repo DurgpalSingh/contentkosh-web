@@ -1,6 +1,13 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.2.49] - fix cpntent stream issue ad ui 
+**P.R Raised by** : shubh404-SE on **Date** : 2026-11-17
+
+### Fixed
+  - fixed issue in stream content api, now user can stream content without any issue.
+  - fixed ui issue in content list page and content view page.
+---
 ## Version [1.2.48] - added email verify page and resend link feature for email verify
 **P.R Raised by** : shubh404-SE on **Date** : 2026-11-04
 
