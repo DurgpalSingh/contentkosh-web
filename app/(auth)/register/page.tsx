@@ -109,7 +109,7 @@ export default function RegisterPage() {
     handleSubmit,
     control,
     setValue,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<SignupFormData>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
@@ -122,6 +122,16 @@ export default function RegisterPage() {
       termsAccepted: false,
     }
   });
+
+  useEffect(() => {
+    if ((!isDirty && !isLoading) || registration) return;
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isDirty, isLoading, registration]);
 
   const instituteName = useWatch({
     control,
@@ -192,18 +202,18 @@ export default function RegisterPage() {
   useEffect(() => {
     if (instituteName) {
       const generatedSlug = slugify(instituteName, true);
-      setValue('slug', generatedSlug, { shouldValidate: true });
+      setValue('slug', generatedSlug, { shouldValidate: true, shouldDirty: true });
     }
   }, [instituteName, setValue]);
 
   const handleSlugChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const nextSlug = slugify(event.target.value);
-    setValue('slug', nextSlug, { shouldValidate: true });
+    setValue('slug', nextSlug, { shouldValidate: true, shouldDirty: true });
   };
 
   const handleSlugBlur = (event: React.FocusEvent<HTMLInputElement>) => {
     const nextSlug = slugify(event.target.value, true);
-    setValue('slug', nextSlug, { shouldValidate: true });
+    setValue('slug', nextSlug, { shouldValidate: true, shouldDirty: true });
   };
 
   const onSubmit = async (data: SignupFormData) => {

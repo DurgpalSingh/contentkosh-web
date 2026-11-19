@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
-import { Download, Expand, FileText, Image as ImageIcon, Loader2, Minimize2, X } from 'lucide-react';
+import { Download, Expand, FileText, Image as ImageIcon, Loader2, Minimize2, WifiOff, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ContentFilesService, type Content } from '@/lib/api';
 import { PdfCanvasPreview } from '@/components/common/PdfCanvasPreview';
@@ -27,6 +27,14 @@ type ContentFileViewerModalProps = {
   isOpen: boolean;
   onClose: () => void;
 };
+
+const NETWORK_UNAVAILABLE_MESSAGE = 'You appear to be offline. Check your internet connection and try again.';
+
+function isNetworkUnavailable(error: unknown): boolean {
+  if (typeof navigator !== 'undefined' && !navigator.onLine) return true;
+  const message = error instanceof Error ? error.message : String(error ?? '');
+  return /failed to fetch|network error|network request failed|internet disconnected|offline/i.test(message);
+}
 
 function getContentType(content: Content | null): string {
   return (content?.type || '').toLowerCase();
@@ -75,6 +83,7 @@ export function ContentFileViewerModal({ content, isOpen, onClose }: ContentFile
   const [downloadSettingError, setDownloadSettingError] = useState<string | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
+  const [isOffline, setIsOffline] = useState(false);
   const isStudent = useAuthStore((state) => state.user?.role === 'STUDENT');
   const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -87,11 +96,19 @@ export function ContentFileViewerModal({ content, isOpen, onClose }: ContentFile
 
   useEffect(() => {
     if (!isOpen) return;
+    const updateConnectivity = () => setIsOffline(!navigator.onLine);
+    updateConnectivity();
+    window.addEventListener('online', updateConnectivity);
+    window.addEventListener('offline', updateConnectivity);
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose();
     };
     document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('online', updateConnectivity);
+      window.removeEventListener('offline', updateConnectivity);
+    };
   }, [isOpen, onClose]);
 
   useEffect(() => {
@@ -129,7 +146,11 @@ export function ContentFileViewerModal({ content, isOpen, onClose }: ContentFile
         .catch((err: unknown) => {
           if (cancelled) return;
           console.error('Failed to load content download settings:', err);
-          setDownloadSettingError('Could not verify the download setting. Downloads are hidden until it can be checked.');
+          setDownloadSettingError(
+            isNetworkUnavailable(err)
+              ? NETWORK_UNAVAILABLE_MESSAGE
+              : 'We could not check the download settings right now. Please try again later.'
+          );
           setDownloadSettingLoaded(true);
         });
     }
@@ -190,8 +211,12 @@ export function ContentFileViewerModal({ content, isOpen, onClose }: ContentFile
     setStatus(CONTENT_FILE_VIEWER_STATUS.READY);
   }, []);
 
-  const handlePreviewError = useCallback(() => {
-    setError('Failed to prepare the file preview. Please try again.');
+  const handlePreviewError = useCallback((previewError?: unknown) => {
+    setError(
+      isNetworkUnavailable(previewError)
+        ? NETWORK_UNAVAILABLE_MESSAGE
+        : 'Failed to prepare the file preview. Please try again.'
+    );
     setStatus(CONTENT_FILE_VIEWER_STATUS.ERROR);
   }, []);
 
@@ -252,6 +277,12 @@ export function ContentFileViewerModal({ content, isOpen, onClose }: ContentFile
           {(downloadSettingError || downloadError) && (
             <p role="status" className="absolute left-3 right-3 top-3 z-20 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
               {downloadSettingError || downloadError}
+            </p>
+          )}
+          {isOffline && !downloadSettingError && !downloadError && (
+            <p role="status" className="absolute left-3 right-3 top-3 z-20 flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+              <WifiOff className="h-4 w-4 shrink-0" />
+              {NETWORK_UNAVAILABLE_MESSAGE}
             </p>
           )}
           {showLoading && (

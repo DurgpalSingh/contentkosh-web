@@ -237,19 +237,16 @@ export default function ContentsPage() {
   }, [isStudent]);
 
   const confirmDelete = useCallback(async () => {
-    if (!selectedContent?.id) return;
-    try {
-      await ContentsService.deleteApiContents({ contentId: selectedContent.id });
-      if (selectedBatchId) await fetchAndCacheContents(selectedBatchId);
-      toast.success('Content deleted successfully');
-    } catch (err) {
-      console.error('Delete failed:', err);
-      toast.error('Failed to delete content. Please try again.');
-    } finally {
-      setIsDeleteOpen(false);
-      setSelectedContent(null);
+    if (!selectedContent?.id) throw new Error('No content selected for deletion');
+    await ContentsService.deleteApiContents({ contentId: selectedContent.id });
+    if (selectedBatchId) {
+      const updated = (contentsByBatchIdRef.current.get(selectedBatchId) ?? contents)
+        .filter((content) => content.id !== selectedContent.id);
+      contentsByBatchIdRef.current.set(selectedBatchId, updated);
+      setContents(updated);
     }
-  }, [selectedContent, selectedBatchId, fetchAndCacheContents]);
+    toast.success('Content deleted successfully');
+  }, [contents, selectedContent, selectedBatchId]);
 
   if (isLoading || !isInitialized || loading) {
     return (
