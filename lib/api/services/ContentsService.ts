@@ -45,6 +45,43 @@ export class ContentsService {
     }
 
     /**
+     * Create multiple contents in one request (multipart/form-data).
+     * Form data: `files` (repeated), `titles` (JSON array in the same order as files),
+     * optional `subjectId` and `status` applied to every created content.
+     * All-or-nothing: if any file fails validation, nothing is created.
+     * @param batchId Batch ID
+     * @param formData Form data containing files, titles, and optional subjectId/status
+     * @returns any Contents created successfully
+     * @throws ApiError
+     */
+    public static postApiBatchesContentsBulk({
+        batchId,
+        formData,
+    }: {
+        /** Batch ID */
+        batchId: number,
+        formData: FormData,
+    }): CancelablePromise<(ApiResponse & {
+        data?: Array<Content>;
+    })> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/batches/{batchId}/contents/bulk',
+            path: {
+                'batchId': batchId,
+            },
+            formData: formData as any,
+            mediaType: 'multipart/form-data',
+            errors: {
+                400: `Invalid input data or file validation failed`,
+                403: `Insufficient permissions`,
+                404: `Batch not found`,
+                500: `Internal server error`,
+            },
+        });
+    }
+
+    /**
      * Get contents for a batch
      * @param batchId Batch ID
      * @param type Filter by content type
@@ -114,41 +151,6 @@ export class ContentsService {
                 404: `Content not found`,
                 500: `Internal server error`,
             },
-        });
-    }
-
-    /**
-     * Download/view content file (returns binary stream)
-     * @param contentId Content ID
-     * @returns any File streamed successfully
-     * @throws ApiError
-     */
-    public static getApiContentsFile({
-        contentId,
-    }: {
-        /** Content ID */
-        contentId: number,
-    }): CancelablePromise<Blob> {
-        // Use direct fetch because generated request utility does not expose responseType easily
-        return new CancelablePromise(async (resolve, reject, onCancel) => {
-            try {
-                const controller = new AbortController();
-                onCancel(() => controller.abort());
-                const url = `${OpenAPI.BASE}/api/contents/${encodeURIComponent(String(contentId))}/file`;
-                const res = await fetch(url, {
-                    method: 'GET',
-                    credentials: OpenAPI.CREDENTIALS,
-                    signal: controller.signal,
-                });
-                if (!res.ok) {
-                    const text = await res.text();
-                    throw new Error(`Failed to fetch file: ${res.status} ${text}`);
-                }
-                const blob = await res.blob();
-                resolve(blob);
-            } catch (err) {
-                reject(err);
-            }
         });
     }
 

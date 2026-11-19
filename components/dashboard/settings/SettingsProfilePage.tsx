@@ -44,6 +44,7 @@ const EMPTY_FORM: SettingsProfileFormState = {
   businessContactNumber: '',
   businessEmail: '',
   businessAddress: '',
+  businessAllowContentDownloads: true,
 };
 
 const formatDateInput = (value?: string | Date | null): string => {
@@ -112,6 +113,7 @@ export function SettingsProfilePage() {
     businessContactNumber: data.business?.contactNumber || '',
     businessEmail: data.business?.email || '',
     businessAddress: data.business?.address || '',
+    businessAllowContentDownloads: data.business?.allowContentDownloads ?? true,
   });
 
   const loadProfile = useCallback(async () => {
@@ -270,7 +272,8 @@ export function SettingsProfilePage() {
           contactNumber: form.businessContactNumber.trim() ? form.businessContactNumber : '',
           email: form.businessEmail,
           tagline: form.businessTagline,
-          address: form.businessAddress
+          address: form.businessAddress,
+          allowContentDownloads: form.businessAllowContentDownloads
         });
         if (!parsedBusinessDetails.success) {
           toast.error(parsedBusinessDetails.error.issues[0]?.message || 'Please check business details');

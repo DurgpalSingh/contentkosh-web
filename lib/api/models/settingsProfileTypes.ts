@@ -22,6 +22,7 @@ export type SettingsProfileFormState = {
   businessContactNumber: string;
   businessEmail: string;
   businessAddress: string;
+  businessAllowContentDownloads: boolean;
 };
 
 export type SettingsTextFieldKey = {

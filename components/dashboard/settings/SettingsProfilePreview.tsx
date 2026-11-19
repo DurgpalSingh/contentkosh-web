@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import Image from 'next/image';
-import { Briefcase, Building2, Edit, GraduationCap, Mail, Phone, User as UserIcon } from 'lucide-react';
+import { Briefcase, Building2, Check, Download, Edit, GraduationCap, Mail, Phone, User as UserIcon, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { SettingsProfileResponse } from '@/lib/api/models/SettingsProfile';
 import type { SettingsProfileFormState } from '@/lib/api/models/settingsProfileTypes';
@@ -158,32 +158,62 @@ export function SettingsProfilePreview({
       )}
 
       {isAdmin && (
-        <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-4">
-              <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
-                {displayedBusinessLogo ? (
-                  <Image src={displayedBusinessLogo} alt="Business logo" width={56} height={56} unoptimized className="h-full w-full object-cover" />
-                ) : (
-                  <Building2 className="h-6 w-6 text-slate-400" />
-                )}
+        <>
+          <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-4">
+                <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+                  {displayedBusinessLogo ? (
+                    <Image src={displayedBusinessLogo} alt="Business logo" width={56} height={56} unoptimized className="h-full w-full object-cover" />
+                  ) : (
+                    <Building2 className="h-6 w-6 text-slate-400" />
+                  )}
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900">Business Details</h2>
+                  <p className="text-sm text-slate-500">Institute profile and public contact details.</p>
+                </div>
+              </div>
+            </div>
+            <div className="grid gap-5 md:grid-cols-2">
+              <DetailRow label="Institute" value={form.businessInstituteName} />
+              <DetailRow label="Contact" value={form.businessContactNumber} />
+              <DetailRow label="Email" value={form.businessEmail} />
+              <DetailRow label="Tagline" value={form.businessTagline} />
+              <div className="md:col-span-2">
+                <DetailRow label="Address" value={form.businessAddress} />
+              </div>
+            </div>
+          </section>
+
+          <section className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-4">
+              <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
+                form.businessAllowContentDownloads ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'
+              }`}>
+                <Download className="h-5 w-5" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-slate-900">Business Details</h2>
-                <p className="text-sm text-slate-500">Institute profile and public contact details.</p>
+                <h2 className="font-semibold text-slate-900">Student content downloads</h2>
+                <p className="mt-1 text-sm text-slate-600">
+                  {form.businessAllowContentDownloads
+                    ? 'Students can download content files.'
+                    : 'Students can preview supported files, but downloads are disabled.'}
+                </p>
               </div>
             </div>
-          </div>
-          <div className="grid gap-5 md:grid-cols-2">
-            <DetailRow label="Institute" value={form.businessInstituteName} />
-            <DetailRow label="Contact" value={form.businessContactNumber} />
-            <DetailRow label="Email" value={form.businessEmail} />
-            <DetailRow label="Tagline" value={form.businessTagline} />
-            <div className="md:col-span-2">
-              <DetailRow label="Address" value={form.businessAddress} />
-            </div>
-          </div>
-        </section>
+            <span className={`inline-flex w-fit shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold ${
+              form.businessAllowContentDownloads
+                ? 'bg-emerald-50 text-emerald-700'
+                : 'bg-slate-100 text-slate-600'
+            }`}>
+              {form.businessAllowContentDownloads
+                ? <Check className="h-4 w-4" aria-hidden="true" />
+                : <X className="h-4 w-4" aria-hidden="true" />}
+              {form.businessAllowContentDownloads ? 'Enabled' : 'Disabled'}
+            </span>
+          </section>
+        </>
       )}
     </div>
   );

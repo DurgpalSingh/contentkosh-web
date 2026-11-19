@@ -19,7 +19,7 @@ export default function StudentMyTestAttemptLayout({ children }: { children: Rea
   }, [router, slug]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 overflow-x-hidden w-full">
+    <div className="min-h-screen flex flex-col bg-slate-50 overflow-x-clip w-full">
       {guard.needsUserGesture && (
         <div className="sticky top-0 z-40 border-b border-slate-200/90 bg-white/95 backdrop-blur-sm shrink-0 shadow-sm">
           <div className="mx-auto w-full max-w-[1320px] px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-3">

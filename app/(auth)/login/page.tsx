@@ -8,9 +8,11 @@ import { z } from 'zod';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useAuthStore } from '@/store/useAuthStore';
-import { authApi } from '@/lib/auth';
-import { ROUTES, USER_ROLES } from '@/lib/constants';
+import { AuthApiError, authApi } from '@/lib/auth';
+import { API_CODES, EMAIL_VERIFICATION, ROUTES, USER_ROLES } from '@/lib/constants';
+import { EMAIL_VERIFICATION_MESSAGES } from '@/lib/messages';
 import { LoginRequest } from '@/lib/api';
 import { toast } from 'sonner';
 
@@ -30,7 +32,9 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   // useSearchParams can cause prerender/suspense issues during SSR; use a client-only fallback
@@ -60,13 +64,16 @@ export default function LoginPage() {
   };
 
   const onSubmit = async (data: LoginFormData) => {
+    if (isLoading || isRedirecting) return;
     setIsLoading(true);
     setError(null);
+    setUnverifiedEmail(null);
+    const payloadEmail = data.email.trim();
 
     try {
       const payload: LoginRequest = {
         ...data,
-        email: data.email.trim(),
+        email: payloadEmail,
       };
 
       const response = await authApi.login(payload);
@@ -80,20 +87,29 @@ export default function LoginPage() {
         }
 
         const safeNextPath = getSafeNextPath();
+        let redirectPath: string;
         if (profile?.role === USER_ROLES.SUPERADMIN) {
           const isSuperAdminNextPath = safeNextPath?.startsWith(ROUTES.SUPERADMIN.ROOT);
-          router.push(isSuperAdminNextPath ? safeNextPath! : ROUTES.SUPERADMIN.BUSINESSES);
+          redirectPath = isSuperAdminNextPath ? safeNextPath! : ROUTES.SUPERADMIN.BUSINESSES;
         } else if (profile?.business?.slug) {
-          router.push(safeNextPath || `/${profile.business.slug}/dashboard`);
+          redirectPath = safeNextPath || `/${profile.business.slug}/dashboard`;
         } else {
-          router.push(safeNextPath || ROUTES.DASHBOARD);
+          redirectPath = safeNextPath || ROUTES.DASHBOARD;
         }
+        setIsRedirecting(true);
         toast.success('Login successful');
+        router.push(redirectPath);
       } else {
         setError('Invalid response from server');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
+      // The backend message says to verify first; keep the email so the user can request a new link.
+      setUnverifiedEmail(
+        err instanceof AuthApiError && err.apiCode === API_CODES.EMAIL_NOT_VERIFIED
+          ? (err.email ?? payloadEmail)
+          : null,
+      );
     } finally {
       setIsLoading(false);
     }
@@ -101,6 +117,17 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-10 sm:px-6 lg:px-8 flex items-center">
+      {isRedirecting && (
+        <div
+          className="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-4 bg-white/95"
+          role="status"
+          aria-live="polite"
+          aria-label="Signing in and redirecting"
+        >
+          <LoadingSpinner size="lg" />
+          <p className="text-sm font-medium text-slate-700">Login successful. Redirecting...</p>
+        </div>
+      )}
       <div className="mx-auto grid w-full max-w-5xl gap-8 lg:grid-cols-2 lg:items-center">
         <section className="mb-8 lg:mb-0">
           <Image
@@ -131,6 +158,14 @@ export default function LoginPage() {
             {error && (
               <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                 {error}
+                {unverifiedEmail && (
+                  <Link
+                    href={`${ROUTES.RESEND_VERIFICATION}?${EMAIL_VERIFICATION.EMAIL_QUERY_PARAM}=${encodeURIComponent(unverifiedEmail)}`}
+                    className="mt-2 block font-semibold text-cyan-700 hover:text-cyan-800"
+                  >
+                    {EMAIL_VERIFICATION_MESSAGES.LOGIN_RESEND_LINK}
+                  </Link>
+                )}
               </div>
             )}
 
@@ -211,7 +246,8 @@ export default function LoginPage() {
 
             <Button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || isRedirecting}
+              aria-busy={isLoading || isRedirecting}
               className="w-full rounded-xl bg-slate-900 py-2.5 text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isLoading ? 'Signing in...' : 'Sign in'}

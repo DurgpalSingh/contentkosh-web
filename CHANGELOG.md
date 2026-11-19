@@ -1,6 +1,44 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.2.51] - Delete popup on discard
+**P.R Raised by** : shubh404-SE on **Date** : 2026-11-19
+
+### Changed
+  - added a popup to confirm before discard the modal form.
+---
+## Version [1.2.50] - test attempt ui fix for mobile view
+**P.R Raised by** : shubh404-SE on **Date** : 2026-11-17
+
+### Changed 
+  - test attempt screen ui fixed for mobile view, now student can attempt test without any issue in mobile view.
+---
+## Version [1.2.49] - fix cpntent stream issue ad ui 
+**P.R Raised by** : shubh404-SE on **Date** : 2026-11-17
+
+### Fixed
+  - fixed issue in stream content api, now user can stream content without any issue.
+  - fixed ui issue in content list page and content view page.
+---
+## Version [1.2.48] - added email verify page and resend link feature for email verify
+**P.R Raised by** : shubh404-SE on **Date** : 2026-11-04
+
+### Added
+  - added email verify page for user to verify their email after registration.
+  - added resend link feature in email verify page for user to resend the verification link.
+---
+## Version [1.2.47] - content multiple upload feature
+**P.R Raised by** : shubh404-SE on **Date** : 2026-11-13
+
+### Changed
+  - added a new feature in upload content to upload multiple files at once and updated content list page view.
+---
+## Version [1.2.46] - content download button setting
+**P.R Raised by** : shubh404-SE on **Date** : 2026-11-14
+
+### Added
+  - added a new setting in business setting to show/hide content download button in settings.
+
 ## Version [1.2.45] - prod env
 **P.R Raised by** : shubh404-SE on **Date** : 2026-11-05
 

@@ -1,16 +1,24 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { X, AlertCircle, Info } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { X, AlertCircle, Info, FileText, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ContentsService, CreateContentRequest, Subject } from '@/lib/api';
-import { FileUploadArea } from '../dashboard/contents/FileUploadArea';
-import { CONTENT_UPLOAD_ACCEPT, CONTENT_UPLOAD_INFO_ITEMS, CONTENT_UPLOAD_LABEL } from '@/lib/content-upload.config';
+import { ContentsService, Subject } from '@/lib/api';
+import { formatFileSize } from '../dashboard/contents/FileUploadArea';
+import { MultiFileUploadArea } from '../dashboard/contents/MultiFileUploadArea';
+import {
+  CONTENT_UPLOAD_ACCEPT,
+  CONTENT_UPLOAD_INFO_ITEMS,
+  CONTENT_UPLOAD_LABEL,
+  CONTENT_UPLOAD_MAX_FILES,
+  getContentTitleFromFileName,
+} from '@/lib/content-upload.config';
 import { validateEntityName } from '@/lib/validation';
 import { Input } from '../ui/input';
 import { Select } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { toast } from 'sonner';
+import { DeleteConfirmModal } from '@/components/modals/DeleteConfirmModal';
 
 interface AddContentModalProps {
   isOpen: boolean;
@@ -28,6 +36,19 @@ interface AddContentModalProps {
   onCreated?: () => void;
 }
 
+interface SelectedContentFile {
+  id: string;
+  file: File;
+  title: string;
+}
+
+const getFileKey = (file: File) => `${file.name}-${file.size}-${file.lastModified}`;
+
+const getTitleError = (title: string): string | null => {
+  if (title.trim().length < 3) return 'Title must be at least 3 characters long';
+  return validateEntityName(title, 'Content title', 100);
+};
+
 export function AddContentModal({
   isOpen,
   onClose,
@@ -38,34 +59,98 @@ export function AddContentModal({
   initialSubjectId,
   onCreated,
 }: AddContentModalProps) {
-  const [title, setTitle] = useState('');
   const [status, setStatus] = useState<'ACTIVE' | 'INACTIVE'>('ACTIVE');
-  const [file, setFile] = useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<SelectedContentFile[]>([]);
+  const [titleErrors, setTitleErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isUploadInfoOpen, setIsUploadInfoOpen] = useState(false);
+  const [isDiscardConfirmationOpen, setIsDiscardConfirmationOpen] = useState(false);
   const [selectedSubjectId, setSelectedSubjectId] = useState<number | undefined>(initialSubjectId);
+  const initialBatchIdRef = useRef(selectedBatchId);
+
+  const reset = useCallback(() => {
+    setStatus('ACTIVE');
+    setSelectedFiles([]);
+    setTitleErrors({});
+    setError(null);
+    setSelectedSubjectId(initialSubjectId);
+  }, [initialSubjectId]);
+
+  const handleClose = useCallback(() => {
+    if (loading || isDiscardConfirmationOpen) return;
+    const hasUnsavedChanges =
+      selectedFiles.length > 0 ||
+      status !== 'ACTIVE' ||
+      selectedSubjectId !== initialSubjectId ||
+      selectedBatchId !== initialBatchIdRef.current;
+    if (hasUnsavedChanges) {
+      setIsDiscardConfirmationOpen(true);
+      return;
+    }
+    reset();
+    onClose();
+  }, [initialSubjectId, isDiscardConfirmationOpen, loading, onClose, reset, selectedBatchId, selectedFiles.length, selectedSubjectId, status]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) onClose();
+      if (e.key === 'Escape' && isOpen && !loading) handleClose();
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-  }, [isOpen, onClose]);
-
-  const reset = () => {
-    setTitle('');
-    setStatus('ACTIVE');
-    setFile(null);
-    setError(null);
-    setSelectedSubjectId(initialSubjectId);
-  };
+  }, [handleClose, isOpen, loading]);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || !loading) return;
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isOpen, loading]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setIsDiscardConfirmationOpen(false);
+      return;
+    }
     setSelectedSubjectId(initialSubjectId);
   }, [isOpen, initialSubjectId, subjects]);
+
+  const handleAddFiles = (files: File[]) => {
+    setSelectedFiles((prev) => {
+      const existingKeys = new Set(prev.map((item) => item.id));
+      const added = files
+        .filter((file) => !existingKeys.has(getFileKey(file)))
+        .map((file) => ({
+          id: getFileKey(file),
+          file,
+          title: getContentTitleFromFileName(file.name),
+        }));
+      return [...prev, ...added];
+    });
+  };
+
+  const removeTitleError = (id: string) => {
+    setTitleErrors((prev) => {
+      if (!(id in prev)) return prev;
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+  };
+
+  const handleRemoveFile = (id: string) => {
+    setSelectedFiles((prev) => prev.filter((item) => item.id !== id));
+    removeTitleError(id);
+    setError(null);
+  };
+
+  const handleTitleChange = (id: string, title: string) => {
+    setSelectedFiles((prev) => prev.map((item) => (item.id === id ? { ...item, title } : item)));
+    removeTitleError(id);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,17 +158,19 @@ export function AddContentModal({
       setError('Please select a batch');
       return;
     }
-    if (title.trim().length < 3) {
-      setError('Title must be at least 3 characters long');
+    if (selectedFiles.length === 0) {
+      setError('Please select at least one file');
       return;
     }
-    const validationError = validateEntityName(title, 'Content title', 100);
-    if (validationError) {
-      setError(validationError);
-      return;
+
+    const nextTitleErrors: Record<string, string> = {};
+    for (const item of selectedFiles) {
+      const titleError = getTitleError(item.title);
+      if (titleError) nextTitleErrors[item.id] = titleError;
     }
-    if (!file) {
-      setError('Please select a file');
+    setTitleErrors(nextTitleErrors);
+    if (Object.keys(nextTitleErrors).length > 0) {
+      setError('Please fix the highlighted file titles');
       return;
     }
 
@@ -91,20 +178,21 @@ export function AddContentModal({
     setError(null);
     try {
       const form = new FormData();
-      form.append('file', file);
-      form.append('title', title.trim());
+      selectedFiles.forEach((item) => form.append('files', item.file));
+      form.append('titles', JSON.stringify(selectedFiles.map((item) => item.title.trim())));
       if (status) form.append('status', status);
       if (selectedSubjectId !== undefined) {
         form.append('subjectId', String(selectedSubjectId));
       }
 
-      await ContentsService.postApiBatchesContents({
+      await ContentsService.postApiBatchesContentsBulk({
         batchId: selectedBatchId,
-        requestBody: form as unknown as CreateContentRequest
+        formData: form,
       });
       onCreated?.();
+      const count = selectedFiles.length;
       reset();
-      toast.success('Content uploaded successfully');
+      toast.success(count === 1 ? 'Content uploaded successfully' : `${count} contents uploaded successfully`);
       onClose();
     } catch (err: unknown) {
       console.error('Create content failed:', err);
@@ -128,21 +216,17 @@ export function AddContentModal({
     }
   };
 
-  const handleClose = () => {
-    reset();
-    onClose();
-  };
-
   if (!isOpen) return null;
 
   return (
+    <>
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-4">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={handleClose} />
 
-      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md overflow-y-auto max-h-[90vh]">
+      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-y-auto max-h-[90vh]">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-700">
           <h2 className="text-lg font-semibold text-white">Add Content</h2>
-          <Button variant="ghost" size="icon" onClick={handleClose} className="text-white/80 hover:text-white hover:bg-white/20">
+          <Button variant="ghost" size="icon" onClick={handleClose} disabled={loading} className="text-white/80 hover:text-white hover:bg-white/20">
             <X className="h-5 w-5" />
           </Button>
         </div>
@@ -206,20 +290,9 @@ export function AddContentModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700">Title <span className="text-red-500">*</span></label>
-            <Input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              maxLength={100}
-            />
-            <p className="mt-1 text-xs text-gray-500">{title.length}/100 characters</p>
-          </div>
-
-          <div>
             <label className="block text-sm font-medium text-slate-700">
               <span className="inline-flex items-center gap-1.5">
-                File ({CONTENT_UPLOAD_LABEL}) <span className="text-red-500">*</span>
+                Files ({CONTENT_UPLOAD_LABEL}) <span className="text-red-500">*</span>
                 <Popover open={isUploadInfoOpen} onOpenChange={setIsUploadInfoOpen}>
                   <PopoverTrigger asChild>
                     <button
@@ -253,23 +326,91 @@ export function AddContentModal({
                 </Popover>
               </span>
             </label>
-            <FileUploadArea
-              accept={CONTENT_UPLOAD_ACCEPT}
-              value={file}
-              onChange={setFile}
-              onError={setError}
-              required
-            />
+            <div className="mt-1 space-y-3">
+              {selectedFiles.length > 0 && (
+                <ul className="space-y-2" aria-label="Selected files">
+                  {selectedFiles.map((item, index) => {
+                    const titleError = titleErrors[item.id];
+                    const FileIcon = item.file.type.startsWith('image/') ? ImageIcon : FileText;
+                    return (
+                      <li
+                        key={item.id}
+                        className={`rounded-lg border p-3 ${titleError ? 'border-red-300 bg-red-50/40' : 'border-slate-200 bg-slate-50'}`}
+                      >
+                        <div className="flex items-center gap-2 text-xs text-slate-500">
+                          <FileIcon className="h-4 w-4 shrink-0 text-slate-400" />
+                          <span className="truncate" title={item.file.name}>{item.file.name}</span>
+                          <span className="shrink-0">· {formatFileSize(item.file.size)}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveFile(item.id)}
+                            className="ml-auto shrink-0 rounded-full p-1 hover:bg-red-100 transition-colors disabled:opacity-50"
+                            aria-label={`Remove ${item.file.name}`}
+                            disabled={loading}
+                          >
+                            <X className="h-4 w-4 text-red-600" />
+                          </button>
+                        </div>
+                        <label htmlFor={`content-title-${index}`} className="sr-only">
+                          Title for {item.file.name}
+                        </label>
+                        <Input
+                          id={`content-title-${index}`}
+                          value={item.title}
+                          onChange={(e) => handleTitleChange(item.id, e.target.value)}
+                          placeholder="Content title"
+                          aria-invalid={Boolean(titleError)}
+                          className={`mt-2 w-full border rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${titleError ? 'border-red-400' : 'border-gray-300'}`}
+                          maxLength={100}
+                          disabled={loading}
+                        />
+                        {titleError ? (
+                          <p className="mt-1 text-xs text-red-600">{titleError}</p>
+                        ) : (
+                          <p className="mt-1 text-xs text-gray-500">{item.title.length}/100 characters</p>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+              <MultiFileUploadArea
+                accept={CONTENT_UPLOAD_ACCEPT}
+                acceptedLabel={CONTENT_UPLOAD_LABEL}
+                selectedCount={selectedFiles.length}
+                maxFiles={CONTENT_UPLOAD_MAX_FILES}
+                onAdd={handleAddFiles}
+                onError={setError}
+                disabled={loading}
+              />
+            </div>
           </div>
 
           <div className="flex justify-end space-x-3 pt-4">
-            <Button variant="outline" onClick={handleClose}>Cancel</Button>
+            <Button type="button" variant="outline" onClick={handleClose} disabled={loading}>Cancel</Button>
             <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white" disabled={loading}>
-              {loading ? 'Uploading...' : 'Upload'}
+              {loading
+                ? 'Uploading...'
+                : selectedFiles.length > 1
+                  ? `Upload ${selectedFiles.length} files`
+                  : 'Upload'}
             </Button>
           </div>
         </form>
       </div>
     </div>
+    <DeleteConfirmModal
+      isOpen={isDiscardConfirmationOpen}
+      onClose={() => setIsDiscardConfirmationOpen(false)}
+      onConfirm={async () => {
+        reset();
+        setIsDiscardConfirmationOpen(false);
+        onClose();
+      }}
+      title="Discard changes?"
+      message="Your selected files and entered details will be lost."
+      confirmLabel="Discard changes"
+    />
+    </>
   );
 }
