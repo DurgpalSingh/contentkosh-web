@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { X, AlertCircle, Info, FileText, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ContentsService, Subject } from '@/lib/api';
@@ -18,6 +18,7 @@ import { Input } from '../ui/input';
 import { Select } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { toast } from 'sonner';
+import { DeleteConfirmModal } from '@/components/modals/DeleteConfirmModal';
 
 interface AddContentModalProps {
   isOpen: boolean;
@@ -64,26 +65,56 @@ export function AddContentModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isUploadInfoOpen, setIsUploadInfoOpen] = useState(false);
+  const [isDiscardConfirmationOpen, setIsDiscardConfirmationOpen] = useState(false);
   const [selectedSubjectId, setSelectedSubjectId] = useState<number | undefined>(initialSubjectId);
+  const initialBatchIdRef = useRef(selectedBatchId);
 
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) onClose();
-    };
-    document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
-  }, [isOpen, onClose]);
-
-  const reset = () => {
+  const reset = useCallback(() => {
     setStatus('ACTIVE');
     setSelectedFiles([]);
     setTitleErrors({});
     setError(null);
     setSelectedSubjectId(initialSubjectId);
-  };
+  }, [initialSubjectId]);
+
+  const handleClose = useCallback(() => {
+    if (loading || isDiscardConfirmationOpen) return;
+    const hasUnsavedChanges =
+      selectedFiles.length > 0 ||
+      status !== 'ACTIVE' ||
+      selectedSubjectId !== initialSubjectId ||
+      selectedBatchId !== initialBatchIdRef.current;
+    if (hasUnsavedChanges) {
+      setIsDiscardConfirmationOpen(true);
+      return;
+    }
+    reset();
+    onClose();
+  }, [initialSubjectId, isDiscardConfirmationOpen, loading, onClose, reset, selectedBatchId, selectedFiles.length, selectedSubjectId, status]);
 
   useEffect(() => {
-    if (!isOpen) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen && !loading) handleClose();
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [handleClose, isOpen, loading]);
+
+  useEffect(() => {
+    if (!isOpen || !loading) return;
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isOpen, loading]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setIsDiscardConfirmationOpen(false);
+      return;
+    }
     setSelectedSubjectId(initialSubjectId);
   }, [isOpen, initialSubjectId, subjects]);
 
@@ -185,21 +216,17 @@ export function AddContentModal({
     }
   };
 
-  const handleClose = () => {
-    reset();
-    onClose();
-  };
-
   if (!isOpen) return null;
 
   return (
+    <>
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-4">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={handleClose} />
 
       <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-y-auto max-h-[90vh]">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-700">
           <h2 className="text-lg font-semibold text-white">Add Content</h2>
-          <Button variant="ghost" size="icon" onClick={handleClose} className="text-white/80 hover:text-white hover:bg-white/20">
+          <Button variant="ghost" size="icon" onClick={handleClose} disabled={loading} className="text-white/80 hover:text-white hover:bg-white/20">
             <X className="h-5 w-5" />
           </Button>
         </div>
@@ -360,7 +387,7 @@ export function AddContentModal({
           </div>
 
           <div className="flex justify-end space-x-3 pt-4">
-            <Button variant="outline" onClick={handleClose}>Cancel</Button>
+            <Button type="button" variant="outline" onClick={handleClose} disabled={loading}>Cancel</Button>
             <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white" disabled={loading}>
               {loading
                 ? 'Uploading...'
@@ -372,5 +399,18 @@ export function AddContentModal({
         </form>
       </div>
     </div>
+    <DeleteConfirmModal
+      isOpen={isDiscardConfirmationOpen}
+      onClose={() => setIsDiscardConfirmationOpen(false)}
+      onConfirm={async () => {
+        reset();
+        setIsDiscardConfirmationOpen(false);
+        onClose();
+      }}
+      title="Discard changes?"
+      message="Your selected files and entered details will be lost."
+      confirmLabel="Discard changes"
+    />
+    </>
   );
 }
