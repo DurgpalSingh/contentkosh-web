@@ -1,6 +1,12 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.2.51] - Delete popup on discard
+**P.R Raised by** : shubh404-SE on **Date** : 2026-11-19
+
+### Changed
+  - added a popup to confirm before discard the modal form.
+---
 ## Version [1.2.50] - test attempt ui fix for mobile view
 **P.R Raised by** : shubh404-SE on **Date** : 2026-11-17
 

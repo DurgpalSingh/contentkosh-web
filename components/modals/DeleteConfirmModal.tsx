@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useId } from 'react';
 import { AlertTriangle, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -11,6 +11,7 @@ interface DeleteConfirmModalProps {
     title: string;
     message: string;
     itemName?: string;
+    confirmLabel?: string;
 }
 
 export function DeleteConfirmModal({
@@ -20,20 +21,22 @@ export function DeleteConfirmModal({
     title,
     message,
     itemName,
+    confirmLabel = 'Delete',
 }: DeleteConfirmModalProps) {
+    const titleId = useId();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape' && isOpen) {
+            if (e.key === 'Escape' && isOpen && !loading) {
                 onClose();
             }
         };
 
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [isOpen, onClose]);
+    }, [isOpen, onClose, loading]);
 
     const handleConfirm = async () => {
         setLoading(true);
@@ -52,6 +55,7 @@ export function DeleteConfirmModal({
     };
 
     const handleClose = () => {
+        if (loading) return;
         setError(null);
         onClose();
     };
@@ -63,24 +67,32 @@ export function DeleteConfirmModal({
             {/* Backdrop */}
             <div
                 className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-                onClick={handleClose}
+                onClick={() => {
+                    if (!loading) handleClose();
+                }}
             />
 
             {/* Modal */}
-            <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md overflow-y-auto max-h-[90vh]">
+            <div
+                role="alertdialog"
+                aria-modal="true"
+                aria-labelledby={titleId}
+                className="relative bg-white rounded-xl shadow-2xl w-full max-w-md overflow-y-auto max-h-[90vh]"
+            >
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
                     <div className="flex items-center space-x-3">
                         <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
                             <AlertTriangle className="h-5 w-5 text-red-600" />
                         </div>
-                        <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
+                        <h2 id={titleId} className="text-xl font-semibold text-gray-900">{title}</h2>
                     </div>
 
                     <Button
                         variant="ghost"
                         size="icon"
                         onClick={handleClose}
+                        disabled={loading}
                         className="text-gray-400 hover:text-gray-600 hover:bg-gray-100"
                     >
                         <X className="h-5 w-5" />
@@ -144,7 +156,7 @@ export function DeleteConfirmModal({
                                     Deleting...
                                 </>
                             ) : (
-                                'Delete'
+                                confirmLabel
                             )}
                         </Button>
                     </div>

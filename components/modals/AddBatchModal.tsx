@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,7 @@ import { BatchesService, Course, CreateBatchRequest } from '@/lib/api';
 import { DatePicker } from '@/components/ui/date-picker';
 import { batchSchema } from '@/lib/schemas';
 import { toast } from 'sonner';
+import { DeleteConfirmModal } from '@/components/modals/DeleteConfirmModal';
 
 interface AddBatchModalProps {
     isOpen: boolean;
@@ -33,9 +34,14 @@ export function AddBatchModal({
     const [isActive, setIsActive] = useState(true);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [isDiscardConfirmationOpen, setIsDiscardConfirmationOpen] = useState(false);
+    const defaultCourseId = initialCourseId ?? courses[0]?.id ?? 0;
 
     useEffect(() => {
-        if (!isOpen) return;
+        if (!isOpen) {
+            setIsDiscardConfirmationOpen(false);
+            return;
+        }
 
         const nextCourseId = initialCourseId ?? courses[0]?.id;
 
@@ -48,25 +54,39 @@ export function AddBatchModal({
         }
     }, [isOpen, initialCourseId, courses]);
 
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape' && isOpen) {
-                onClose();
-            }
-        };
-
-        document.addEventListener('keydown', handleKeyDown);
-        return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [isOpen, onClose]);
-
-    const resetForm = () => {
+    const resetForm = useCallback(() => {
         setCodeName('');
         setDisplayName('');
         setStartDate(undefined);
         setEndDate(undefined);
         setIsActive(true);
         setError(null);
-    };
+    }, []);
+
+    const handleClose = useCallback(() => {
+        if (loading || isDiscardConfirmationOpen) return;
+        const hasUnsavedChanges =
+            codeName.trim() !== '' ||
+            displayName.trim() !== '' ||
+            startDate !== undefined ||
+            endDate !== undefined ||
+            selectedCourseId !== defaultCourseId ||
+            !isActive;
+        if (hasUnsavedChanges) {
+            setIsDiscardConfirmationOpen(true);
+            return;
+        }
+        resetForm();
+        onClose();
+    }, [codeName, defaultCourseId, displayName, endDate, isActive, isDiscardConfirmationOpen, loading, onClose, resetForm, selectedCourseId, startDate]);
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && isOpen && !loading) handleClose();
+        };
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [handleClose, isOpen, loading]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -117,15 +137,11 @@ export function AddBatchModal({
         }
     };
 
-    const handleClose = () => {
-        resetForm();
-        onClose();
-    };
-
     if (!isOpen) return null;
     const noCoursesAvailable = courses.length === 0;
 
     return (
+        <>
         <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-4">
             {/* Backdrop */}
             <div
@@ -143,6 +159,7 @@ export function AddBatchModal({
                         variant="ghost"
                         size="icon"
                         onClick={handleClose}
+                        disabled={loading}
                         className="text-white/80 hover:text-white hover:bg-white/20"
                     >
                         <X className="h-5 w-5" />
@@ -295,5 +312,18 @@ export function AddBatchModal({
                 </form>
             </div>
         </div>
+        <DeleteConfirmModal
+            isOpen={isDiscardConfirmationOpen}
+            onClose={() => setIsDiscardConfirmationOpen(false)}
+            onConfirm={async () => {
+                resetForm();
+                setIsDiscardConfirmationOpen(false);
+                onClose();
+            }}
+            title="Discard changes?"
+            message="The information entered for this batch will be lost."
+            confirmLabel="Discard changes"
+        />
+        </>
     );
 }
