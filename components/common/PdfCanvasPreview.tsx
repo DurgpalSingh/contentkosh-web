@@ -6,6 +6,7 @@ import {
   ChevronRight,
   Gauge,
   Headphones,
+  Highlighter,
   Languages,
   Minus,
   Pause,
@@ -19,11 +20,17 @@ import {
   CONTENT_FILE_VIEWER_DEFAULT_DEVICE_PIXEL_RATIO,
   CONTENT_FILE_VIEWER_PDF,
 } from '@/lib/contentFileViewer.config';
+import {
+  applyPdfTextHighlight,
+  clearPdfTextHighlights,
+  isPdfTextSelection,
+} from './pdfTextHighlight';
 
 export type PdfCanvasPreviewProps = {
   blob?: Blob;
   url?: string;
   title: string;
+  enableHighlight?: boolean;
   onReady: () => void;
   onError: (error?: unknown) => void;
 };
@@ -55,7 +62,7 @@ function getVoiceKey(voice: SpeechSynthesisVoice): string {
 }
 
 /** Renders every page of a PDF blob onto canvases (pdf.js). Shared by content and subjective test viewers. */
-export function PdfCanvasPreview({ blob, url, title, onReady, onError }: PdfCanvasPreviewProps) {
+export function PdfCanvasPreview({ blob, url, title, enableHighlight = false, onReady, onError }: PdfCanvasPreviewProps) {
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const speechChunksRef = useRef<string[]>([]);
@@ -64,6 +71,7 @@ export function PdfCanvasPreview({ blob, url, title, onReady, onError }: PdfCanv
   const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
   const selectedVoiceRef = useRef('');
   const speechRateRef = useRef(1);
+  const selectedRangeRef = useRef<Range | null>(null);
 
   const [pdfText, setPdfText] = useState('');
   const [pageCount, setPageCount] = useState(0);
@@ -79,6 +87,8 @@ export function PdfCanvasPreview({ blob, url, title, onReady, onError }: PdfCanv
   const [speechRate, setSpeechRate] = useState(1);
   const [speechSection, setSpeechSection] = useState(0);
   const [speechSectionCount, setSpeechSectionCount] = useState(0);
+  const [canHighlightSelection, setCanHighlightSelection] = useState(false);
+  const [highlightCount, setHighlightCount] = useState(0);
 
   voicesRef.current = availableVoices;
   selectedVoiceRef.current = selectedVoice;
@@ -201,6 +211,44 @@ export function PdfCanvasPreview({ blob, url, title, onReady, onError }: PdfCanv
     if (speechState !== 'idle') restartCurrentSpeechSection(speechState === 'speaking');
   };
 
+  const handleHighlightSelection = () => {
+    const root = containerRef.current;
+    const range = selectedRangeRef.current;
+    if (!enableHighlight || !root || !range) return;
+
+    const addedHighlights = applyPdfTextHighlight(range, root);
+    if (addedHighlights > 0) setHighlightCount((current) => current + addedHighlights);
+    selectedRangeRef.current = null;
+    setCanHighlightSelection(false);
+    window.getSelection()?.removeAllRanges();
+  };
+
+  const handleClearHighlights = () => {
+    const root = containerRef.current;
+    if (!root) return;
+    clearPdfTextHighlights(root);
+    setHighlightCount(0);
+  };
+
+  useEffect(() => {
+    if (!enableHighlight) return;
+
+    const updateSelection = () => {
+      const selection = window.getSelection();
+      const root = containerRef.current;
+      if (root && isPdfTextSelection(selection, root)) {
+        selectedRangeRef.current = selection.getRangeAt(0).cloneRange();
+        setCanHighlightSelection(true);
+      } else {
+        selectedRangeRef.current = null;
+        setCanHighlightSelection(false);
+      }
+    };
+
+    document.addEventListener('selectionchange', updateSelection);
+    return () => document.removeEventListener('selectionchange', updateSelection);
+  }, [enableHighlight]);
+
   useEffect(() => {
     setSpeechAvailable('speechSynthesis' in window && 'SpeechSynthesisUtterance' in window);
     if (!('speechSynthesis' in window)) return;
@@ -231,6 +279,9 @@ export function PdfCanvasPreview({ blob, url, title, onReady, onError }: PdfCanv
     setPageInput('1');
     setZoom(100);
     setDocumentReady(false);
+    setCanHighlightSelection(false);
+    setHighlightCount(0);
+    selectedRangeRef.current = null;
     setSpeechState('idle');
     setSpeechError(null);
     speechChunksRef.current = [];
@@ -259,8 +310,9 @@ export function PdfCanvasPreview({ blob, url, title, onReady, onError }: PdfCanv
           if (cancelled) return;
 
           const page = await pdf.getPage(pageNumber);
+          let textContent: Awaited<ReturnType<typeof page.getTextContent>> | null = null;
           try {
-            const textContent = await page.getTextContent();
+            textContent = await page.getTextContent();
             extractedPages.push(
               textContent.items
                 .map((item) => ('str' in item ? item.str : ''))
@@ -303,7 +355,18 @@ export function PdfCanvasPreview({ blob, url, title, onReady, onError }: PdfCanv
           canvas.dataset.baseHeight = String(baseHeight);
           canvas.className = 'rounded-lg bg-white shadow-md ring-1 ring-slate-200';
 
-          pageShell.append(pageLabel, canvas);
+          const pageSurface = document.createElement('div');
+          pageSurface.className = 'pdf-page-surface relative';
+          pageSurface.style.width = `${baseWidth}px`;
+          pageSurface.style.height = `${baseHeight}px`;
+
+          const textLayerDiv = document.createElement('div');
+          textLayerDiv.className = 'pdf-text-layer textLayer';
+          textLayerDiv.style.width = `${baseWidth}px`;
+          textLayerDiv.style.height = `${baseHeight}px`;
+
+          pageSurface.append(canvas, textLayerDiv);
+          pageShell.append(pageLabel, pageSurface);
           container.append(pageShell);
           if (pendingPageRef.current === pageNumber) {
             pendingPageRef.current = null;
@@ -311,7 +374,16 @@ export function PdfCanvasPreview({ blob, url, title, onReady, onError }: PdfCanv
           }
 
           context.setTransform(outputScale, 0, 0, outputScale, 0, 0);
-          await page.render({ canvas, canvasContext: context, viewport }).promise;
+          const renderTasks = [page.render({ canvas, canvasContext: context, viewport }).promise];
+          if (textContent) {
+            const textLayer = new pdfjs.TextLayer({
+              textContentSource: textContent,
+              container: textLayerDiv,
+              viewport,
+            });
+            renderTasks.push(textLayer.render());
+          }
+          await Promise.all(renderTasks);
           if (pageNumber === 1 && !cancelled) onReady();
         }
 
@@ -348,8 +420,16 @@ export function PdfCanvasPreview({ blob, url, title, onReady, onError }: PdfCanv
     containerRef.current?.querySelectorAll<HTMLCanvasElement>('canvas[data-base-width]').forEach((canvas) => {
       const baseWidth = Number(canvas.dataset.baseWidth);
       const baseHeight = Number(canvas.dataset.baseHeight);
-      canvas.style.width = `${Math.round(baseWidth * zoom / 100)}px`;
-      canvas.style.height = `${Math.round(baseHeight * zoom / 100)}px`;
+      const scaledWidth = Math.round(baseWidth * zoom / 100);
+      const scaledHeight = Math.round(baseHeight * zoom / 100);
+      canvas.style.width = `${scaledWidth}px`;
+      canvas.style.height = `${scaledHeight}px`;
+      if (canvas.parentElement) {
+        canvas.parentElement.style.width = `${scaledWidth}px`;
+        canvas.parentElement.style.height = `${scaledHeight}px`;
+      }
+      const textLayer = canvas.parentElement?.querySelector<HTMLElement>('.pdf-text-layer');
+      if (textLayer) textLayer.style.transform = `scale(${zoom / 100})`;
     });
   }, [documentReady, zoom]);
 
@@ -476,6 +556,43 @@ export function PdfCanvasPreview({ blob, url, title, onReady, onError }: PdfCanv
               Fit
             </Button>
           </div>
+
+          {enableHighlight && (
+            <div
+              role="group"
+              aria-label="PDF text highlighting"
+              className="inline-flex h-10 shrink-0 items-center gap-1 rounded-xl border border-amber-100 bg-amber-50/80 p-1"
+            >
+              <Button
+                type="button"
+                size="sm"
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={handleHighlightSelection}
+                disabled={!documentReady || !canHighlightSelection}
+                className="h-8 rounded-lg bg-amber-500 px-3 text-white shadow-sm hover:bg-amber-600"
+                aria-label="Highlight selected text temporarily"
+                title="Select PDF text, then highlight it"
+              >
+                <Highlighter className="mr-1.5 h-4 w-4" />
+                Highlight
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={handleClearHighlights}
+                disabled={highlightCount === 0}
+                className="h-8 rounded-lg px-2 text-amber-800"
+                aria-label="Clear temporary highlights"
+                title="Clear temporary highlights"
+              >
+                Clear
+              </Button>
+              <span className="hidden px-1 text-[11px] font-medium text-amber-800 sm:inline">
+                Temporary
+              </span>
+            </div>
+          )}
 
           <span className="hidden h-6 w-px shrink-0 bg-slate-200 xl:block" aria-hidden="true" />
 

@@ -310,6 +310,7 @@ export function ContentFileViewerModal({ content, isOpen, onClose }: ContentFile
             <PdfCanvasPreview
               url={fileUrl}
               title={content.title || 'Content file'}
+              enableHighlight={isStudent}
               onReady={handlePreviewReady}
               onError={handlePreviewError}
             />

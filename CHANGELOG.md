@@ -1,6 +1,12 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.2.52] - highlight pdf in content view
+**P.R Raised by** : shubh404-SE on **Date** : 2026-11-24
+
+### Changed
+  - added a new feature to highlight pdf content in content view page.
+---
 ## Version [1.2.51] - Delete popup on discard
 **P.R Raised by** : shubh404-SE on **Date** : 2026-11-19
 

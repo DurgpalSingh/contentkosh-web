@@ -14,6 +14,34 @@
   box-shadow: 0 1px 3px rgb(15 23 42 / 15%);
 }
 
+.pdf-text-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  overflow: hidden;
+  line-height: 1;
+  text-align: initial;
+  transform-origin: 0 0;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.pdf-text-layer span,
+.pdf-text-layer br {
+  position: absolute;
+  color: transparent;
+  white-space: pre;
+  cursor: text;
+  transform-origin: 0 0;
+}
+
+.pdf-text-layer mark.pdf-text-highlight {
+  border-radius: 2px;
+  background: rgb(250 204 21 / 55%);
+  color: transparent;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
