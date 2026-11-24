@@ -1,9 +1,10 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
+  Eraser,
   Gauge,
   Headphones,
   Highlighter,
@@ -19,11 +20,17 @@ import { Button } from '@/components/ui/button';
 import {
   CONTENT_FILE_VIEWER_DEFAULT_DEVICE_PIXEL_RATIO,
   CONTENT_FILE_VIEWER_PDF,
+  CONTENT_FILE_VIEWER_PDF_NO_VOICES_LABEL,
+  CONTENT_FILE_VIEWER_PDF_SPEECH_API,
+  CONTENT_FILE_VIEWER_PDF_SELECTION_TOOL,
+  CONTENT_FILE_VIEWER_PDF_SELECTION_TOOL_COPY,
+  CONTENT_FILE_VIEWER_PDF_VOICE_LANGUAGES,
+  type ContentFileViewerPdfSelectionTool,
 } from '@/lib/contentFileViewer.config';
 import {
   applyPdfTextHighlight,
-  clearPdfTextHighlights,
   isPdfTextSelection,
+  removePdfTextHighlight,
 } from './pdfTextHighlight';
 
 export type PdfCanvasPreviewProps = {
@@ -39,6 +46,17 @@ const SPEECH_RATES = [0.75, 1, 1.25, 1.5, 2];
 const MIN_ZOOM = 50;
 const MAX_ZOOM = 200;
 const ZOOM_STEP = 10;
+const SUPPORTED_SPEECH_VOICE_LOCALES = new Set(
+  CONTENT_FILE_VIEWER_PDF_VOICE_LANGUAGES.map((language) => language.code.toLowerCase())
+);
+
+function getVoiceLocaleCode(voice: SpeechSynthesisVoice): string {
+  return voice.lang.toLowerCase();
+}
+
+function isSupportedSpeechVoice(voice: SpeechSynthesisVoice): boolean {
+  return SUPPORTED_SPEECH_VOICE_LOCALES.has(getVoiceLocaleCode(voice));
+}
 
 function splitSpeechText(text: string, maxLength = 1800): string[] {
   const chunks: string[] = [];
@@ -66,14 +84,16 @@ export function PdfCanvasPreview({ blob, url, title, enableHighlight = false, on
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const speechChunksRef = useRef<string[]>([]);
+  const speechChunksByPageRef = useRef<string[][]>([]);
   const speechIndexRef = useRef(0);
+  const pageInputDirtyRef = useRef(false);
   const pendingPageRef = useRef<number | null>(null);
   const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
   const selectedVoiceRef = useRef('');
   const speechRateRef = useRef(1);
-  const selectedRangeRef = useRef<Range | null>(null);
+  const selectionToolRef = useRef<ContentFileViewerPdfSelectionTool>(null);
 
-  const [pdfText, setPdfText] = useState('');
+  const [hasPdfText, setHasPdfText] = useState(false);
   const [pageCount, setPageCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageInput, setPageInput] = useState('1');
@@ -85,10 +105,18 @@ export function PdfCanvasPreview({ blob, url, title, enableHighlight = false, on
   const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoice, setSelectedVoice] = useState('');
   const [speechRate, setSpeechRate] = useState(1);
-  const [speechSection, setSpeechSection] = useState(0);
-  const [speechSectionCount, setSpeechSectionCount] = useState(0);
-  const [canHighlightSelection, setCanHighlightSelection] = useState(false);
-  const [highlightCount, setHighlightCount] = useState(0);
+  const [selectionTool, setSelectionTool] = useState<ContentFileViewerPdfSelectionTool>(null);
+
+  const availableVoicesByLocale = useMemo(() => {
+    const voicesByLocale = new Map<string, SpeechSynthesisVoice[]>();
+    for (const language of CONTENT_FILE_VIEWER_PDF_VOICE_LANGUAGES) {
+      voicesByLocale.set(language.code.toLowerCase(), []);
+    }
+    for (const voice of availableVoices) {
+      voicesByLocale.get(getVoiceLocaleCode(voice))?.push(voice);
+    }
+    return voicesByLocale;
+  }, [availableVoices]);
 
   voicesRef.current = availableVoices;
   selectedVoiceRef.current = selectedVoice;
@@ -97,12 +125,12 @@ export function PdfCanvasPreview({ blob, url, title, enableHighlight = false, on
   const speakNextChunk = useCallback(() => {
     if (speechIndexRef.current >= speechChunksRef.current.length) {
       setSpeechState('idle');
-      setSpeechSection(0);
       return;
     }
 
-    setSpeechSection(speechIndexRef.current + 1);
-    const utterance = new SpeechSynthesisUtterance(speechChunksRef.current[speechIndexRef.current]);
+    const utterance = new window[CONTENT_FILE_VIEWER_PDF_SPEECH_API.UTTERANCE_PROPERTY](
+      speechChunksRef.current[speechIndexRef.current]
+    );
     utterance.rate = speechRateRef.current;
     utterance.voice =
       voicesRef.current.find((voice) => getVoiceKey(voice) === selectedVoiceRef.current) ??
@@ -117,15 +145,15 @@ export function PdfCanvasPreview({ blob, url, title, enableHighlight = false, on
       setSpeechError('Audio playback stopped. Please try again.');
       setSpeechState('idle');
     };
-    window.speechSynthesis.speak(utterance);
+    window[CONTENT_FILE_VIEWER_PDF_SPEECH_API.SYNTHESIS_PROPERTY].speak(utterance);
   }, []);
 
   const restartCurrentSpeechSection = useCallback((resume: boolean) => {
     if (speechChunksRef.current.length === 0) return;
-    window.speechSynthesis.cancel();
+    window[CONTENT_FILE_VIEWER_PDF_SPEECH_API.SYNTHESIS_PROPERTY].cancel();
     speakNextChunk();
     if (!resume) {
-      window.speechSynthesis.pause();
+      window[CONTENT_FILE_VIEWER_PDF_SPEECH_API.SYNTHESIS_PROPERTY].pause();
       setSpeechState('paused');
     }
   }, [speakNextChunk]);
@@ -135,26 +163,36 @@ export function PdfCanvasPreview({ blob, url, title, enableHighlight = false, on
       setSpeechError('Audio playback is not supported by this browser.');
       return;
     }
+    if (availableVoices.length === 0) {
+      setSpeechError(CONTENT_FILE_VIEWER_PDF_NO_VOICES_LABEL);
+      return;
+    }
     if (speechState === 'speaking') {
-      window.speechSynthesis.pause();
+      window[CONTENT_FILE_VIEWER_PDF_SPEECH_API.SYNTHESIS_PROPERTY].pause();
       setSpeechState('paused');
       return;
     }
     if (speechState === 'paused') {
-      window.speechSynthesis.resume();
+      window[CONTENT_FILE_VIEWER_PDF_SPEECH_API.SYNTHESIS_PROPERTY].resume();
       setSpeechState('speaking');
       return;
     }
-    if (!pdfText) {
+    if (!hasPdfText) {
       setSpeechError('No readable text was found in this PDF.');
       return;
     }
 
-    speechChunksRef.current = splitSpeechText(pdfText);
+    const startPage = pageInputDirtyRef.current ? submitPageInput() : currentPage;
+    speechChunksRef.current = speechChunksByPageRef.current
+      .slice(startPage - 1)
+      .flat();
+    if (speechChunksRef.current.length === 0) {
+      setSpeechError('No readable text is available on this or following pages.');
+      return;
+    }
     speechIndexRef.current = 0;
-    setSpeechSectionCount(speechChunksRef.current.length);
     setSpeechError(null);
-    window.speechSynthesis.cancel();
+    window[CONTENT_FILE_VIEWER_PDF_SPEECH_API.SYNTHESIS_PROPERTY].cancel();
     setSpeechState('speaking');
     speakNextChunk();
   };
@@ -162,14 +200,13 @@ export function PdfCanvasPreview({ blob, url, title, enableHighlight = false, on
   const handleSpeechStop = () => {
     speechChunksRef.current = [];
     speechIndexRef.current = 0;
-    setSpeechSection(0);
-    setSpeechSectionCount(0);
-    window.speechSynthesis.cancel();
+    window[CONTENT_FILE_VIEWER_PDF_SPEECH_API.SYNTHESIS_PROPERTY].cancel();
     setSpeechState('idle');
   };
 
   const goToPage = (page: number) => {
     if (!Number.isInteger(page) || page < 1 || page > pageCount) return;
+    pageInputDirtyRef.current = false;
     setCurrentPage(page);
     setPageInput(String(page));
     const target = containerRef.current?.querySelector<HTMLElement>(`[data-page-number="${page}"]`);
@@ -181,13 +218,18 @@ export function PdfCanvasPreview({ blob, url, title, enableHighlight = false, on
     }
   };
 
-  const submitPageInput = () => {
+  const submitPageInput = (): number => {
     const page = Number(pageInput);
     if (!Number.isInteger(page) || page < 1 || page > pageCount) {
+      pageInputDirtyRef.current = false;
       setPageInput(String(currentPage));
-      return;
+      return currentPage;
     }
-    goToPage(page);
+    pageInputDirtyRef.current = false;
+    if (page !== currentPage || pageInput !== String(page)) {
+      goToPage(page);
+    }
+    return page;
   };
 
   const getFitWidthZoom = () => {
@@ -211,61 +253,63 @@ export function PdfCanvasPreview({ blob, url, title, enableHighlight = false, on
     if (speechState !== 'idle') restartCurrentSpeechSection(speechState === 'speaking');
   };
 
-  const handleHighlightSelection = () => {
-    const root = containerRef.current;
-    const range = selectedRangeRef.current;
-    if (!enableHighlight || !root || !range) return;
-
-    const addedHighlights = applyPdfTextHighlight(range, root);
-    if (addedHighlights > 0) setHighlightCount((current) => current + addedHighlights);
-    selectedRangeRef.current = null;
-    setCanHighlightSelection(false);
+  const toggleSelectionTool = (tool: Exclude<ContentFileViewerPdfSelectionTool, null>) => {
+    const nextTool = selectionTool === tool ? null : tool;
+    selectionToolRef.current = nextTool;
+    setSelectionTool(nextTool);
     window.getSelection()?.removeAllRanges();
   };
 
-  const handleClearHighlights = () => {
+  const applySelectionTool = useCallback(() => {
     const root = containerRef.current;
-    if (!root) return;
-    clearPdfTextHighlights(root);
-    setHighlightCount(0);
-  };
+    const selection = window.getSelection();
+    const tool = selectionToolRef.current;
+    if (!enableHighlight || !root || !tool || !isPdfTextSelection(selection, root)) return;
+
+    const range = selection.getRangeAt(0).cloneRange();
+    if (tool === CONTENT_FILE_VIEWER_PDF_SELECTION_TOOL.HIGHLIGHT) {
+      applyPdfTextHighlight(range, root);
+    } else {
+      removePdfTextHighlight(range, root);
+    }
+    selection.removeAllRanges();
+  }, [enableHighlight]);
 
   useEffect(() => {
     if (!enableHighlight) return;
 
-    const updateSelection = () => {
-      const selection = window.getSelection();
-      const root = containerRef.current;
-      if (root && isPdfTextSelection(selection, root)) {
-        selectedRangeRef.current = selection.getRangeAt(0).cloneRange();
-        setCanHighlightSelection(true);
-      } else {
-        selectedRangeRef.current = null;
-        setCanHighlightSelection(false);
+    const handlePointerUp = () => {
+      if (selectionToolRef.current) {
+        window.setTimeout(applySelectionTool, 0);
       }
     };
 
-    document.addEventListener('selectionchange', updateSelection);
-    return () => document.removeEventListener('selectionchange', updateSelection);
-  }, [enableHighlight]);
+    document.addEventListener('pointerup', handlePointerUp);
+    return () => {
+      document.removeEventListener('pointerup', handlePointerUp);
+    };
+  }, [applySelectionTool, enableHighlight]);
 
   useEffect(() => {
-    setSpeechAvailable('speechSynthesis' in window && 'SpeechSynthesisUtterance' in window);
-    if (!('speechSynthesis' in window)) return;
+    const speechApi = CONTENT_FILE_VIEWER_PDF_SPEECH_API;
+    setSpeechAvailable(speechApi.SYNTHESIS_PROPERTY in window && speechApi.UTTERANCE_PROPERTY in window);
+    if (!(speechApi.SYNTHESIS_PROPERTY in window)) return;
 
     const updateVoices = () => {
-      const voices = window.speechSynthesis.getVoices();
-      setAvailableVoices(voices);
+      const voices = window[speechApi.SYNTHESIS_PROPERTY].getVoices();
+      const supportedVoices = voices.filter(isSupportedSpeechVoice);
+      setAvailableVoices(supportedVoices);
       setSelectedVoice((current) => {
-        if (voices.some((voice) => getVoiceKey(voice) === current)) return current;
-        const preferred = voices.find((voice) => voice.default) ?? voices[0];
+        if (supportedVoices.some((voice) => getVoiceKey(voice) === current)) return current;
+        const preferred = supportedVoices.find((voice) => voice.default) ?? supportedVoices[0];
         return preferred ? getVoiceKey(preferred) : '';
       });
     };
 
     updateVoices();
-    window.speechSynthesis.addEventListener('voiceschanged', updateVoices);
-    return () => window.speechSynthesis.removeEventListener('voiceschanged', updateVoices);
+    window[speechApi.SYNTHESIS_PROPERTY].addEventListener(speechApi.VOICES_CHANGED_EVENT, updateVoices);
+    return () =>
+      window[speechApi.SYNTHESIS_PROPERTY].removeEventListener(speechApi.VOICES_CHANGED_EVENT, updateVoices);
   }, []);
 
   useEffect(() => {
@@ -273,15 +317,16 @@ export function PdfCanvasPreview({ blob, url, title, enableHighlight = false, on
     let loadingTask: { destroy: () => Promise<void> } | null = null;
     const container = containerRef.current;
 
-    setPdfText('');
+    setHasPdfText(false);
+    speechChunksByPageRef.current = [];
     setPageCount(0);
     setCurrentPage(1);
+    pageInputDirtyRef.current = false;
     setPageInput('1');
     setZoom(100);
     setDocumentReady(false);
-    setCanHighlightSelection(false);
-    setHighlightCount(0);
-    selectedRangeRef.current = null;
+    selectionToolRef.current = null;
+    setSelectionTool(null);
     setSpeechState('idle');
     setSpeechError(null);
     speechChunksRef.current = [];
@@ -303,7 +348,7 @@ export function PdfCanvasPreview({ blob, url, title, enableHighlight = false, on
         const task = pdfjs.getDocument(source);
         loadingTask = task;
         const pdf = await task.promise;
-        const extractedPages: string[] = [];
+        const extractedPages: string[][] = [];
         setPageCount(pdf.numPages);
 
         for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
@@ -311,18 +356,17 @@ export function PdfCanvasPreview({ blob, url, title, enableHighlight = false, on
 
           const page = await pdf.getPage(pageNumber);
           let textContent: Awaited<ReturnType<typeof page.getTextContent>> | null = null;
+          let pageText = '';
           try {
             textContent = await page.getTextContent();
-            extractedPages.push(
-              textContent.items
-                .map((item) => ('str' in item ? item.str : ''))
-                .filter(Boolean)
-                .join(' ')
-            );
+            pageText = textContent.items
+              .map((item) => ('str' in item ? item.str : ''))
+              .filter(Boolean)
+              .join(' ');
           } catch (textError) {
             console.error('Failed to extract text for PDF audio playback:', textError);
-            extractedPages.push('');
           }
+          extractedPages.push(splitSpeechText(pageText));
 
           const baseViewport = page.getViewport({ scale: CONTENT_FILE_VIEWER_PDF.baseScale });
           const availableWidth = Math.max(
@@ -364,6 +408,9 @@ export function PdfCanvasPreview({ blob, url, title, enableHighlight = false, on
           textLayerDiv.className = 'pdf-text-layer textLayer';
           textLayerDiv.style.width = `${baseWidth}px`;
           textLayerDiv.style.height = `${baseHeight}px`;
+          textLayerDiv.style.setProperty('--total-scale-factor', String(viewport.scale));
+          textLayerDiv.style.setProperty('--scale-round-x', '1px');
+          textLayerDiv.style.setProperty('--scale-round-y', '1px');
 
           pageSurface.append(canvas, textLayerDiv);
           pageShell.append(pageLabel, pageSurface);
@@ -381,6 +428,8 @@ export function PdfCanvasPreview({ blob, url, title, enableHighlight = false, on
               container: textLayerDiv,
               viewport,
             });
+            textLayerDiv.style.width = `${baseWidth}px`;
+            textLayerDiv.style.height = `${baseHeight}px`;
             renderTasks.push(textLayer.render());
           }
           await Promise.all(renderTasks);
@@ -388,10 +437,11 @@ export function PdfCanvasPreview({ blob, url, title, enableHighlight = false, on
         }
 
         if (!cancelled) {
-          const text = extractedPages.join('\n\n').trim();
-          setPdfText(text);
+          speechChunksByPageRef.current = extractedPages;
+          const hasText = extractedPages.some((pageChunks) => pageChunks.length > 0);
+          setHasPdfText(hasText);
           setDocumentReady(true);
-          if (!text) setSpeechError('This PDF does not contain readable text to play as audio.');
+          if (!hasText) setSpeechError('This PDF does not contain readable text to play as audio.');
         }
         if (!cancelled && pdf.numPages === 0) {
           setDocumentReady(true);
@@ -409,8 +459,9 @@ export function PdfCanvasPreview({ blob, url, title, enableHighlight = false, on
     return () => {
       cancelled = true;
       speechChunksRef.current = [];
+      speechChunksByPageRef.current = [];
       speechIndexRef.current = 0;
-      window.speechSynthesis?.cancel();
+      window[CONTENT_FILE_VIEWER_PDF_SPEECH_API.SYNTHESIS_PROPERTY]?.cancel();
       loadingTask?.destroy().catch(() => undefined);
       container?.replaceChildren();
     };
@@ -435,14 +486,25 @@ export function PdfCanvasPreview({ blob, url, title, enableHighlight = false, on
 
   useEffect(() => {
     if (!documentReady || !scrollContainerRef.current || !containerRef.current) return;
-    const observer = new IntersectionObserver((entries) => {
-      const mostVisible = entries
-        .filter((entry) => entry.isIntersecting)
-        .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-      const page = Number(mostVisible?.target.getAttribute('data-page-number'));
+    const observer = new IntersectionObserver(() => {
+      const viewport = scrollContainerRef.current?.getBoundingClientRect();
+      const pages = containerRef.current?.querySelectorAll<HTMLElement>('[data-page-number]');
+      if (!viewport || !pages) return;
+      let page = 0;
+      let largestVisibleArea = 0;
+      for (const target of pages) {
+        const bounds = target.getBoundingClientRect();
+        const visibleWidth = Math.max(0, Math.min(bounds.right, viewport.right) - Math.max(bounds.left, viewport.left));
+        const visibleHeight = Math.max(0, Math.min(bounds.bottom, viewport.bottom) - Math.max(bounds.top, viewport.top));
+        const visibleArea = visibleWidth * visibleHeight;
+        if (visibleArea > largestVisibleArea) {
+          page = Number(target.getAttribute('data-page-number'));
+          largestVisibleArea = visibleArea;
+        }
+      }
       if (page) {
         setCurrentPage(page);
-        setPageInput(String(page));
+        if (!pageInputDirtyRef.current) setPageInput(String(page));
       }
     }, {
       root: scrollContainerRef.current,
@@ -456,11 +518,11 @@ export function PdfCanvasPreview({ blob, url, title, enableHighlight = false, on
   return (
     <div className="flex h-full min-h-0 flex-col bg-slate-100" aria-label={CONTENT_FILE_VIEWER_PDF.previewLabel(title)}>
       <div className="z-10 shrink-0 border-b border-slate-200 bg-white shadow-sm">
-        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-2 sm:px-5 lg:flex-nowrap">
+        <div className="mx-auto flex w-full max-w-6xl flex-nowrap items-center justify-start gap-2 overflow-x-auto px-4 py-2 sm:px-5">
           <div
             role="group"
             aria-label="Page navigation"
-            className="inline-flex items-center rounded-xl border border-slate-200 bg-slate-50 p-1 shadow-sm"
+            className="inline-flex shrink-0 items-center"
           >
             <Button
               type="button"
@@ -481,8 +543,13 @@ export function PdfCanvasPreview({ blob, url, title, enableHighlight = false, on
               min={1}
               max={pageCount || undefined}
               value={pageInput}
-              onChange={(event) => setPageInput(event.target.value)}
-              onBlur={submitPageInput}
+              onChange={(event) => {
+                pageInputDirtyRef.current = true;
+                setPageInput(event.target.value);
+              }}
+              onBlur={() => {
+                if (pageInputDirtyRef.current) submitPageInput();
+              }}
               onKeyDown={(event) => {
                 if (event.key === 'Enter') {
                   submitPageInput();
@@ -510,10 +577,12 @@ export function PdfCanvasPreview({ blob, url, title, enableHighlight = false, on
             </Button>
           </div>
 
+          <span className="h-6 w-px shrink-0 bg-slate-200" aria-hidden="true" />
+
           <div
             role="group"
             aria-label="Zoom controls"
-            className="inline-flex items-center rounded-xl border border-slate-200 bg-slate-50 p-1 shadow-sm"
+            className="inline-flex shrink-0 items-center"
           >
             <Button
               type="button"
@@ -557,56 +626,67 @@ export function PdfCanvasPreview({ blob, url, title, enableHighlight = false, on
             </Button>
           </div>
 
+          <span className="h-6 w-px shrink-0 bg-slate-200" aria-hidden="true" />
+
           {enableHighlight && (
             <div
               role="group"
               aria-label="PDF text highlighting"
-              className="inline-flex h-10 shrink-0 items-center gap-1 rounded-xl border border-amber-100 bg-amber-50/80 p-1"
+              className="inline-flex h-10 shrink-0 items-center gap-1"
             >
               <Button
                 type="button"
-                size="sm"
+                size="icon"
                 onMouseDown={(event) => event.preventDefault()}
-                onClick={handleHighlightSelection}
-                disabled={!documentReady || !canHighlightSelection}
-                className="h-8 rounded-lg bg-amber-500 px-3 text-white shadow-sm hover:bg-amber-600"
-                aria-label="Highlight selected text temporarily"
-                title="Select PDF text, then highlight it"
+                onClick={() => toggleSelectionTool(CONTENT_FILE_VIEWER_PDF_SELECTION_TOOL.HIGHLIGHT)}
+                disabled={!documentReady}
+                variant={selectionTool === CONTENT_FILE_VIEWER_PDF_SELECTION_TOOL.HIGHLIGHT ? 'default' : 'outline'}
+                className={`h-8 w-8 rounded-lg ${
+                  selectionTool === CONTENT_FILE_VIEWER_PDF_SELECTION_TOOL.HIGHLIGHT
+                    ? 'bg-amber-500 text-white hover:bg-amber-600'
+                    : 'border-amber-200 bg-white text-amber-800 hover:bg-amber-100'
+                }`}
+                aria-label={CONTENT_FILE_VIEWER_PDF_SELECTION_TOOL_COPY.HIGHLIGHT.ariaLabel}
+                aria-pressed={selectionTool === CONTENT_FILE_VIEWER_PDF_SELECTION_TOOL.HIGHLIGHT}
+                title={CONTENT_FILE_VIEWER_PDF_SELECTION_TOOL_COPY.HIGHLIGHT.title}
               >
-                <Highlighter className="mr-1.5 h-4 w-4" />
-                Highlight
+                <Highlighter className="h-4 w-4" />
               </Button>
               <Button
                 type="button"
-                variant="ghost"
-                size="sm"
-                onClick={handleClearHighlights}
-                disabled={highlightCount === 0}
-                className="h-8 rounded-lg px-2 text-amber-800"
-                aria-label="Clear temporary highlights"
-                title="Clear temporary highlights"
+                size="icon"
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => toggleSelectionTool(CONTENT_FILE_VIEWER_PDF_SELECTION_TOOL.ERASE)}
+                disabled={!documentReady}
+                variant={selectionTool === CONTENT_FILE_VIEWER_PDF_SELECTION_TOOL.ERASE ? 'default' : 'outline'}
+                className={`h-8 w-8 rounded-lg ${
+                  selectionTool === CONTENT_FILE_VIEWER_PDF_SELECTION_TOOL.ERASE
+                    ? 'bg-slate-700 text-white hover:bg-slate-800'
+                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
+                }`}
+                aria-label={CONTENT_FILE_VIEWER_PDF_SELECTION_TOOL_COPY.ERASE.ariaLabel}
+                aria-pressed={selectionTool === CONTENT_FILE_VIEWER_PDF_SELECTION_TOOL.ERASE}
+                title={CONTENT_FILE_VIEWER_PDF_SELECTION_TOOL_COPY.ERASE.title}
               >
-                Clear
+                <Eraser className="h-4 w-4" />
               </Button>
-              <span className="hidden px-1 text-[11px] font-medium text-amber-800 sm:inline">
-                Temporary
-              </span>
             </div>
           )}
 
-          <span className="hidden h-6 w-px shrink-0 bg-slate-200 xl:block" aria-hidden="true" />
+          {enableHighlight && <span className="h-6 w-px shrink-0 bg-slate-200" aria-hidden="true" />}
 
           <div
             role="group"
             aria-label="PDF audio controls"
-            className="inline-flex h-10 shrink-0 items-center gap-1 rounded-xl border border-blue-100 bg-blue-50/80 p-1"
+            className="inline-flex h-10 shrink-0 items-center gap-1"
           >
             <Headphones className="ml-1 h-4 w-4 text-blue-600" aria-hidden="true" />
             <Button
               type="button"
               size="sm"
+              onMouseDown={(event) => event.preventDefault()}
               onClick={handleSpeechToggle}
-              disabled={!pdfText || !speechAvailable}
+              disabled={!hasPdfText || !speechAvailable || availableVoices.length === 0}
               className="h-8 rounded-lg bg-blue-600 px-3 text-white shadow-sm hover:bg-blue-700"
               aria-label={speechState === 'speaking' ? 'Pause PDF audio' : speechState === 'paused' ? 'Resume PDF audio' : 'Listen to PDF'}
             >
@@ -638,12 +718,21 @@ export function PdfCanvasPreview({ blob, url, title, enableHighlight = false, on
               className="h-full min-w-0 max-w-[145px] cursor-pointer bg-transparent pr-0.5 text-xs font-medium text-slate-700 outline-none disabled:cursor-not-allowed disabled:opacity-60"
               aria-label="Speech voice"
             >
-              {availableVoices.map((voice) => (
-                <option key={getVoiceKey(voice)} value={getVoiceKey(voice)}>
-                  {voice.name} ({voice.lang})
-                </option>
-              ))}
-              {availableVoices.length === 0 && <option value="">Browser default</option>}
+              {CONTENT_FILE_VIEWER_PDF_VOICE_LANGUAGES.map((language) => {
+                const languageVoices = availableVoicesByLocale.get(language.code.toLowerCase()) ?? [];
+                if (languageVoices.length === 0) return null;
+
+                return (
+                  <optgroup key={language.code} label={language.label}>
+                    {languageVoices.map((voice) => (
+                      <option key={getVoiceKey(voice)} value={getVoiceKey(voice)}>
+                        {voice.name} ({voice.lang})
+                      </option>
+                    ))}
+                  </optgroup>
+                );
+              })}
+              {availableVoices.length === 0 && <option value="">{CONTENT_FILE_VIEWER_PDF_NO_VOICES_LABEL}</option>}
             </select>
           </label>
 
@@ -663,37 +752,29 @@ export function PdfCanvasPreview({ blob, url, title, enableHighlight = false, on
             </select>
           </label>
 
-          <div
-            role="status"
-            aria-live="polite"
-            title={speechError ?? undefined}
-            className={`flex h-9 min-w-0 max-w-[190px] shrink items-center gap-2 rounded-lg px-2.5 text-xs font-medium ${
-              speechError
-                ? 'border border-amber-200 bg-amber-50 text-amber-800'
-                : speechState === 'speaking'
-                  ? 'border border-blue-100 bg-blue-50 text-blue-700'
-                  : 'border border-slate-200 bg-slate-50 text-slate-500'
-            }`}
-          >
-            <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${
-              speechError ? 'bg-amber-500' : speechState === 'speaking' ? 'animate-pulse bg-blue-600' : 'bg-slate-400'
-            }`} aria-hidden="true" />
-            <span className="truncate">
-              {speechError
-                ? speechError
-                : speechState !== 'idle'
-                  ? `${speechState === 'paused' ? 'Paused' : 'Reading'} · ${speechSection} of ${speechSectionCount}`
-                  : !speechAvailable
-                    ? 'Audio unavailable'
-                    : pdfText
-                      ? 'Ready to listen'
-                      : 'Preparing audio'}
-            </span>
-          </div>
+          {speechError && (
+            <div
+              role="status"
+              aria-live="polite"
+              className="flex h-9 min-w-0 max-w-[190px] shrink items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-2.5 text-xs font-medium text-amber-800"
+            >
+              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" aria-hidden="true" />
+              <span className="truncate">{speechError}</span>
+            </div>
+          )}
         </div>
       </div>
 
-      <div ref={scrollContainerRef} className="min-h-0 flex-1 overflow-auto px-3 py-5 sm:px-5">
+      <div
+        ref={scrollContainerRef}
+        className={`min-h-0 flex-1 overflow-auto px-3 py-5 sm:px-5 ${
+          selectionTool === CONTENT_FILE_VIEWER_PDF_SELECTION_TOOL.HIGHLIGHT
+            ? 'pdf-highlighter-active'
+            : selectionTool === CONTENT_FILE_VIEWER_PDF_SELECTION_TOOL.ERASE
+              ? 'pdf-eraser-active'
+              : ''
+        }`}
+      >
         <div ref={containerRef} className="mx-auto w-fit min-w-full" />
       </div>
     </div>

@@ -18,13 +18,21 @@
   position: absolute;
   top: 0;
   left: 0;
+  inset: 0;
   z-index: 1;
   overflow: hidden;
   line-height: 1;
+  letter-spacing: normal;
+  word-spacing: normal;
   text-align: initial;
+  text-size-adjust: none;
+  forced-color-adjust: none;
   transform-origin: 0 0;
   user-select: text;
   -webkit-user-select: text;
+  --min-font-size: 1;
+  --text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size));
+  --min-font-size-inv: calc(1 / var(--min-font-size));
 }
 
 .pdf-text-layer span,
@@ -34,6 +42,35 @@
   white-space: pre;
   cursor: text;
   transform-origin: 0 0;
+  user-select: text !important;
+  -webkit-user-select: text !important;
+}
+
+.pdf-text-layer > :not(.markedContent),
+.pdf-text-layer .markedContent span:not(.markedContent) {
+  z-index: 1;
+  --font-height: 0;
+  font-size: calc(var(--text-scale-factor) * var(--font-height));
+  --scale-x: 1;
+  --rotate: 0deg;
+  transform: rotate(var(--rotate)) scaleX(var(--scale-x)) scale(var(--min-font-size-inv));
+}
+
+.pdf-text-layer .markedContent {
+  display: contents;
+}
+
+.pdf-text-layer ::selection {
+  background: transparent;
+  color: transparent;
+}
+
+.pdf-highlighter-active .pdf-text-layer ::selection {
+  background: rgb(250 204 21 / 45%);
+}
+
+.pdf-eraser-active .pdf-text-layer ::selection {
+  background: rgb(248 113 113 / 40%);
 }
 
 .pdf-text-layer mark.pdf-text-highlight {

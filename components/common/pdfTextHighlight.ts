@@ -52,12 +52,55 @@ export function applyPdfTextHighlight(range: Range, root: HTMLElement): number {
   return highlightedNodeCount;
 }
 
-export function clearPdfTextHighlights(root: HTMLElement): number {
-  const highlights = Array.from(root.querySelectorAll(PDF_TEXT_HIGHLIGHT_SELECTOR));
-  for (const highlight of highlights) {
-    const parent = highlight.parentNode;
-    highlight.replaceWith(document.createTextNode(highlight.textContent ?? ''));
-    parent?.normalize();
+export function removePdfTextHighlight(range: Range, root: HTMLElement): number {
+  if (!root.contains(range.startContainer) || !root.contains(range.endContainer)) return 0;
+
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const markedTextNodes: Text[] = [];
+  let node = walker.nextNode();
+  while (node) {
+    if (
+      isWithinPdfTextLayer(node) &&
+      node.parentElement?.closest(PDF_TEXT_HIGHLIGHT_SELECTOR) &&
+      range.intersectsNode(node)
+    ) {
+      markedTextNodes.push(node as Text);
+    }
+    node = walker.nextNode();
   }
-  return highlights.length;
+
+  let removedCharacterCount = 0;
+  for (const textNode of markedTextNodes) {
+    const mark = textNode.parentElement?.closest(PDF_TEXT_HIGHLIGHT_SELECTOR);
+    if (!mark) continue;
+
+    const startOffset = range.startContainer === textNode ? range.startOffset : 0;
+    const endOffset = range.endContainer === textNode ? range.endOffset : textNode.length;
+    if (endOffset <= startOffset) continue;
+
+    const selectedText = startOffset > 0 ? textNode.splitText(startOffset) : textNode;
+    if (endOffset - startOffset < selectedText.length) {
+      selectedText.splitText(endOffset - startOffset);
+    }
+
+    removedCharacterCount += selectedText.length;
+    const replacements: Node[] = [];
+    // Each marker wraps one text node, so splitting it produces at most one sibling per side.
+    const textBeforeSelection = selectedText.previousSibling;
+    const textAfterSelection = selectedText.nextSibling;
+    if (textBeforeSelection) {
+      const beforeMark = mark.cloneNode(false) as HTMLElement;
+      beforeMark.append(textBeforeSelection);
+      replacements.push(beforeMark);
+    }
+    replacements.push(document.createTextNode(selectedText.textContent ?? ''));
+    if (textAfterSelection) {
+      const afterMark = mark.cloneNode(false) as HTMLElement;
+      afterMark.append(textAfterSelection);
+      replacements.push(afterMark);
+    }
+    mark.replaceWith(...replacements);
+  }
+
+  return removedCharacterCount;
 }
