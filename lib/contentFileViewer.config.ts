@@ -65,6 +65,40 @@ export const CONTENT_FILE_VIEWER_PDF = {
   previewLabel: (title: string) => `${title} PDF preview`,
 } as const;
 
+export const CONTENT_FILE_VIEWER_PDF_SELECTION_TOOL = {
+  HIGHLIGHT: 'highlight',
+  ERASE: 'erase',
+} as const;
+
+export type ContentFileViewerPdfSelectionTool =
+  (typeof CONTENT_FILE_VIEWER_PDF_SELECTION_TOOL)[keyof typeof CONTENT_FILE_VIEWER_PDF_SELECTION_TOOL] | null;
+
+export const CONTENT_FILE_VIEWER_PDF_SELECTION_TOOL_COPY = {
+  HIGHLIGHT: {
+    ariaLabel: 'Toggle highlighter tool',
+    title: 'Turn on, then drag over text to highlight',
+  },
+  ERASE: {
+    ariaLabel: 'Toggle highlight eraser',
+    title: 'Turn on, then drag over highlighted text to erase only that part',
+  },
+} as const;
+
+export const CONTENT_FILE_VIEWER_PDF_VOICE_LANGUAGES = [
+  { code: 'en-GB', label: 'English (UK)' },
+  { code: 'en-US', label: 'English (US)' },
+  { code: 'en-IN', label: 'English (India)' },
+  { code: 'hi-IN', label: 'Hindi' },
+] as const;
+
+export const CONTENT_FILE_VIEWER_PDF_SPEECH_API = {
+  SYNTHESIS_PROPERTY: 'speechSynthesis',
+  UTTERANCE_PROPERTY: 'SpeechSynthesisUtterance',
+  VOICES_CHANGED_EVENT: 'voiceschanged',
+} as const;
+
+export const CONTENT_FILE_VIEWER_PDF_NO_VOICES_LABEL = 'No English or Hindi voices available';
+
 export const CONTENT_FILE_VIEWER_IMAGE = {
   previewWidth: 1200,
   previewHeight: 900,
