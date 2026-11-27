@@ -85,11 +85,11 @@ export const CONTENT_FILE_VIEWER_PDF_SELECTION_TOOL_COPY = {
 } as const;
 
 export const CONTENT_FILE_VIEWER_PDF_VOICE_LANGUAGES = [
-  { code: 'en-GB', label: 'English (UK)' },
-  { code: 'en-US', label: 'English (US)' },
   { code: 'en-IN', label: 'English (India)' },
-  { code: 'hi-IN', label: 'Hindi' },
+  { code: 'hi-IN', label: 'Hindi (India)' },
 ] as const;
+
+export const CONTENT_FILE_VIEWER_PDF_NATURAL_VOICE_MARKERS = ['natural', 'neural'] as const;
 
 export const CONTENT_FILE_VIEWER_PDF_SPEECH_API = {
   SYNTHESIS_PROPERTY: 'speechSynthesis',
@@ -97,7 +97,18 @@ export const CONTENT_FILE_VIEWER_PDF_SPEECH_API = {
   VOICES_CHANGED_EVENT: 'voiceschanged',
 } as const;
 
-export const CONTENT_FILE_VIEWER_PDF_NO_VOICES_LABEL = 'No English or Hindi voices available';
+const PDF_HIGHLIGHT_STORAGE_KEY_PREFIX = 'contentkosh:pdf-highlights';
+const PDF_HIGHLIGHT_STORAGE_VERSION = 1;
+
+export const CONTENT_FILE_VIEWER_PDF_HIGHLIGHT_STORAGE = {
+  KEY_PREFIX: PDF_HIGHLIGHT_STORAGE_KEY_PREFIX,
+  VERSION: PDF_HIGHLIGHT_STORAGE_VERSION,
+  ERROR_MESSAGE: 'PDF highlights could not be loaded or saved in this browser.',
+  key: (userId: number, contentId: number) =>
+    `${PDF_HIGHLIGHT_STORAGE_KEY_PREFIX}:v${PDF_HIGHLIGHT_STORAGE_VERSION}:user:${userId}:content:${contentId}`,
+} as const;
+
+export const CONTENT_FILE_VIEWER_PDF_NO_VOICES_LABEL = 'No natural Indian English or Hindi voices available';
 
 export const CONTENT_FILE_VIEWER_IMAGE = {
   previewWidth: 1200,

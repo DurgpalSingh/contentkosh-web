@@ -85,6 +85,7 @@ export function ContentFileViewerModal({ content, isOpen, onClose }: ContentFile
   const [downloading, setDownloading] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
   const isStudent = useAuthStore((state) => state.user?.role === 'STUDENT');
+  const highlightUserId = useAuthStore((state) => state.user?.id);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   const fileKind = useMemo(() => getFileKind(content), [content]);
@@ -311,6 +312,8 @@ export function ContentFileViewerModal({ content, isOpen, onClose }: ContentFile
               url={fileUrl}
               title={content.title || 'Content file'}
               enableHighlight={isStudent}
+              highlightUserId={isStudent ? highlightUserId : undefined}
+              highlightContentId={isStudent ? content.id : undefined}
               onReady={handlePreviewReady}
               onError={handlePreviewError}
             />

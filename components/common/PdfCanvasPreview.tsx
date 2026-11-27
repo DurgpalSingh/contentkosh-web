@@ -20,6 +20,8 @@ import { Button } from '@/components/ui/button';
 import {
   CONTENT_FILE_VIEWER_DEFAULT_DEVICE_PIXEL_RATIO,
   CONTENT_FILE_VIEWER_PDF,
+  CONTENT_FILE_VIEWER_PDF_HIGHLIGHT_STORAGE,
+  CONTENT_FILE_VIEWER_PDF_NATURAL_VOICE_MARKERS,
   CONTENT_FILE_VIEWER_PDF_NO_VOICES_LABEL,
   CONTENT_FILE_VIEWER_PDF_SPEECH_API,
   CONTENT_FILE_VIEWER_PDF_SELECTION_TOOL,
@@ -29,8 +31,11 @@ import {
 } from '@/lib/contentFileViewer.config';
 import {
   applyPdfTextHighlight,
+  createPdfTextHighlightSnapshot,
   isPdfTextSelection,
+  parsePdfTextHighlightSnapshot,
   removePdfTextHighlight,
+  restorePdfTextHighlights,
 } from './pdfTextHighlight';
 
 export type PdfCanvasPreviewProps = {
@@ -38,6 +43,8 @@ export type PdfCanvasPreviewProps = {
   url?: string;
   title: string;
   enableHighlight?: boolean;
+  highlightUserId?: number;
+  highlightContentId?: number;
   onReady: () => void;
   onError: (error?: unknown) => void;
 };
@@ -55,7 +62,9 @@ function getVoiceLocaleCode(voice: SpeechSynthesisVoice): string {
 }
 
 function isSupportedSpeechVoice(voice: SpeechSynthesisVoice): boolean {
-  return SUPPORTED_SPEECH_VOICE_LOCALES.has(getVoiceLocaleCode(voice));
+  const voiceDescription = `${voice.name} ${voice.voiceURI}`.toLowerCase();
+  return SUPPORTED_SPEECH_VOICE_LOCALES.has(getVoiceLocaleCode(voice)) &&
+    CONTENT_FILE_VIEWER_PDF_NATURAL_VOICE_MARKERS.some((marker) => voiceDescription.includes(marker));
 }
 
 function splitSpeechText(text: string, maxLength = 1800): string[] {
@@ -80,7 +89,16 @@ function getVoiceKey(voice: SpeechSynthesisVoice): string {
 }
 
 /** Renders every page of a PDF blob onto canvases (pdf.js). Shared by content and subjective test viewers. */
-export function PdfCanvasPreview({ blob, url, title, enableHighlight = false, onReady, onError }: PdfCanvasPreviewProps) {
+export function PdfCanvasPreview({
+  blob,
+  url,
+  title,
+  enableHighlight = false,
+  highlightUserId,
+  highlightContentId,
+  onReady,
+  onError,
+}: PdfCanvasPreviewProps) {
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const speechChunksRef = useRef<string[]>([]);
@@ -106,6 +124,10 @@ export function PdfCanvasPreview({ blob, url, title, enableHighlight = false, on
   const [selectedVoice, setSelectedVoice] = useState('');
   const [speechRate, setSpeechRate] = useState(1);
   const [selectionTool, setSelectionTool] = useState<ContentFileViewerPdfSelectionTool>(null);
+  const [highlightStorageError, setHighlightStorageError] = useState(false);
+  const highlightStorageKey = highlightUserId && highlightContentId
+    ? CONTENT_FILE_VIEWER_PDF_HIGHLIGHT_STORAGE.key(highlightUserId, highlightContentId)
+    : null;
 
   const availableVoicesByLocale = useMemo(() => {
     const voicesByLocale = new Map<string, SpeechSynthesisVoice[]>();
@@ -273,7 +295,25 @@ export function PdfCanvasPreview({ blob, url, title, enableHighlight = false, on
       removePdfTextHighlight(range, root);
     }
     selection.removeAllRanges();
-  }, [enableHighlight]);
+
+    if (highlightStorageKey) {
+      try {
+        const snapshot = createPdfTextHighlightSnapshot(
+          root,
+          CONTENT_FILE_VIEWER_PDF_HIGHLIGHT_STORAGE.VERSION
+        );
+        if (Object.keys(snapshot.pages).length > 0) {
+          window.localStorage.setItem(highlightStorageKey, JSON.stringify(snapshot));
+        } else {
+          window.localStorage.removeItem(highlightStorageKey);
+        }
+        setHighlightStorageError(false);
+      } catch (storageError) {
+        console.error('Failed to save PDF text highlights:', storageError);
+        setHighlightStorageError(true);
+      }
+    }
+  }, [enableHighlight, highlightStorageKey]);
 
   useEffect(() => {
     if (!enableHighlight) return;
@@ -318,6 +358,7 @@ export function PdfCanvasPreview({ blob, url, title, enableHighlight = false, on
     const container = containerRef.current;
 
     setHasPdfText(false);
+    setHighlightStorageError(false);
     speechChunksByPageRef.current = [];
     setPageCount(0);
     setCurrentPage(1);
@@ -338,6 +379,22 @@ export function PdfCanvasPreview({ blob, url, title, enableHighlight = false, on
       if (!container) return;
 
       try {
+        let savedHighlights = null;
+        if (enableHighlight && highlightStorageKey) {
+          try {
+            const serializedHighlights = window.localStorage.getItem(highlightStorageKey);
+            if (serializedHighlights) {
+              savedHighlights = parsePdfTextHighlightSnapshot(
+                serializedHighlights,
+                CONTENT_FILE_VIEWER_PDF_HIGHLIGHT_STORAGE.VERSION
+              );
+            }
+          } catch (storageError) {
+            console.error('Failed to read saved PDF text highlights:', storageError);
+            setHighlightStorageError(true);
+          }
+        }
+
         const pdfjs = await import('pdfjs-dist');
         pdfjs.GlobalWorkerOptions.workerSrc = CONTENT_FILE_VIEWER_PDF.workerSrc;
 
@@ -437,6 +494,7 @@ export function PdfCanvasPreview({ blob, url, title, enableHighlight = false, on
         }
 
         if (!cancelled) {
+          if (savedHighlights) restorePdfTextHighlights(container, savedHighlights);
           speechChunksByPageRef.current = extractedPages;
           const hasText = extractedPages.some((pageChunks) => pageChunks.length > 0);
           setHasPdfText(hasText);
@@ -465,7 +523,7 @@ export function PdfCanvasPreview({ blob, url, title, enableHighlight = false, on
       loadingTask?.destroy().catch(() => undefined);
       container?.replaceChildren();
     };
-  }, [blob, onError, onReady, url]);
+  }, [blob, enableHighlight, highlightStorageKey, onError, onReady, url]);
 
   useEffect(() => {
     containerRef.current?.querySelectorAll<HTMLCanvasElement>('canvas[data-base-width]').forEach((canvas) => {
@@ -760,6 +818,11 @@ export function PdfCanvasPreview({ blob, url, title, enableHighlight = false, on
             >
               <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" aria-hidden="true" />
               <span className="truncate">{speechError}</span>
+            </div>
+          )}
+          {highlightStorageError && (
+            <div role="status" className="text-xs font-medium text-amber-700">
+              {CONTENT_FILE_VIEWER_PDF_HIGHLIGHT_STORAGE.ERROR_MESSAGE}
             </div>
           )}
         </div>
