@@ -1,6 +1,12 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## Version [1.2.53] - Store highlight data of pdf in db
+**P.R Raised by** : shubh404-SE on **Date** : 2026-11-28
+
+### Added
+  - added a new feature to store content pdf highlight data in db, now user can highlight text in pdf and it will be stored in db and user can see his highlights when he open the pdf again.
+---
 ## Version [1.2.52] - highlight pdf in content view
 **P.R Raised by** : shubh404-SE on **Date** : 2026-11-24
 

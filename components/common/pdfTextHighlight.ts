@@ -1,13 +1,7 @@
+import type { PdfTextHighlightSnapshot } from '@/lib/contentFileViewer.config';
+
 const PDF_TEXT_LAYER_SELECTOR = '.pdf-text-layer';
 const PDF_TEXT_HIGHLIGHT_SELECTOR = 'mark.pdf-text-highlight';
-
-export type PdfTextHighlightSnapshot = {
-  version: number;
-  pages: Record<string, {
-    textHash: string;
-    ranges: Array<{ start: number; end: number }>;
-  }>;
-};
 
 function isWithinPdfTextLayer(node: Node): boolean {
   const element = node.nodeType === Node.ELEMENT_NODE ? node as Element : node.parentElement;
@@ -74,6 +68,20 @@ export function isPdfTextSelection(selection: Selection | null, root: HTMLElemen
     isWithinPdfTextLayer(range.endContainer);
 }
 
+export function getPdfTextSelectionPageNumbers(range: Range, root: HTMLElement): number[] {
+  const getPageNumber = (node: Node): number => {
+    const element = node.nodeType === Node.ELEMENT_NODE ? node as Element : node.parentElement;
+    return Number(element?.closest<HTMLElement>('[data-page-number]')?.dataset.pageNumber);
+  };
+  const startPage = getPageNumber(range.startContainer);
+  const endPage = getPageNumber(range.endContainer);
+  if (!startPage || !endPage || !root.contains(range.startContainer) || !root.contains(range.endContainer)) return [];
+
+  const firstPage = Math.min(startPage, endPage);
+  const lastPage = Math.max(startPage, endPage);
+  return Array.from({ length: lastPage - firstPage + 1 }, (_value, index) => firstPage + index);
+}
+
 export function applyPdfTextHighlight(range: Range, root: HTMLElement): number {
   if (!root.contains(range.startContainer) || !root.contains(range.endContainer)) return 0;
 
@@ -110,9 +118,17 @@ export function applyPdfTextHighlight(range: Range, root: HTMLElement): number {
   return highlightedNodeCount;
 }
 
-export function createPdfTextHighlightSnapshot(root: HTMLElement, version: number): PdfTextHighlightSnapshot {
+export function createPdfTextHighlightSnapshot(
+  root: HTMLElement,
+  version: number,
+  pageNumbers?: number[]
+): PdfTextHighlightSnapshot {
   const pages: PdfTextHighlightSnapshot['pages'] = {};
-  const pageElements = root.querySelectorAll<HTMLElement>('[data-page-number]');
+  const pageElements = pageNumbers
+    ? pageNumbers
+      .map((pageNumber) => root.querySelector<HTMLElement>(`[data-page-number="${pageNumber}"]`))
+      .filter((pageElement): pageElement is HTMLElement => pageElement !== null)
+    : Array.from(root.querySelectorAll<HTMLElement>('[data-page-number]'));
 
   for (const pageElement of pageElements) {
     const pageNumber = pageElement.dataset.pageNumber;
@@ -151,33 +167,62 @@ export function parsePdfTextHighlightSnapshot(serialized: string, version: numbe
   if (!value || typeof value !== 'object') throw new Error('Invalid PDF highlight data.');
 
   const snapshot = value as Partial<PdfTextHighlightSnapshot>;
-  if (snapshot.version !== version || !snapshot.pages || typeof snapshot.pages !== 'object') {
+  if (
+    snapshot.version !== version ||
+    !snapshot.pages ||
+    typeof snapshot.pages !== 'object' ||
+    Array.isArray(snapshot.pages)
+  ) {
     throw new Error('Unsupported PDF highlight data.');
   }
 
   for (const [pageNumber, page] of Object.entries(snapshot.pages)) {
-    if (!/^[1-9]\d*$/.test(pageNumber) || !page || typeof page.textHash !== 'string' || !Array.isArray(page.ranges)) {
+    if (
+      !/^[1-9]\d*$/.test(pageNumber) ||
+      !page ||
+      typeof page.textHash !== 'string' ||
+      !/^[a-f0-9]{1,8}$/i.test(page.textHash) ||
+      !Array.isArray(page.ranges)
+    ) {
       throw new Error('Invalid PDF highlight page data.');
     }
+    let previousEnd = -1;
     for (const range of page.ranges) {
       if (
         !range ||
         !Number.isInteger(range.start) ||
         !Number.isInteger(range.end) ||
         range.start < 0 ||
-        range.end <= range.start
+        range.end <= range.start ||
+        range.end > 10000000 ||
+        range.start < previousEnd
       ) {
         throw new Error('Invalid PDF highlight range data.');
       }
+      previousEnd = range.end;
     }
   }
 
   return snapshot as PdfTextHighlightSnapshot;
 }
 
-export function restorePdfTextHighlights(root: HTMLElement, snapshot: PdfTextHighlightSnapshot): void {
-  for (const [pageNumber, page] of Object.entries(snapshot.pages)) {
-    const pageElement = root.querySelector<HTMLElement>(`[data-page-number="${pageNumber}"]`);
+export function restorePdfTextHighlights(
+  root: HTMLElement,
+  snapshot: PdfTextHighlightSnapshot,
+  pageNumbers?: number[]
+): void {
+  const pages = pageNumbers
+    ? pageNumbers.flatMap((pageNumber) => {
+      const page = snapshot.pages[String(pageNumber)];
+      return page ? [[String(pageNumber), page] as const] : [];
+    })
+    : Object.entries(snapshot.pages);
+
+  for (const [pageNumber, page] of pages) {
+    const pageSelector = `[data-page-number="${pageNumber}"]`;
+    const pageElement = root.matches(pageSelector)
+      ? root
+      : root.querySelector<HTMLElement>(pageSelector);
     const textLayer = pageElement?.querySelector<HTMLElement>(PDF_TEXT_LAYER_SELECTOR);
     if (!textLayer) continue;
 

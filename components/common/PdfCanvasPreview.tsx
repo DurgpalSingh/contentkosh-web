@@ -9,29 +9,35 @@ import {
   Headphones,
   Highlighter,
   Languages,
+  Loader2,
   Minus,
   Pause,
   Play,
   Plus,
   RotateCcw,
+  Save,
   Square,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   CONTENT_FILE_VIEWER_DEFAULT_DEVICE_PIXEL_RATIO,
   CONTENT_FILE_VIEWER_PDF,
-  CONTENT_FILE_VIEWER_PDF_HIGHLIGHT_STORAGE,
+  CONTENT_FILE_VIEWER_PDF_AUDIO_PREPARING_LABEL,
+  CONTENT_FILE_VIEWER_PDF_HIGHLIGHT,
   CONTENT_FILE_VIEWER_PDF_NATURAL_VOICE_MARKERS,
   CONTENT_FILE_VIEWER_PDF_NO_VOICES_LABEL,
   CONTENT_FILE_VIEWER_PDF_SPEECH_API,
   CONTENT_FILE_VIEWER_PDF_SELECTION_TOOL,
   CONTENT_FILE_VIEWER_PDF_SELECTION_TOOL_COPY,
   CONTENT_FILE_VIEWER_PDF_VOICE_LANGUAGES,
+  type PdfTextHighlightSnapshot,
   type ContentFileViewerPdfSelectionTool,
 } from '@/lib/contentFileViewer.config';
+import { PdfTextHighlightsService } from '@/lib/api/services/PdfTextHighlightsService';
 import {
   applyPdfTextHighlight,
   createPdfTextHighlightSnapshot,
+  getPdfTextSelectionPageNumbers,
   isPdfTextSelection,
   parsePdfTextHighlightSnapshot,
   removePdfTextHighlight,
@@ -45,6 +51,8 @@ export type PdfCanvasPreviewProps = {
   enableHighlight?: boolean;
   highlightUserId?: number;
   highlightContentId?: number;
+  onUnsavedChangesChange?: (hasUnsavedChanges: boolean) => void;
+  onRegisterHighlightSave?: (save: (() => Promise<boolean>) | null) => void;
   onReady: () => void;
   onError: (error?: unknown) => void;
 };
@@ -96,6 +104,8 @@ export function PdfCanvasPreview({
   enableHighlight = false,
   highlightUserId,
   highlightContentId,
+  onUnsavedChangesChange,
+  onRegisterHighlightSave,
   onReady,
   onError,
 }: PdfCanvasPreviewProps) {
@@ -104,6 +114,9 @@ export function PdfCanvasPreview({
   const speechChunksRef = useRef<string[]>([]);
   const speechChunksByPageRef = useRef<string[][]>([]);
   const speechIndexRef = useRef(0);
+  const highlightSnapshotRef = useRef<PdfTextHighlightSnapshot | null>(null);
+  const highlightSavePromiseRef = useRef<Promise<boolean> | null>(null);
+  const hasUnsavedHighlightsRef = useRef(false);
   const pageInputDirtyRef = useRef(false);
   const pendingPageRef = useRef<number | null>(null);
   const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
@@ -117,6 +130,7 @@ export function PdfCanvasPreview({
   const [pageInput, setPageInput] = useState('1');
   const [zoom, setZoom] = useState(100);
   const [documentReady, setDocumentReady] = useState(false);
+  const [speechPreparing, setSpeechPreparing] = useState(false);
   const [speechState, setSpeechState] = useState<'idle' | 'speaking' | 'paused'>('idle');
   const [speechError, setSpeechError] = useState<string | null>(null);
   const [speechAvailable, setSpeechAvailable] = useState(true);
@@ -124,10 +138,19 @@ export function PdfCanvasPreview({
   const [selectedVoice, setSelectedVoice] = useState('');
   const [speechRate, setSpeechRate] = useState(1);
   const [selectionTool, setSelectionTool] = useState<ContentFileViewerPdfSelectionTool>(null);
-  const [highlightStorageError, setHighlightStorageError] = useState(false);
-  const highlightStorageKey = highlightUserId && highlightContentId
-    ? CONTENT_FILE_VIEWER_PDF_HIGHLIGHT_STORAGE.key(highlightUserId, highlightContentId)
+  const [highlightSyncError, setHighlightSyncError] = useState(false);
+  const [highlightDataReady, setHighlightDataReady] = useState(!enableHighlight);
+  const [hasUnsavedHighlights, setHasUnsavedHighlights] = useState(false);
+  const [isSavingHighlights, setIsSavingHighlights] = useState(false);
+  const legacyHighlightStorageKey = highlightUserId && highlightContentId
+    ? CONTENT_FILE_VIEWER_PDF_HIGHLIGHT.legacyStorageKey(highlightUserId, highlightContentId)
     : null;
+
+  const updateUnsavedHighlights = useCallback((hasUnsavedChanges: boolean) => {
+    hasUnsavedHighlightsRef.current = hasUnsavedChanges;
+    setHasUnsavedHighlights(hasUnsavedChanges);
+    onUnsavedChangesChange?.(hasUnsavedChanges);
+  }, [onUnsavedChangesChange]);
 
   const availableVoicesByLocale = useMemo(() => {
     const voicesByLocale = new Map<string, SpeechSynthesisVoice[]>();
@@ -282,38 +305,96 @@ export function PdfCanvasPreview({
     window.getSelection()?.removeAllRanges();
   };
 
+  const saveHighlightChanges = useCallback((): Promise<boolean> => {
+    if (!enableHighlight || !highlightContentId || !highlightSnapshotRef.current) {
+      return Promise.resolve(false);
+    }
+    if (!hasUnsavedHighlightsRef.current) return Promise.resolve(true);
+    if (highlightSavePromiseRef.current) return highlightSavePromiseRef.current;
+
+    const snapshot = highlightSnapshotRef.current;
+    setIsSavingHighlights(true);
+    const savePromise = (async () => {
+      try {
+        const savedSnapshot = await PdfTextHighlightsService.savePdfTextHighlights(highlightContentId, snapshot);
+        const snapshotIsCurrent = highlightSnapshotRef.current === snapshot;
+        if (snapshotIsCurrent) {
+          highlightSnapshotRef.current = savedSnapshot;
+          updateUnsavedHighlights(false);
+        }
+        if (highlightUserId) {
+          try {
+            window.localStorage.removeItem(
+              CONTENT_FILE_VIEWER_PDF_HIGHLIGHT.legacyStorageKey(highlightUserId, highlightContentId)
+            );
+          } catch (storageError) {
+            console.warn('Could not remove migrated local PDF highlights:', storageError);
+          }
+        }
+        setHighlightSyncError(false);
+        return snapshotIsCurrent;
+      } catch (error) {
+        console.error('Failed to save PDF text highlights:', error);
+        setHighlightSyncError(true);
+        return false;
+      } finally {
+        setIsSavingHighlights(false);
+      }
+    })();
+
+    highlightSavePromiseRef.current = savePromise;
+    void savePromise.finally(() => {
+      if (highlightSavePromiseRef.current === savePromise) {
+        highlightSavePromiseRef.current = null;
+      }
+    });
+    return savePromise;
+  }, [enableHighlight, highlightContentId, highlightUserId, updateUnsavedHighlights]);
+
+  useEffect(() => {
+    onRegisterHighlightSave?.(saveHighlightChanges);
+    return () => onRegisterHighlightSave?.(null);
+  }, [onRegisterHighlightSave, saveHighlightChanges]);
+
   const applySelectionTool = useCallback(() => {
     const root = containerRef.current;
     const selection = window.getSelection();
     const tool = selectionToolRef.current;
-    if (!enableHighlight || !root || !tool || !isPdfTextSelection(selection, root)) return;
+    if (!enableHighlight || !highlightContentId || !root || !tool || !isPdfTextSelection(selection, root)) return;
 
     const range = selection.getRangeAt(0).cloneRange();
+    const affectedPages = getPdfTextSelectionPageNumbers(range, root);
+    if (affectedPages.length === 0) return;
+    const selectionRoot = affectedPages.length === 1
+      ? root.querySelector<HTMLElement>(`[data-page-number="${affectedPages[0]}"]`) ?? root
+      : root;
     if (tool === CONTENT_FILE_VIEWER_PDF_SELECTION_TOOL.HIGHLIGHT) {
-      applyPdfTextHighlight(range, root);
+      applyPdfTextHighlight(range, selectionRoot);
     } else {
-      removePdfTextHighlight(range, root);
+      removePdfTextHighlight(range, selectionRoot);
     }
     selection.removeAllRanges();
 
-    if (highlightStorageKey) {
-      try {
-        const snapshot = createPdfTextHighlightSnapshot(
-          root,
-          CONTENT_FILE_VIEWER_PDF_HIGHLIGHT_STORAGE.VERSION
-        );
-        if (Object.keys(snapshot.pages).length > 0) {
-          window.localStorage.setItem(highlightStorageKey, JSON.stringify(snapshot));
-        } else {
-          window.localStorage.removeItem(highlightStorageKey);
-        }
-        setHighlightStorageError(false);
-      } catch (storageError) {
-        console.error('Failed to save PDF text highlights:', storageError);
-        setHighlightStorageError(true);
-      }
+    const currentSnapshot = highlightSnapshotRef.current ?? {
+      version: CONTENT_FILE_VIEWER_PDF_HIGHLIGHT.VERSION,
+      pages: {},
+    };
+    const changedPages = createPdfTextHighlightSnapshot(
+      root,
+      CONTENT_FILE_VIEWER_PDF_HIGHLIGHT.VERSION,
+      affectedPages
+    );
+    const pages = { ...currentSnapshot.pages };
+    for (const pageNumber of affectedPages) {
+      const key = String(pageNumber);
+      const page = changedPages.pages[key];
+      if (page) pages[key] = page;
+      else delete pages[key];
     }
-  }, [enableHighlight, highlightStorageKey]);
+    const snapshot = { version: CONTENT_FILE_VIEWER_PDF_HIGHLIGHT.VERSION, pages };
+    highlightSnapshotRef.current = snapshot;
+    updateUnsavedHighlights(true);
+  }, [enableHighlight, highlightContentId, updateUnsavedHighlights]);
 
   useEffect(() => {
     if (!enableHighlight) return;
@@ -358,7 +439,11 @@ export function PdfCanvasPreview({
     const container = containerRef.current;
 
     setHasPdfText(false);
-    setHighlightStorageError(false);
+    setSpeechPreparing(true);
+    setHighlightSyncError(false);
+    setHighlightDataReady(!enableHighlight || !highlightContentId);
+    updateUnsavedHighlights(false);
+    highlightSnapshotRef.current = null;
     speechChunksByPageRef.current = [];
     setPageCount(0);
     setCurrentPage(1);
@@ -379,20 +464,63 @@ export function PdfCanvasPreview({
       if (!container) return;
 
       try {
-        let savedHighlights = null;
-        if (enableHighlight && highlightStorageKey) {
+        let savedHighlights: PdfTextHighlightSnapshot | null = null;
+        let legacyHighlights: PdfTextHighlightSnapshot | null = null;
+        if (legacyHighlightStorageKey) {
           try {
-            const serializedHighlights = window.localStorage.getItem(highlightStorageKey);
-            if (serializedHighlights) {
-              savedHighlights = parsePdfTextHighlightSnapshot(
-                serializedHighlights,
-                CONTENT_FILE_VIEWER_PDF_HIGHLIGHT_STORAGE.VERSION
+            const serializedLegacyHighlights = window.localStorage.getItem(legacyHighlightStorageKey);
+            if (serializedLegacyHighlights) {
+              legacyHighlights = parsePdfTextHighlightSnapshot(
+                serializedLegacyHighlights,
+                CONTENT_FILE_VIEWER_PDF_HIGHLIGHT.VERSION
               );
             }
           } catch (storageError) {
-            console.error('Failed to read saved PDF text highlights:', storageError);
-            setHighlightStorageError(true);
+            console.error('Failed to read local PDF highlights for migration:', storageError);
+            setHighlightSyncError(true);
           }
+        }
+        if (enableHighlight && highlightContentId) {
+          void PdfTextHighlightsService.getPdfTextHighlights(highlightContentId)
+            .then((responseSnapshot) => {
+              const serverSnapshot = parsePdfTextHighlightSnapshot(
+                JSON.stringify(responseSnapshot),
+                CONTENT_FILE_VIEWER_PDF_HIGHLIGHT.VERSION
+              );
+              if (cancelled) return null;
+              const hasServerHighlights = Object.keys(serverSnapshot.pages).length > 0;
+              const snapshot = hasServerHighlights || !legacyHighlights
+                ? serverSnapshot
+                : legacyHighlights;
+              savedHighlights = snapshot;
+              highlightSnapshotRef.current = snapshot;
+              setHighlightDataReady(true);
+              setHighlightSyncError(false);
+              updateUnsavedHighlights(!hasServerHighlights && Boolean(legacyHighlights));
+              restorePdfTextHighlights(container, snapshot);
+              if (hasServerHighlights && legacyHighlightStorageKey) {
+                try {
+                  window.localStorage.removeItem(legacyHighlightStorageKey);
+                } catch (storageError) {
+                  console.warn('Could not remove migrated local PDF highlights:', storageError);
+                }
+              }
+              return snapshot;
+            })
+            .catch((error: unknown) => {
+              if (cancelled) return null;
+              console.error('Failed to load PDF text highlights:', error);
+              const fallbackSnapshot = legacyHighlights ?? {
+                version: CONTENT_FILE_VIEWER_PDF_HIGHLIGHT.VERSION,
+                pages: {},
+              };
+              savedHighlights = fallbackSnapshot;
+              highlightSnapshotRef.current = fallbackSnapshot;
+              setHighlightDataReady(true);
+              setHighlightSyncError(true);
+              updateUnsavedHighlights(Boolean(legacyHighlights));
+              restorePdfTextHighlights(container, fallbackSnapshot);
+            });
         }
 
         const pdfjs = await import('pdfjs-dist');
@@ -490,14 +618,17 @@ export function PdfCanvasPreview({
             renderTasks.push(textLayer.render());
           }
           await Promise.all(renderTasks);
+          if (savedHighlights) {
+            restorePdfTextHighlights(container, savedHighlights, [pageNumber]);
+          }
           if (pageNumber === 1 && !cancelled) onReady();
         }
 
         if (!cancelled) {
-          if (savedHighlights) restorePdfTextHighlights(container, savedHighlights);
           speechChunksByPageRef.current = extractedPages;
           const hasText = extractedPages.some((pageChunks) => pageChunks.length > 0);
           setHasPdfText(hasText);
+          setSpeechPreparing(false);
           setDocumentReady(true);
           if (!hasText) setSpeechError('This PDF does not contain readable text to play as audio.');
         }
@@ -507,6 +638,7 @@ export function PdfCanvasPreview({
         }
       } catch (err) {
         if (cancelled) return;
+        setSpeechPreparing(false);
         console.error('Failed to render PDF preview:', err);
         onError(err);
       }
@@ -523,7 +655,16 @@ export function PdfCanvasPreview({
       loadingTask?.destroy().catch(() => undefined);
       container?.replaceChildren();
     };
-  }, [blob, enableHighlight, highlightStorageKey, onError, onReady, url]);
+  }, [
+    blob,
+    enableHighlight,
+    highlightContentId,
+    legacyHighlightStorageKey,
+    onError,
+    onReady,
+    updateUnsavedHighlights,
+    url,
+  ]);
 
   useEffect(() => {
     containerRef.current?.querySelectorAll<HTMLCanvasElement>('canvas[data-base-width]').forEach((canvas) => {
@@ -690,14 +831,20 @@ export function PdfCanvasPreview({
             <div
               role="group"
               aria-label="PDF text highlighting"
-              className="inline-flex h-10 shrink-0 items-center gap-1"
+              className="inline-flex h-10 shrink-0 items-center gap-1 rounded-xl border border-slate-200 bg-slate-50/80 px-1.5 shadow-sm"
             >
+              {!highlightDataReady && (
+                <span role="status" aria-live="polite" className="inline-flex items-center gap-1 text-xs text-slate-500">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                  {CONTENT_FILE_VIEWER_PDF_HIGHLIGHT.LOADING_LABEL}
+                </span>
+              )}
               <Button
                 type="button"
                 size="icon"
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => toggleSelectionTool(CONTENT_FILE_VIEWER_PDF_SELECTION_TOOL.HIGHLIGHT)}
-                disabled={!documentReady}
+                disabled={!documentReady || !highlightDataReady}
                 variant={selectionTool === CONTENT_FILE_VIEWER_PDF_SELECTION_TOOL.HIGHLIGHT ? 'default' : 'outline'}
                 className={`h-8 w-8 rounded-lg ${
                   selectionTool === CONTENT_FILE_VIEWER_PDF_SELECTION_TOOL.HIGHLIGHT
@@ -715,7 +862,7 @@ export function PdfCanvasPreview({
                 size="icon"
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => toggleSelectionTool(CONTENT_FILE_VIEWER_PDF_SELECTION_TOOL.ERASE)}
-                disabled={!documentReady}
+                disabled={!documentReady || !highlightDataReady}
                 variant={selectionTool === CONTENT_FILE_VIEWER_PDF_SELECTION_TOOL.ERASE ? 'default' : 'outline'}
                 className={`h-8 w-8 rounded-lg ${
                   selectionTool === CONTENT_FILE_VIEWER_PDF_SELECTION_TOOL.ERASE
@@ -728,6 +875,41 @@ export function PdfCanvasPreview({
               >
                 <Eraser className="h-4 w-4" />
               </Button>
+              <Button
+                type="button"
+                variant={hasUnsavedHighlights ? 'default' : 'ghost'}
+                size="icon"
+                onClick={() => void saveHighlightChanges()}
+                disabled={!documentReady || !highlightDataReady || !hasUnsavedHighlights || isSavingHighlights}
+                aria-label={isSavingHighlights
+                  ? CONTENT_FILE_VIEWER_PDF_HIGHLIGHT.SAVING_LABEL
+                  : CONTENT_FILE_VIEWER_PDF_HIGHLIGHT.SAVE_BUTTON_LABEL}
+                title={isSavingHighlights
+                  ? CONTENT_FILE_VIEWER_PDF_HIGHLIGHT.SAVING_LABEL
+                  : CONTENT_FILE_VIEWER_PDF_HIGHLIGHT.SAVE_BUTTON_LABEL}
+                className={`h-8 w-8 rounded-lg disabled:opacity-100 ${
+                  hasUnsavedHighlights
+                    ? 'bg-blue-600 text-white shadow-sm hover:bg-blue-700 disabled:bg-blue-300'
+                    : 'text-slate-400 hover:bg-white hover:text-slate-700 disabled:text-slate-300'
+                }`}
+              >
+                {isSavingHighlights
+                  ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                  : <Save className="h-4 w-4" aria-hidden="true" />}
+              </Button>
+              {(hasUnsavedHighlights || isSavingHighlights) && (
+                <span
+                  role="status"
+                  aria-live="polite"
+                  className={`whitespace-nowrap px-1 text-[11px] font-medium ${
+                    isSavingHighlights ? 'text-blue-700' : 'text-amber-700'
+                  }`}
+                >
+                  {isSavingHighlights
+                    ? CONTENT_FILE_VIEWER_PDF_HIGHLIGHT.SAVING_LABEL
+                    : CONTENT_FILE_VIEWER_PDF_HIGHLIGHT.UNSAVED_LABEL}
+                </span>
+              )}
             </div>
           )}
 
@@ -739,12 +921,18 @@ export function PdfCanvasPreview({
             className="inline-flex h-10 shrink-0 items-center gap-1"
           >
             <Headphones className="ml-1 h-4 w-4 text-blue-600" aria-hidden="true" />
+            {speechPreparing && (
+              <span role="status" aria-live="polite" className="inline-flex items-center gap-1 text-xs text-blue-700">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                {CONTENT_FILE_VIEWER_PDF_AUDIO_PREPARING_LABEL}
+              </span>
+            )}
             <Button
               type="button"
               size="sm"
               onMouseDown={(event) => event.preventDefault()}
               onClick={handleSpeechToggle}
-              disabled={!hasPdfText || !speechAvailable || availableVoices.length === 0}
+              disabled={speechPreparing || !hasPdfText || !speechAvailable || availableVoices.length === 0}
               className="h-8 rounded-lg bg-blue-600 px-3 text-white shadow-sm hover:bg-blue-700"
               aria-label={speechState === 'speaking' ? 'Pause PDF audio' : speechState === 'paused' ? 'Resume PDF audio' : 'Listen to PDF'}
             >
@@ -820,9 +1008,9 @@ export function PdfCanvasPreview({
               <span className="truncate">{speechError}</span>
             </div>
           )}
-          {highlightStorageError && (
+          {highlightSyncError && (
             <div role="status" className="text-xs font-medium text-amber-700">
-              {CONTENT_FILE_VIEWER_PDF_HIGHLIGHT_STORAGE.ERROR_MESSAGE}
+              {CONTENT_FILE_VIEWER_PDF_HIGHLIGHT.ERROR_MESSAGE}
             </div>
           )}
         </div>

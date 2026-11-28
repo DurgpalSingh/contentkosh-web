@@ -97,16 +97,32 @@ export const CONTENT_FILE_VIEWER_PDF_SPEECH_API = {
   VOICES_CHANGED_EVENT: 'voiceschanged',
 } as const;
 
-const PDF_HIGHLIGHT_STORAGE_KEY_PREFIX = 'contentkosh:pdf-highlights';
-const PDF_HIGHLIGHT_STORAGE_VERSION = 1;
+export type PdfTextHighlightSnapshot = {
+  version: number;
+  pages: Record<string, {
+    textHash: string;
+    ranges: Array<{ start: number; end: number }>;
+  }>;
+};
 
-export const CONTENT_FILE_VIEWER_PDF_HIGHLIGHT_STORAGE = {
-  KEY_PREFIX: PDF_HIGHLIGHT_STORAGE_KEY_PREFIX,
-  VERSION: PDF_HIGHLIGHT_STORAGE_VERSION,
-  ERROR_MESSAGE: 'PDF highlights could not be loaded or saved in this browser.',
-  key: (userId: number, contentId: number) =>
-    `${PDF_HIGHLIGHT_STORAGE_KEY_PREFIX}:v${PDF_HIGHLIGHT_STORAGE_VERSION}:user:${userId}:content:${contentId}`,
+export const CONTENT_FILE_VIEWER_PDF_HIGHLIGHT = {
+  VERSION: 1,
+  LOADING_LABEL: 'Loading saved highlights',
+  ERROR_MESSAGE: 'PDF highlights could not be synchronized with the server. Please try again.',
+  SAVE_BUTTON_LABEL: 'Save highlights',
+  SAVING_LABEL: 'Saving highlights...',
+  UNSAVED_LABEL: 'Unsaved',
+  UNSAVED_DIALOG_TITLE: 'Unsaved PDF highlights',
+  UNSAVED_DIALOG_MESSAGE: 'Save your changes before closing? If you discard, your unsaved highlight changes will be lost.',
+  SAVE_AND_CLOSE_LABEL: 'Save and close',
+  DISCARD_CHANGES_LABEL: 'Discard changes',
+  CANCEL_LABEL: 'Cancel',
+  SAVE_ERROR_MESSAGE: 'Could not save your highlights. Please try again or discard your changes.',
+  legacyStorageKey: (userId: number, contentId: number) =>
+    `contentkosh:pdf-highlights:v1:user:${userId}:content:${contentId}`,
 } as const;
+
+export const CONTENT_FILE_VIEWER_PDF_AUDIO_PREPARING_LABEL = 'Preparing audio';
 
 export const CONTENT_FILE_VIEWER_PDF_NO_VOICES_LABEL = 'No natural Indian English or Hindi voices available';
 
