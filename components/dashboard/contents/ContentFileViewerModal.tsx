@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import { Download, Expand, FileText, Image as ImageIcon, Loader2, Minimize2, WifiOff, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ import {
   CONTENT_FILE_VIEWER_IMAGE,
   CONTENT_FILE_VIEWER_KIND,
   CONTENT_FILE_VIEWER_MODE,
+  CONTENT_FILE_VIEWER_PDF_HIGHLIGHT,
   CONTENT_FILE_VIEWER_STATUS,
   type ContentFileViewerFileKind,
   type ContentFileViewerMode,
@@ -84,7 +85,13 @@ export function ContentFileViewerModal({ content, isOpen, onClose }: ContentFile
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
+  const [showUnsavedHighlightDialog, setShowUnsavedHighlightDialog] = useState(false);
+  const [isSavingAndClosing, setIsSavingAndClosing] = useState(false);
+  const [closeSaveError, setCloseSaveError] = useState(false);
+  const hasUnsavedHighlightChangesRef = useRef(false);
+  const saveHighlightChangesRef = useRef<(() => Promise<boolean>) | null>(null);
   const isStudent = useAuthStore((state) => state.user?.role === 'STUDENT');
+  const highlightUserId = useAuthStore((state) => state.user?.id);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   const fileKind = useMemo(() => getFileKind(content), [content]);
@@ -94,6 +101,48 @@ export function ContentFileViewerModal({ content, isOpen, onClose }: ContentFile
     status === CONTENT_FILE_VIEWER_STATUS.FETCHING ||
     status === CONTENT_FILE_VIEWER_STATUS.LOADING_PREVIEW;
 
+  const handleUnsavedHighlightChangesChange = useCallback((hasChanges: boolean) => {
+    hasUnsavedHighlightChangesRef.current = hasChanges;
+  }, []);
+
+  const handleRegisterHighlightSave = useCallback((save: (() => Promise<boolean>) | null) => {
+    saveHighlightChangesRef.current = save;
+  }, []);
+
+  const handleCloseRequest = useCallback(() => {
+    if (hasUnsavedHighlightChangesRef.current) {
+      setCloseSaveError(false);
+      setShowUnsavedHighlightDialog(true);
+      return;
+    }
+    onClose();
+  }, [onClose]);
+
+  const handleDiscardAndClose = useCallback(() => {
+    handleUnsavedHighlightChangesChange(false);
+    setShowUnsavedHighlightDialog(false);
+    setCloseSaveError(false);
+    onClose();
+  }, [handleUnsavedHighlightChangesChange, onClose]);
+
+  const handleSaveAndClose = useCallback(async () => {
+    if (isSavingAndClosing) return;
+    setIsSavingAndClosing(true);
+    setCloseSaveError(false);
+    try {
+      const saved = await saveHighlightChangesRef.current?.();
+      if (!saved) {
+        setCloseSaveError(true);
+        return;
+      }
+      handleUnsavedHighlightChangesChange(false);
+      setShowUnsavedHighlightDialog(false);
+      onClose();
+    } finally {
+      setIsSavingAndClosing(false);
+    }
+  }, [handleUnsavedHighlightChangesChange, isSavingAndClosing, onClose]);
+
   useEffect(() => {
     if (!isOpen) return;
     const updateConnectivity = () => setIsOffline(!navigator.onLine);
@@ -101,7 +150,14 @@ export function ContentFileViewerModal({ content, isOpen, onClose }: ContentFile
     window.addEventListener('online', updateConnectivity);
     window.addEventListener('offline', updateConnectivity);
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
+      if (event.key !== 'Escape' || isSavingAndClosing) return;
+      event.preventDefault();
+      if (showUnsavedHighlightDialog) {
+        setShowUnsavedHighlightDialog(false);
+        setCloseSaveError(false);
+      } else {
+        handleCloseRequest();
+      }
     };
     document.addEventListener('keydown', onKeyDown);
     return () => {
@@ -109,7 +165,7 @@ export function ContentFileViewerModal({ content, isOpen, onClose }: ContentFile
       window.removeEventListener('online', updateConnectivity);
       window.removeEventListener('offline', updateConnectivity);
     };
-  }, [isOpen, onClose]);
+  }, [handleCloseRequest, isOpen, isSavingAndClosing, showUnsavedHighlightDialog]);
 
   useEffect(() => {
     if (!isOpen || !content?.id) return;
@@ -182,6 +238,10 @@ export function ContentFileViewerModal({ content, isOpen, onClose }: ContentFile
       setDocxBlob(null);
       setStatus(CONTENT_FILE_VIEWER_STATUS.IDLE);
       setError(null);
+      hasUnsavedHighlightChangesRef.current = false;
+      saveHighlightChangesRef.current = null;
+      setShowUnsavedHighlightDialog(false);
+      setCloseSaveError(false);
     }
   }, [isOpen]);
 
@@ -267,7 +327,7 @@ export function ContentFileViewerModal({ content, isOpen, onClose }: ContentFile
                 {downloading ? 'Downloading...' : 'Download'}
               </Button>
             )}
-            <Button type="button" variant="ghost" size="icon" onClick={onClose} aria-label="Close file viewer">
+            <Button type="button" variant="ghost" size="icon" onClick={handleCloseRequest} aria-label="Close file viewer">
               <X className="h-5 w-5" />
             </Button>
           </div>
@@ -310,7 +370,11 @@ export function ContentFileViewerModal({ content, isOpen, onClose }: ContentFile
             <PdfCanvasPreview
               url={fileUrl}
               title={content.title || 'Content file'}
-              enableHighlight={isStudent}
+              enableHighlight={isStudent && Boolean(content.id)}
+              highlightUserId={isStudent ? highlightUserId : undefined}
+              highlightContentId={isStudent ? content.id : undefined}
+              onUnsavedChangesChange={handleUnsavedHighlightChangesChange}
+              onRegisterHighlightSave={handleRegisterHighlightSave}
               onReady={handlePreviewReady}
               onError={handlePreviewError}
             />
@@ -365,6 +429,56 @@ export function ContentFileViewerModal({ content, isOpen, onClose }: ContentFile
           )}
         </div>
       </div>
+      {showUnsavedHighlightDialog && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/60 p-4">
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="unsaved-highlights-title"
+            aria-describedby="unsaved-highlights-description"
+            className="w-full max-w-md rounded-xl bg-white p-5 shadow-2xl"
+          >
+            <h2 id="unsaved-highlights-title" className="text-lg font-semibold text-slate-900">
+              {CONTENT_FILE_VIEWER_PDF_HIGHLIGHT.UNSAVED_DIALOG_TITLE}
+            </h2>
+            <p id="unsaved-highlights-description" className="mt-2 text-sm text-slate-600">
+              {CONTENT_FILE_VIEWER_PDF_HIGHLIGHT.UNSAVED_DIALOG_MESSAGE}
+            </p>
+            {closeSaveError && (
+              <p role="alert" className="mt-3 text-sm text-red-700">
+                {CONTENT_FILE_VIEWER_PDF_HIGHLIGHT.SAVE_ERROR_MESSAGE}
+              </p>
+            )}
+            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowUnsavedHighlightDialog(false);
+                  setCloseSaveError(false);
+                }}
+                disabled={isSavingAndClosing}
+              >
+                {CONTENT_FILE_VIEWER_PDF_HIGHLIGHT.CANCEL_LABEL}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleDiscardAndClose}
+                disabled={isSavingAndClosing}
+              >
+                {CONTENT_FILE_VIEWER_PDF_HIGHLIGHT.DISCARD_CHANGES_LABEL}
+              </Button>
+              <Button type="button" onClick={() => void handleSaveAndClose()} disabled={isSavingAndClosing}>
+                {isSavingAndClosing && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}
+                {isSavingAndClosing
+                  ? CONTENT_FILE_VIEWER_PDF_HIGHLIGHT.SAVING_LABEL
+                  : CONTENT_FILE_VIEWER_PDF_HIGHLIGHT.SAVE_AND_CLOSE_LABEL}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

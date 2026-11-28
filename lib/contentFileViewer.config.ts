@@ -85,11 +85,11 @@ export const CONTENT_FILE_VIEWER_PDF_SELECTION_TOOL_COPY = {
 } as const;
 
 export const CONTENT_FILE_VIEWER_PDF_VOICE_LANGUAGES = [
-  { code: 'en-GB', label: 'English (UK)' },
-  { code: 'en-US', label: 'English (US)' },
   { code: 'en-IN', label: 'English (India)' },
-  { code: 'hi-IN', label: 'Hindi' },
+  { code: 'hi-IN', label: 'Hindi (India)' },
 ] as const;
+
+export const CONTENT_FILE_VIEWER_PDF_NATURAL_VOICE_MARKERS = ['natural', 'neural'] as const;
 
 export const CONTENT_FILE_VIEWER_PDF_SPEECH_API = {
   SYNTHESIS_PROPERTY: 'speechSynthesis',
@@ -97,7 +97,34 @@ export const CONTENT_FILE_VIEWER_PDF_SPEECH_API = {
   VOICES_CHANGED_EVENT: 'voiceschanged',
 } as const;
 
-export const CONTENT_FILE_VIEWER_PDF_NO_VOICES_LABEL = 'No English or Hindi voices available';
+export type PdfTextHighlightSnapshot = {
+  version: number;
+  pages: Record<string, {
+    textHash: string;
+    ranges: Array<{ start: number; end: number }>;
+  }>;
+};
+
+export const CONTENT_FILE_VIEWER_PDF_HIGHLIGHT = {
+  VERSION: 1,
+  LOADING_LABEL: 'Loading saved highlights',
+  ERROR_MESSAGE: 'PDF highlights could not be synchronized with the server. Please try again.',
+  SAVE_BUTTON_LABEL: 'Save highlights',
+  SAVING_LABEL: 'Saving highlights...',
+  UNSAVED_LABEL: 'Unsaved',
+  UNSAVED_DIALOG_TITLE: 'Unsaved PDF highlights',
+  UNSAVED_DIALOG_MESSAGE: 'Save your changes before closing? If you discard, your unsaved highlight changes will be lost.',
+  SAVE_AND_CLOSE_LABEL: 'Save and close',
+  DISCARD_CHANGES_LABEL: 'Discard changes',
+  CANCEL_LABEL: 'Cancel',
+  SAVE_ERROR_MESSAGE: 'Could not save your highlights. Please try again or discard your changes.',
+  legacyStorageKey: (userId: number, contentId: number) =>
+    `contentkosh:pdf-highlights:v1:user:${userId}:content:${contentId}`,
+} as const;
+
+export const CONTENT_FILE_VIEWER_PDF_AUDIO_PREPARING_LABEL = 'Preparing audio';
+
+export const CONTENT_FILE_VIEWER_PDF_NO_VOICES_LABEL = 'No natural Indian English or Hindi voices available';
 
 export const CONTENT_FILE_VIEWER_IMAGE = {
   previewWidth: 1200,
